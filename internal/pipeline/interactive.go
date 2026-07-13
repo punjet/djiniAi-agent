@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"djinni-bot-go/internal/api"
 	"djinni-bot-go/internal/notify"
@@ -41,45 +40,35 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 		select {
 		case <-ctx.Done():
 			return "", false, ctx.Err()
-		default:
-			updates, err := bot.GetUpdates()
-			if err != nil {
-				time.Sleep(3 * time.Second)
-				continue
-			}
+		case u := <-bot.UpdateChan:
+			if u.CallbackQuery != nil {
+				data := u.CallbackQuery.Data
+				if strings.HasPrefix(data, "apply_accept:") && strings.HasSuffix(data, jobSlug) {
+					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Accepted!")
+					_ = notify.EditMessageText(msgID, text+"\n\n🟢 *Status:* Application accepted and submitted.")
+					_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
+					return "", true, nil
+				}
+				if strings.HasPrefix(data, "apply_reject:") && strings.HasSuffix(data, jobSlug) {
+					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Rejected!")
+					_ = notify.EditMessageText(msgID, text+"\n\n🔴 *Status:* Application rejected (skipped).")
+					_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
+					return "", false, nil
+				}
+				if strings.HasPrefix(data, "apply_edit:") && strings.HasSuffix(data, jobSlug) {
+					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Waiting for edit instructions...")
+					_ = notify.EditMessageText(msgID, text+"\n\n🤖 *Status:* Waiting for you to type what the AI should change in the cover letter...")
+					_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
 
-			for _, u := range updates {
-				if u.CallbackQuery != nil {
-					data := u.CallbackQuery.Data
-					if strings.HasPrefix(data, "apply_accept:") && strings.HasSuffix(data, jobSlug) {
-						_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Accepted!")
-						_ = notify.EditMessageText(msgID, text+"\n\n🟢 *Status:* Application accepted and submitted.")
-						_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
-						return "", true, nil
+					instruction, err := waitForUserMessage(ctx, bot)
+					if err != nil {
+						return "", false, err
 					}
-					if strings.HasPrefix(data, "apply_reject:") && strings.HasSuffix(data, jobSlug) {
-						_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Rejected!")
-						_ = notify.EditMessageText(msgID, text+"\n\n🔴 *Status:* Application rejected (skipped).")
-						_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
-						return "", false, nil
-					}
-					if strings.HasPrefix(data, "apply_edit:") && strings.HasSuffix(data, jobSlug) {
-						_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Waiting for edit instructions...")
-						_ = notify.EditMessageText(msgID, text+"\n\n🤖 *Status:* Waiting for you to type what the AI should change in the cover letter...")
-						_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
 
-						instruction, err := waitForUserMessage(ctx, bot)
-						if err != nil {
-							return "", false, err
-						}
-
-						_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n🔄 *Status:* Regenerating cover letter using guidance: %q", instruction))
-						return "edit:" + instruction, false, nil
-					}
+					_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n🔄 *Status:* Regenerating cover letter using guidance: %q", instruction))
+					return "edit:" + instruction, false, nil
 				}
 			}
-
-			time.Sleep(2 * time.Second)
 		}
 	}
 }
@@ -129,65 +118,55 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 		select {
 		case <-ctx.Done():
 			return "", ctx.Err()
-		default:
-			updates, err := bot.GetUpdates()
-			if err != nil {
-				time.Sleep(3 * time.Second)
-				continue
-			}
+		case u := <-bot.UpdateChan:
+			if u.CallbackQuery != nil {
+				data := u.CallbackQuery.Data
+				if strings.HasPrefix(data, "inbox_confirm:") && strings.HasSuffix(data, dialogueID) {
+					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Reply Confirmed!")
+					_ = notify.EditMessageText(msgID, text+"\n\n🟢 *Status:* Confirmed and sent.")
+					_ = notify.EditMessageReplyMarkup(msgID, nil)
+					return proposedReply, nil
+				}
+				if strings.HasPrefix(data, "inbox_reject:") && strings.HasSuffix(data, dialogueID) {
+					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Reply Rejected!")
 
-			for _, u := range updates {
-				if u.CallbackQuery != nil {
-					data := u.CallbackQuery.Data
-					if strings.HasPrefix(data, "inbox_confirm:") && strings.HasSuffix(data, dialogueID) {
-						_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Reply Confirmed!")
-						_ = notify.EditMessageText(msgID, text+"\n\n🟢 *Status:* Confirmed and sent.")
-						_ = notify.EditMessageReplyMarkup(msgID, nil)
-						return proposedReply, nil
+					// Show the Edit/Explain choices
+					editKeyboard := [][]notify.InlineButton{
+						{
+							{Text: "✍️ Write Manually", CallbackData: "inbox_manual:" + dialogueID},
+							{Text: "🤖 Explain to AI", CallbackData: "inbox_explain:" + dialogueID},
+						},
 					}
-					if strings.HasPrefix(data, "inbox_reject:") && strings.HasSuffix(data, dialogueID) {
-						_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Reply Rejected!")
+					_ = notify.EditMessageReplyMarkup(msgID, editKeyboard)
+				}
+				if strings.HasPrefix(data, "inbox_manual:") && strings.HasSuffix(data, dialogueID) {
+					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Waiting for manual input...")
+					_ = notify.EditMessageText(msgID, text+"\n\n✍️ *Status:* Waiting for you to type your manual reply in the chat...")
+					_ = notify.EditMessageReplyMarkup(msgID, nil)
 
-						// Show the Edit/Explain choices
-						editKeyboard := [][]notify.InlineButton{
-							{
-								{Text: "✍️ Write Manually", CallbackData: "inbox_manual:" + dialogueID},
-								{Text: "🤖 Explain to AI", CallbackData: "inbox_explain:" + dialogueID},
-							},
-						}
-						_ = notify.EditMessageReplyMarkup(msgID, editKeyboard)
+					// Loop waiting for a text message from the user
+					manualText, err := waitForUserMessage(ctx, bot)
+					if err != nil {
+						return "", err
 					}
-					if strings.HasPrefix(data, "inbox_manual:") && strings.HasSuffix(data, dialogueID) {
-						_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Waiting for manual input...")
-						_ = notify.EditMessageText(msgID, text+"\n\n✍️ *Status:* Waiting for you to type your manual reply in the chat...")
-						_ = notify.EditMessageReplyMarkup(msgID, nil)
 
-						// Loop waiting for a text message from the user
-						manualText, err := waitForUserMessage(ctx, bot)
-						if err != nil {
-							return "", err
-						}
+					_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n🟢 *Status:* Sent manual reply: %q", manualText))
+					return manualText, nil
+				}
+				if strings.HasPrefix(data, "inbox_explain:") && strings.HasSuffix(data, dialogueID) {
+					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Waiting for explanation...")
+					_ = notify.EditMessageText(msgID, text+"\n\n🤖 *Status:* Waiting for you to type what the AI should change...")
+					_ = notify.EditMessageReplyMarkup(msgID, nil)
 
-						_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n🟢 *Status:* Sent manual reply: %q", manualText))
-						return manualText, nil
+					explanation, err := waitForUserMessage(ctx, bot)
+					if err != nil {
+						return "", err
 					}
-					if strings.HasPrefix(data, "inbox_explain:") && strings.HasSuffix(data, dialogueID) {
-						_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Waiting for explanation...")
-						_ = notify.EditMessageText(msgID, text+"\n\n🤖 *Status:* Waiting for you to type what the AI should change...")
-						_ = notify.EditMessageReplyMarkup(msgID, nil)
 
-						explanation, err := waitForUserMessage(ctx, bot)
-						if err != nil {
-							return "", err
-						}
-
-						_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n🔄 *Status:* Regenerating reply using guidance: %q", explanation))
-						return "explain:" + explanation, nil
-					}
+					_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n🔄 *Status:* Regenerating reply using guidance: %q", explanation))
+					return "explain:" + explanation, nil
 				}
 			}
-
-			time.Sleep(2 * time.Second)
 		}
 	}
 }
@@ -197,20 +176,10 @@ func waitForUserMessage(ctx context.Context, bot *notify.TelegramBot) (string, e
 		select {
 		case <-ctx.Done():
 			return "", ctx.Err()
-		default:
-			updates, err := bot.GetUpdates()
-			if err != nil {
-				time.Sleep(3 * time.Second)
-				continue
+		case u := <-bot.UpdateChan:
+			if u.Message != nil && u.Message.Text != "" {
+				return u.Message.Text, nil
 			}
-
-			for _, u := range updates {
-				if u.Message != nil && u.Message.Text != "" {
-					return u.Message.Text, nil
-				}
-			}
-
-			time.Sleep(2 * time.Second)
 		}
 	}
 }

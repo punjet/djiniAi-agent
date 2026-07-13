@@ -17,6 +17,7 @@ type TelegramBot struct {
 	running     bool
 	offset      int64
 	statusMsgID int64
+	UpdateChan  chan TGUpdate
 }
 
 // SendMessageFunc allows mocking the Telegram message sender in tests.
@@ -25,6 +26,7 @@ var SendMessageFunc = SendTelegramMessage
 func NewTelegramBot() *TelegramBot {
 	bot := &TelegramBot{
 		commands: make(map[string]func(*TGMessage)),
+		UpdateChan: make(chan TGUpdate, 100),
 	}
 	bot.SetupDefaultCommands()
 	return bot
@@ -139,6 +141,12 @@ func (b *TelegramBot) Start() {
 						b.mu.RUnlock()
 						if ok {
 							cmdFunc(update.Message)
+						}
+					} else {
+						select {
+						case b.UpdateChan <- update:
+						default:
+							// drop if channel is full
 						}
 					}
 				}

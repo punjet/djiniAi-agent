@@ -4,6 +4,8 @@ go 1.26
 
 require (
 	github.com/PuerkitoBio/goquery v1.12.0
+	github.com/chromedp/cdproto v0.0.0-20260321001828-e3e3800016bc
+	github.com/chromedp/chromedp v0.15.1
 	github.com/google/generative-ai-go v0.20.1
 	github.com/imroc/req/v3 v3.57.0
 	github.com/joho/godotenv v1.5.1
@@ -21,8 +23,6 @@ require (
 	cloud.google.com/go/longrunning v0.5.7 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
-	github.com/chromedp/cdproto v0.0.0-20260321001828-e3e3800016bc // indirect
-	github.com/chromedp/chromedp v0.15.1 // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-json-experiment/json v0.0.0-20260214004413-d219187c3433 // indirect
