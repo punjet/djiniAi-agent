@@ -287,14 +287,18 @@ var GetUpdatesFunc = func(offset int64) ([]TGUpdate, error) {
 	}
 	defer resp.Body.Close()
 
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
 	var tgResp tgResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tgResp); err != nil {
-		return nil, err
+	if err := json.Unmarshal(bodyBytes, &tgResp); err != nil {
+		return nil, fmt.Errorf("failed to parse getUpdates response: %w, body: %s", err, string(bodyBytes))
 	}
 
 	if !tgResp.OK {
-		snippet, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("telegram getUpdates failed: %s", string(snippet))
+		return nil, fmt.Errorf("telegram getUpdates failed: %s", string(bodyBytes))
 	}
 
 	var updates []TGUpdate
