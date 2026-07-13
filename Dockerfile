@@ -15,13 +15,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app-binary ./cmd/
 
 # =============================================================================
 # Runtime stage
-#   Needs Node.js + Playwright + Chromium because the pipeline shells out to
-#   generate-cover-letter.mjs, generate-cv-html.mjs and generate-pdf.mjs
-#   to produce ATS-ready CV PDFs.
+#   Needs Chromium for chromedp PDF generation (Go native, no Node.js).
 # =============================================================================
-FROM node:20-alpine AS runner
+FROM alpine:3.20
 
-# ---- Chromium + system deps for Playwright headless PDF generation ----
+# ---- Chromium + system deps for chromedp headless PDF generation ----
 RUN apk add --no-cache \
     chromium \
     nss \
@@ -33,11 +31,6 @@ RUN apk add --no-cache \
     font-noto \
     wget
 
-# Tell Playwright to use the system-installed Chromium instead of
-# downloading its own (saves ~400 MB in image size).
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium-browser
-
 WORKDIR /app
 
 # ---- Go binary ----
@@ -45,16 +38,11 @@ COPY --from=builder /app/app-binary .
 
 # ---- Career-ops context directory ----
 # Contains cv.md, config/profile.yml, modes/*.md, templates/*.html,
-# scripts/*.mjs, fonts/, package.json — the pipeline reads all of these
-# at runtime for CV/cover-letter generation.
+# fonts/ — the pipeline reads all of these at runtime for CV/cover-letter
+# generation.
 COPY --from=builder /app/career-ops ./career-ops
 
-# ---- Install Node.js dependencies for PDF scripts ----
-WORKDIR /app/career-ops
-RUN npm install --omit=dev
-
 # ---- Runtime directories the pipeline expects ----
-WORKDIR /app
 RUN mkdir -p /app/career-ops/output \
              /app/career-ops/logs \
              /app/career-ops/batch/tracker-additions \
