@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app-binary ./cmd/
 
 # =============================================================================
 # Runtime stage
-#   Needs Chromium for chromedp PDF generation (Go native, no Node.js).
+#   Needs Chromium for chromedp PDF generation (pure Go, no JS runtime).
 # =============================================================================
 FROM alpine:3.20
 
