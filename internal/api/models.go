@@ -1,0 +1,31 @@
+package api
+
+import "djinni-bot-go/internal/extractor"
+
+// ThreadMessage represents a single message in a conversation thread.
+type ThreadMessage struct {
+	Role      string `json:"role"`       // "recruiter" or "candidate"
+	Text      string `json:"text"`
+	Timestamp string `json:"timestamp"`
+}
+
+// Dialogue represents a dialogue containing unread/recent messages.
+type Dialogue struct {
+	ID       string           `json:"id"`
+	Sender   string           `json:"sender"`
+	Message  string           `json:"message"`
+	Messages []ThreadMessage `json:"messages,omitempty"`
+}
+
+// JobFull represents the full details of a job posting combining summary and detailed info.
+type JobFull struct {
+	ID            string                `json:"id"`
+	Slug          string                `json:"slug"`
+	Title         string                `json:"title"`
+	Company       string                `json:"company"`
+	Description   string                `json:"description"`
+	Requirements  string                `json:"requirements"`
+	URL           string                `json:"url"`
+	QuizID        string                `json:"quiz_id"`
+	QuizQuestions []extractor.QuizQuestion `json:"quiz_questions,omitempty"`
+}

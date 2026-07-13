@@ -1,0 +1,91 @@
+# Career-Ops Profile Configuration
+# Single source of truth for candidate data across all modes.
+
+candidate:
+  full_name: "Кирилл Киров"
+  email: "hello@kirov.dev"
+  phone: "+380637324924"
+  location: "Kyiv, Ukraine"
+  linkedin: "linkedin.com/in/kirilo-kirov"
+  portfolio_url: ""
+  github: ""
+  twitter: ""
+  # (Optional) Canva resume design ID for visual CV generation via /career-ops pdf.
+  # Find it in your Canva design URL: https://www.canva.com/design/DAxxxxxxx/...
+  # The ID starts with "D" and is 11 characters long.
+  # canva_resume_design_id: "DAxxxxxxxxx"
+
+target_roles:
+  # North Star roles — what you're optimizing for
+  primary:
+    - "AI Agent Architect"
+    - "AI Solutions Specialist"
+    - "AI/ML Engineer"
+  # Archetypes help the evaluation system score fit
+  archetypes:
+    - name: "AI Agent Architect"
+      level: "Senior"
+      fit: "primary"
+    - name: "AI/ML Engineer"
+      level: "Senior"
+      fit: "primary"
+    - name: "AI Solutions Specialist"
+      level: "Senior"
+      fit: "primary"
+    - name: "RAG Engineer"
+      level: "Mid-Senior"
+      fit: "secondary"
+    - name: "Automation Engineer"
+      level: "Senior"
+      fit: "secondary"
+
+narrative:
+  # Professional headline (1 line)
+  headline: "AI Agent Architect — специалист по внедрению ИИ-агентов для автоматизации бизнеса"
+  # Exit story — what makes you unique
+  exit_story: >-
+    Перешел из маркетинга и системного администрирования в разработку ИИ-агентов.
+    С сентября 2025 проектирую и внедряю мультиагентные системы: RAG-пайплайны,
+    голосовые агенты с HITL-эскалацией, n8n-автоматизацию квалификации лидов.
+    Уникальное сочетание — глубокая техническая экспертиза в LLM-архитектуре
+    плюс маркетинговое понимание воронок продаж. Создаю агентов, которые
+    реально конвертируют лидов и разгружают операторов.
+  # Top 3-5 superpowers
+  superpowers:
+    - "Архитектура мультиагентных систем и RAG-пайплайнов"
+    - "Голосовые AI-агенты с HITL-эскалацией и state machine"
+    - "Автоматизация бизнес-процессов (n8n, CRM, API-интеграции)"
+    - "Advanced Prompt Engineering (Chain-of-Thought, ReAct, Few-shot)"
+    - "Векторный поиск и embedding-модели для предметных доменов"
+  # Proof points — projects with measurable impact
+  proof_points:
+    - name: "AI Support Agent — автобусный билетный оператор"
+      url: ""
+      hero_metric: "Разгрузил 10 операторов: RAG + Python state machine + Tool Calling + Docker"
+    - name: "n8n Lead Qualification — B2B-автоматизация"
+      url: ""
+      hero_metric: "Сократил время первого ответа с 4 часов до 3 минут"
+    - name: "AI Voice Agent — ріелторське агентство"
+      url: ""
+      hero_metric: "Автономный голосовой агент с RAG, HITL и query rewriting"
+    - name: "AI-агент юридических консультаций"
+      url: ""
+      hero_metric: "Embeddings + векторный поиск прецедентов с цитатами документов"
+  # Optional: dashboard/demo URL with credentials
+  # dashboard:
+  #   url: "https://..."
+  #   password: "..."
+
+compensation:
+  target_range: "$60K-85K"
+  currency: "USD"
+  minimum: "$50K"
+  location_flexibility: "Remote only (EU timezone-friendly)"
+
+location:
+  country: "Ukraine"
+  city: "Kyiv"
+  timezone: "EET"
+  visa_status: "Open to remote; requires employer support for relocation"
+  # For remote roles outside your country:
+  # onsite_availability: "1 week/month in any city"

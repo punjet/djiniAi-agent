@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kirill Kirov — CV</title>
+<style>
+  @font-face {
+    font-family: 'Space Grotesk';
+    src: url('./fonts/space-grotesk-latin.woff2') format('woff2');
+    font-weight: 300 700;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'DM Sans';
+    src: url('./fonts/dm-sans-latin.woff2') format('woff2');
+    font-weight: 100 1000;
+    font-style: normal;
+    font-display: swap;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; font-size: 11px; line-height: 1.5; color: #1a1a2e; background: #ffffff; }
+  .page { width: 100%; max-width: 210mm; margin: 0 auto; padding: 40px; }
+  .header { margin-bottom: 20px; }
+  .header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+  .header-gradient { height: 2px; background: linear-gradient(to right, hsl(187, 74%, 32%), hsl(270, 70%, 45%)); margin-bottom: 10px; }
+  .contact-row { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 10.5px; color: #555; }
+  .contact-row a { color: #555; text-decoration: none; }
+  .section { margin-bottom: 18px; }
+  .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: hsl(187, 74%, 32%); border-bottom: 1.5px solid #e2e2e2; padding-bottom: 4px; margin-bottom: 10px; }
+  .summary-text { font-size: 11px; line-height: 1.7; color: #2f2f2f; }
+  .competencies-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .competency-tag { font-size: 10px; font-weight: 500; color: hsl(187, 74%, 28%); background: hsl(187, 40%, 95%); padding: 4px 10px; border-radius: 3px; border: 1px solid hsl(187, 40%, 88%); }
+  .job { margin-bottom: 14px; }
+  .job-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .job-company { font-family: 'Space Grotesk', sans-serif; font-size: 12.5px; font-weight: 600; color: hsl(270, 70%, 45%); }
+  .job-period { font-size: 10.5px; color: #777; }
+  .job-role { font-size: 11px; font-weight: 600; color: #333; margin-bottom: 6px; }
+  .job ul { padding-left: 18px; margin-top: 6px; }
+  .job li { font-size: 10.5px; line-height: 1.6; color: #333; margin-bottom: 4px; }
+  .project { margin-bottom: 12px; }
+  .project-title { font-family: 'Space Grotesk', sans-serif; font-size: 11.5px; font-weight: 600; color: hsl(270, 70%, 45%); }
+  .project-desc { font-size: 10.5px; color: #444; margin-top: 3px; }
+  .project-tech { font-size: 9.5px; color: #888; margin-top: 3px; }
+  .edu-item { margin-bottom: 8px; }
+  .edu-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .edu-title { font-weight: 600; font-size: 11px; color: #333; }
+  .edu-org { color: hsl(270, 70%, 45%); font-weight: 500; }
+  .edu-year { font-size: 10px; color: #777; }
+  .skills-grid { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .skill-item { font-size: 10.5px; color: #444; }
+  .skill-category { font-weight: 600; color: #333; }
+  @media print { .page { padding: 0; } }
+  .avoid-break { break-inside: avoid; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header avoid-break">
+    <h1>Kirill Kirov</h1>
+    <div class="header-gradient"></div>
+    <div class="contact-row">
+      <span>hello@kirov.dev</span>
+      <span>|</span>
+      <a href="https://www.linkedin.com/in/kirilo-kirov">linkedin.com/in/kirilo-kirov</a>
+      <span>|</span>
+      <span>Kyiv, Ukraine</span>
+      <span>|</span>
+      <span>+380637324924</span>
+    </div>
+  </div>
+
+  <div class="section avoid-break">
+    <div class="section-title">Professional Summary</div>
+    <div class="summary-text">AI Agent Architect with production experience in multi-agent orchestration and scalable RAG pipelines. Specialized in building autonomous agents and custom tools (Tool Calling) using LangChain, Claude models, and complex Python State Machines. Proven track record in deploying reliable AI applications that integrate with enterprise workflows and external APIs. Founding-engineer mindset focused on safe, beneficial AI systems.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Core Competencies</div>
+    <div class="competencies-grid">
+      <span class="competency-tag">Agentic AI & Orchestration</span>
+      <span class="competency-tag">Production RAG Pipelines</span>
+      <span class="competency-tag">Advanced Prompt Engineering</span>
+      <span class="competency-tag">Tool Calling & API Integration</span>
+      <span class="competency-tag">Python & State Machines</span>
+      <span class="competency-tag">Evaluation Frameworks (Evals)</span>
+      <span class="competency-tag">MCP & Agent Skills</span>
+      <span class="competency-tag">LLM Scalability & Reliability</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Work Experience</div>
+    <div class="job">
+      <div class="job-header">
+        <span class="job-company">AI Agent Architect / AI Developer</span>
+        <span class="job-period">September 2025 — Present</span>
+      </div>
+      <div class="job-role">Freelance | Kyiv, Ukraine</div>
+      <ul>
+        <li><strong>Architected and deployed</strong> autonomous AI agents (Claude, GPT, local models) for complex business process automation.</li>
+        <li><strong>Developed production-grade RAG pipelines:</strong> implemented advanced chunk scoring, query rewriting, and hybrid search to ensure high-accuracy retrieval for legal and commercial datasets.</li>
+        <li><strong>Built multi-agent systems</strong> using Python State Machines to manage dialogue states and Human-in-the-Loop (HITL) escalation logic.</li>
+        <li><strong>Engineered custom agent skills</strong> and MCP-style servers for real-time integration with enterprise CRM systems, Microsoft 365, and external APIs via Tool Calling.</li>
+        <li><strong>Optimized LLM performance</strong> using Chain-of-Thought and ReAct techniques, significantly reducing hallucinations and improving task execution reliability.</li>
+      </ul>
+    </div>
+    <div class="job">
+      <div class="job-header">
+        <span class="job-company">AI Marketing Automation Consultant</span>
+        <span class="job-period">January 2026 — March 2026</span>
+      </div>
+      <div class="job-role">Softsvit | Kyiv, Ukraine</div>
+      <ul>
+        <li>Analyzed sales funnels and implemented <strong>AI-driven lead qualification</strong>, reducing lead response time from 4 hours to 3 minutes.</li>
+        <li>Designed communication strategies for AI agents ensuring brand-voice consistency and high conversion rates.</li>
+      </ul>
+    </div>
+    <div class="job">
+      <div class="job-header">
+        <span class="job-company">System Administrator / IT Specialist</span>
+        <span class="job-period">May 2025 — October 2025</span>
+      </div>
+      <div class="job-role">Sheraton Four Points | Kyiv, Ukraine</div>
+      <ul>
+        <li>Administered enterprise IT systems (OPERA) and network infrastructure, ensuring 99.9% uptime for financial modules.</li>
+        <li>Managed complex technical incidents under tight deadlines, maintaining high system security and reliability.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section avoid-break">
+    <div class="section-title">Selected Projects</div>
+    <div class="project">
+      <span class="project-title">AI Support Agent — Transportation Industry</span>
+      <div class="project-desc">RAG-based support system using Python State Machines. Automated customer inquiries through internal APIs, handling real-time booking statuses and policy-based reasoning with autonomous escalation logic.</div>
+      <div class="project-tech">Tech: LangChain, Python, RAG, Docker, Tool Calling, Evals</div>
+    </div>
+    <div class="project">
+      <span class="project-title">AI Voice Agent — Real Estate Domain</span>
+      <div class="project-desc">Autonomous voice agent for customer consultations. Built a custom RAG pipeline for real-time property retrieval and ranking during live telephony sessions.</div>
+      <div class="project-tech">Tech: OpenAI, Embeddings, Vector Search, Telephony API</div>
+    </div>
+  </div>
+
+  <div class="section avoid-break">
+    <div class="section-title">Education</div>
+    <div class="edu-item">
+      <div class="edu-header">
+        <span class="edu-title">Bachelor of Hospitality Management</span>
+        <span class="edu-year">2024 — Present</span>
+      </div>
+      <div class="edu-org">Volodymyr Dahl East Ukrainian National University</div>
+    </div>
+  </div>
+
+  <div class="section avoid-break">
+    <div class="section-title">Technical Skills</div>
+    <div class="skills-grid">
+      <div class="skill-item"><span class="skill-category">AI Stack:</span> LangChain, LangGraph, OpenAI/Claude APIs, LlamaIndex, ChromaDB, Pinecone.</div>
+      <div class="skill-item"><span class="skill-category">Backend & Automation:</span> Python (FastAPI), n8n, Make.com, Docker, Microsoft Graph API.</div>
+      <div class="skill-item"><span class="skill-category">Languages:</span> Ukrainian (Native), Russian (Native), English (B2 - Upper Intermediate).</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

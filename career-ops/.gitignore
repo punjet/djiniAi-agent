@@ -1,0 +1,11 @@
+# Local outputs & binary
+career-ops
+djinni-bot-go-bin
+output/
+reports/
+batch/
+data/scan-history.tsv
+
+# Node & System
+node_modules/
+.DS_Store
