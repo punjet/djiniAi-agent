@@ -10,9 +10,45 @@ import (
 	"djinni-bot-go/internal/config"
 )
 
-// ---------------------------------------------------------------------------
-// Script path resolution tests
-// ---------------------------------------------------------------------------
+func TestPreprocessTemplate(t *testing.T) {
+	input := `<h1>{{NAME}}</h1><p>{{CONTACT_LINE}}</p>{{EMPTY}}`
+	expected := `<h1>{{.NAME}}</h1><p>{{.CONTACT_LINE}}</p>{{.EMPTY}}`
+	got := preprocessTemplate(input)
+	if got != expected {
+		t.Errorf("preprocessTemplate(%q) = %q, want %q", input, got, expected)
+	}
+}
+
+func TestPreprocessTemplate_NoPlaceholders(t *testing.T) {
+	input := `<h1>Hello</h1><p>World</p>`
+	got := preprocessTemplate(input)
+	if got != input {
+		t.Errorf("preprocessTemplate(%q) = %q, want unchanged", input, got)
+	}
+}
+
+func TestPreprocessTemplate_GoTemplateUnchanged(t *testing.T) {
+	input := `<p>{{.NAME}}</p><p>{{.CONTACT_LINE}}</p>`
+	got := preprocessTemplate(input)
+	if got != input {
+		t.Errorf("preprocessTemplate should not change existing Go templates, got %q", got)
+	}
+}
+
+func TestRenderHTMLToPDF(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping chromedp test in short mode")
+	}
+
+	html := "<html><body><h1>Hello PDF</h1></body></html>"
+	buf, err := renderHTMLToPDF(context.Background(), html)
+	if err != nil {
+		t.Skipf("chromedp not available (no Chrome/Chromium binary?): %v", err)
+	}
+	if len(buf) == 0 {
+		t.Error("expected non-empty PDF bytes")
+	}
+}
 
 func TestValidateCVHTML(t *testing.T) {
 	validHTML := "<html><body><h1>John Doe</h1></body></html>"
@@ -30,123 +66,6 @@ func TestValidateCVHTML(t *testing.T) {
 		t.Errorf("expected error for HTML with }}, got nil")
 	}
 }
-
-func TestScriptPathResolution_GenerateCoverLetter(t *testing.T) {
-	// Create a temp dir simulating a contextDir
-	td := t.TempDir()
-
-	t.Run("prefers_root_when_exists", func(t *testing.T) {
-		rootScript := filepath.Join(td, "generate-cover-letter.mjs")
-		os.WriteFile(rootScript, []byte("// mock"), 0o644)
-		scriptsDir := filepath.Join(td, "scripts")
-		os.MkdirAll(scriptsDir, 0o755)
-		scriptsScript := filepath.Join(scriptsDir, "generate-cover-letter.mjs")
-		os.WriteFile(scriptsScript, []byte("// mock"), 0o644)
-
-		got := filepath.Join(td, "generate-cover-letter.mjs")
-		if _, err := os.Stat(got); os.IsNotExist(err) {
-			got = filepath.Join(td, "scripts", "generate-cover-letter.mjs")
-		}
-
-		if got != rootScript {
-			t.Errorf("expected root path when root exists, got %s", got)
-		}
-	})
-
-	t.Run("falls_back_to_scripts_when_root_missing", func(t *testing.T) {
-		scriptsDir := filepath.Join(td, "scripts")
-		os.MkdirAll(scriptsDir, 0o755)
-		scriptsScript := filepath.Join(scriptsDir, "generate-cover-letter.mjs")
-		os.WriteFile(scriptsScript, []byte("// mock"), 0o644)
-
-		got := filepath.Join(td, "generate-cover-letter.mjs")
-		if _, err := os.Stat(got); os.IsNotExist(err) {
-			got = filepath.Join(td, "scripts", "generate-cover-letter.mjs")
-		}
-		if _, err := os.Stat(got); os.IsNotExist(err) {
-			t.Fatal("expected script to exist in scripts/ fallback")
-		}
-	})
-
-	t.Run("returns_root_when_neither_exists", func(t *testing.T) {
-		got := filepath.Join(td, "generate-cover-letter.mjs")
-		if _, err := os.Stat(got); os.IsNotExist(err) {
-			got = filepath.Join(td, "scripts", "generate-cover-letter.mjs")
-		}
-		// Should return the root path even if it doesn't exist
-		if got != filepath.Join(td, "generate-cover-letter.mjs") {
-			t.Errorf("expected root path fallback when neither exists, got %s", got)
-		}
-	})
-}
-
-func TestScriptPathResolution_GeneratePDF(t *testing.T) {
-	td := t.TempDir()
-
-	t.Run("prefers_root_when_exists", func(t *testing.T) {
-		rootScript := filepath.Join(td, "generate-pdf.mjs")
-		os.WriteFile(rootScript, []byte("// mock"), 0o644)
-
-		got := filepath.Join(td, "generate-pdf.mjs")
-		if _, err := os.Stat(got); os.IsNotExist(err) {
-			got = filepath.Join(td, "scripts", "generate-pdf.mjs")
-		}
-		if got != rootScript {
-			t.Errorf("expected root path, got %s", got)
-		}
-	})
-
-	t.Run("falls_back_to_scripts", func(t *testing.T) {
-		scriptsDir := filepath.Join(td, "scripts")
-		os.MkdirAll(scriptsDir, 0o755)
-		scriptsScript := filepath.Join(scriptsDir, "generate-pdf.mjs")
-		os.WriteFile(scriptsScript, []byte("// mock"), 0o644)
-
-		got := filepath.Join(td, "generate-pdf.mjs")
-		if _, err := os.Stat(got); os.IsNotExist(err) {
-			got = filepath.Join(td, "scripts", "generate-pdf.mjs")
-		}
-		if _, err := os.Stat(got); os.IsNotExist(err) {
-			t.Fatal("expected script to exist in scripts/ fallback")
-		}
-	})
-}
-
-func TestScriptPathResolution_GenerateCVHTML(t *testing.T) {
-	t.Run("prefers_scripts_when_exists", func(t *testing.T) {
-		td := t.TempDir()
-		scriptsDir := filepath.Join(td, "scripts")
-		os.MkdirAll(scriptsDir, 0o755)
-		scriptsScript := filepath.Join(scriptsDir, "generate-cv-html.mjs")
-		os.WriteFile(scriptsScript, []byte("// mock"), 0o644)
-
-		got := filepath.Join(td, "scripts", "generate-cv-html.mjs")
-		if _, err := os.Stat(got); os.IsNotExist(err) {
-			got = filepath.Join(td, "generate-cv-html.mjs")
-		}
-		if got != scriptsScript {
-			t.Errorf("expected scripts/ path, got %s", got)
-		}
-	})
-
-	t.Run("falls_back_to_root_when_scripts_missing", func(t *testing.T) {
-		td := t.TempDir()
-		rootScript := filepath.Join(td, "generate-cv-html.mjs")
-		os.WriteFile(rootScript, []byte("// mock"), 0o644)
-
-		got := filepath.Join(td, "scripts", "generate-cv-html.mjs")
-		if _, err := os.Stat(got); os.IsNotExist(err) {
-			got = filepath.Join(td, "generate-cv-html.mjs")
-		}
-		if got != rootScript {
-			t.Errorf("expected root path fallback, got %s", got)
-		}
-	})
-}
-
-// ---------------------------------------------------------------------------
-// Struct serialization tests
-// ---------------------------------------------------------------------------
 
 func TestPayloadJSON(t *testing.T) {
 	p := Payload{
@@ -209,17 +128,38 @@ func TestGeneratedLetterJSON(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Error case tests (no external dependencies)
-// ---------------------------------------------------------------------------
-
 func TestGenerateCoverLetter_MissingProfile(t *testing.T) {
-	// Temp dir without config/profile.yml → should fail early before reaching LLM/node
 	td := t.TempDir()
 
 	_, _, err := GenerateCoverLetter(nil, nil, "", td, "", "", "test JD")
 	if err == nil {
 		t.Error("expected error for missing config/profile.yml, got nil")
+	}
+}
+
+func TestGenerateCoverLetter_MissingTemplate(t *testing.T) {
+	td := t.TempDir()
+	profileDir := filepath.Join(td, "config")
+	os.MkdirAll(profileDir, 0o755)
+	os.WriteFile(filepath.Join(profileDir, "profile.yml"), []byte(`
+candidate:
+  full_name: Test User
+  email: test@example.com
+  phone: "+1234567890"
+  location: Kyiv
+  linkedin: ""
+  github: ""
+target_roles:
+  primary:
+    - Go Developer
+`), 0o644)
+	os.WriteFile(filepath.Join(td, "cv.md"), []byte("# Test User\nGo Developer\n"), 0o644)
+	// No templates/cover-letter-template.html
+
+	ctx := context.Background()
+	_, _, err := GenerateCoverLetter(ctx, nil, "", td, "", "", "test JD")
+	if err == nil {
+		t.Error("expected error for missing cover letter template, got nil")
 	}
 }
 
@@ -234,10 +174,6 @@ func TestGenerateCustomCV_InvalidContextDir(t *testing.T) {
 		t.Error("expected error for nonexistent contextDir, got nil")
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Profile parsing test
-// ---------------------------------------------------------------------------
 
 func TestProfileYAML(t *testing.T) {
 	td := t.TempDir()
@@ -274,10 +210,6 @@ target_roles:
 		t.Fatal("profile data is empty")
 	}
 }
-
-// ---------------------------------------------------------------------------
-// AnswerQuizQuestions tests
-// ---------------------------------------------------------------------------
 
 func TestAnswerQuizQuestions_MissingProfile(t *testing.T) {
 	td := t.TempDir()

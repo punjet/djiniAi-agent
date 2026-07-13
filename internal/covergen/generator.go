@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -43,8 +43,31 @@ type GeneratedLetter struct {
 	DjinniMessage string                 `json:"djinni_message"`
 }
 
-// GenerateCoverLetter calls the LLM to draft a cover letter and then invokes
-// node generate-cover-letter.mjs to output a PDF file.
+type CVContent struct {
+	SummaryText         string `json:"summary_text"`
+	CompetenciesHTML    string `json:"competencies_html"`
+	ExperienceHTML      string `json:"experience_html"`
+	ProjectsHTML        string `json:"projects_html"`
+	EducationHTML       string `json:"education_html"`
+	CertificationsHTML  string `json:"certifications_html"`
+	SkillsHTML          string `json:"skills_html"`
+}
+
+var placeholderPattern = regexp.MustCompile(`\{\{([A-Z][A-Z_]+)\}\}`)
+
+func preprocessTemplate(htmlContent string) string {
+	return placeholderPattern.ReplaceAllString(htmlContent, `{{.$1}}`)
+}
+
+func getStringField(m map[string]interface{}, key string) string {
+	if v, ok := m[key].(string); ok {
+		return v
+	}
+	return ""
+}
+
+// GenerateCoverLetter calls the LLM to draft a cover letter and then renders
+// it to PDF using Go html/template and chromedp.
 // Returns the PDF bytes, the Djinni message text, and any error.
 func GenerateCoverLetter(ctx context.Context, cfg *config.Config, engine llm.Engine, contextDir string, company string, role string, jdText string) ([]byte, string, error) {
 	// 1. Load profile
@@ -142,70 +165,86 @@ JD Content:
 	genLetter.DjinniMessage = strings.ReplaceAll(genLetter.DjinniMessage, "**", "")
 	genLetter.DjinniMessage = strings.ReplaceAll(genLetter.DjinniMessage, "*", "")
 
-	// 4. Build payload for generate-cover-letter.mjs
-	today := time.Now().Format("2006-01-02")
-	candidateMap := map[string]interface{}{
-		"name":     prof.Candidate.FullName,
-		"email":    prof.Candidate.Email,
-		"phone":    prof.Candidate.Phone,
-		"location": prof.Candidate.Location,
-		"linkedin": prof.Candidate.Linkedin,
-		"github":   prof.Candidate.Github,
+	// 5. Render cover letter template to HTML and convert to PDF
+	templatePath := filepath.Join(contextDir, "templates", "cover-letter-template.html")
+	tmplBytes, err := os.ReadFile(templatePath)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read cover letter template: %w", err)
 	}
 
-	// Ensure fields in genLetter.Letter
-	if genLetter.Letter == nil {
-		genLetter.Letter = make(map[string]interface{})
+	var achievementsBlock strings.Builder
+	if raw, ok := genLetter.Letter["achievements"]; ok {
+		if achievements, ok := raw.([]interface{}); ok {
+			achievementsBlock.WriteString(`<ul class="achievements">`)
+			for _, a := range achievements {
+				if m, ok := a.(map[string]interface{}); ok {
+					lead, _ := m["lead"].(string)
+					impact, _ := m["impact"].(string)
+					achievementsBlock.WriteString(fmt.Sprintf("<li><strong>%s</strong> — %s</li>", lead, impact))
+				}
+			}
+			achievementsBlock.WriteString("</ul>")
+		}
 	}
-	genLetter.Letter["company"] = company
-	genLetter.Letter["role_title"] = role
-	genLetter.Letter["date"] = today
-	if genLetter.Letter["city"] == nil || genLetter.Letter["city"] == "" {
-		genLetter.Letter["city"] = prof.Candidate.Location
+
+	problemsBlock := ""
+	if problems := getStringField(genLetter.Letter, "problems_section"); problems != "" {
+		problemsBlock = fmt.Sprintf("<p>%s</p>", problems)
+	}
+
+	closingBlock := ""
+	if closing := getStringField(genLetter.Letter, "closing"); closing != "" {
+		closingBlock = fmt.Sprintf("<p>%s</p>", closing)
+	}
+
+	greeting := getStringField(genLetter.Letter, "greeting")
+	greetingBlock := ""
+	if greeting != "" {
+		greetingBlock = fmt.Sprintf(`<p class="greeting">%s</p>`, greeting)
+	}
+
+	today := time.Now().Format("2006-01-02")
+
+	tmplData := map[string]string{
+		"NAME":                   prof.Candidate.FullName,
+		"CONTACT_LINE":           fmt.Sprintf("%s | %s", prof.Candidate.Email, prof.Candidate.Phone),
+		"CREDENTIALS_BLOCK":      "",
+		"ROLE_TITLE":             role,
+		"DATELINE":               today,
+		"GREETING_BLOCK":         greetingBlock,
+		"OPENING":                getStringField(genLetter.Letter, "opening"),
+		"PROFILE_INTRO":          getStringField(genLetter.Letter, "profile_intro"),
+		"ACHIEVEMENTS_BLOCK":     achievementsBlock.String(),
+		"PROBLEMS_BLOCK":         problemsBlock,
+		"CLOSING_BLOCK":          closingBlock,
+		"LANGUAGE_CLOSING_BLOCK": "",
+		"FOOTNOTES_BLOCK":        "",
+	}
+
+	tmpl, err := template.New("cover-letter").Parse(preprocessTemplate(string(tmplBytes)))
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to parse cover letter template: %w", err)
+	}
+
+	var htmlBuf strings.Builder
+	if err := tmpl.Execute(&htmlBuf, tmplData); err != nil {
+		return nil, "", fmt.Errorf("failed to execute cover letter template: %w", err)
+	}
+
+	pdfBytes, err := renderHTMLToPDF(ctx, htmlBuf.String())
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to render cover letter PDF: %w", err)
 	}
 
 	pdfOutFilename := fmt.Sprintf("%s-%s-cover.pdf", strings.ToLower(company), strings.ToLower(role))
 	pdfOutFilename = regexp.MustCompile(`[^a-z0-9.-]+`).ReplaceAllString(pdfOutFilename, "-")
 	pdfOutPath := filepath.Join(contextDir, "output", pdfOutFilename)
 
-	payload := Payload{
-		Candidate:  candidateMap,
-		Letter:     genLetter.Letter,
-		OutputPath: pdfOutPath,
+	if err := os.MkdirAll(filepath.Dir(pdfOutPath), 0755); err != nil {
+		return nil, "", fmt.Errorf("failed to create output directory: %w", err)
 	}
-
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to serialize payload: %w", err)
-	}
-
-	tmpPayloadFile := filepath.Join(os.TempDir(), fmt.Sprintf("payload-%d.json", time.Now().UnixNano()))
-	if err := os.WriteFile(tmpPayloadFile, payloadBytes, 0o644); err != nil {
-		return nil, "", fmt.Errorf("failed to write temporary payload: %w", err)
-	}
-	defer os.Remove(tmpPayloadFile)
-
-	// 5. Invoke Node.js generator script
-	// FRAGILE: External node process execution introduces environment dependencies and error handling challenges.
-	// TODO: Port the PDF generation logic natively to Go, or use a robust worker queue / service architecture.
-	// Resolve script path: prefer root of contextDir, fall back to scripts/ subdirectory.
-	coverLetterScript := filepath.Join(contextDir, "generate-cover-letter.mjs")
-	if _, err := os.Stat(coverLetterScript); os.IsNotExist(err) {
-		coverLetterScript = filepath.Join(contextDir, "scripts", "generate-cover-letter.mjs")
-	}
-	coverLetterScript, _ = filepath.Abs(coverLetterScript)
-	cmd := exec.CommandContext(ctx, "node", coverLetterScript, "--payload", tmpPayloadFile, "--out", pdfOutPath)
-	cmd.Dir = contextDir
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stderr // keep stdout clean for caller logs, print script diagnostic to stderr
-	if err := cmd.Run(); err != nil {
-		return nil, "", fmt.Errorf("node generate-cover-letter.mjs execution failed: %w", err)
-	}
-
-	// 6. Read PDF bytes
-	pdfBytes, err := os.ReadFile(pdfOutPath)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to read generated PDF: %w", err)
+	if err := os.WriteFile(pdfOutPath, pdfBytes, 0644); err != nil {
+		return nil, "", fmt.Errorf("failed to write PDF: %w", err)
 	}
 
 	return pdfBytes, genLetter.DjinniMessage, nil
@@ -328,8 +367,6 @@ Please answer the above questions and return them as JSON.`, prof.Candidate.Full
 	return questions, nil
 }
 
-// GenerateCustomCV generates a job-specific tailored CV PDF using scripts/generate-cv-html.mjs and generate-pdf.mjs.
-// ValidateCVHTML checks if the generated CV HTML contains unresolved placeholders.
 func ValidateCVHTML(htmlContent string) error {
 	if strings.Contains(htmlContent, "{{") || strings.Contains(htmlContent, "}}") {
 		return fmt.Errorf("generated CV contains unresolved template placeholders (found '{{' or '}}')")
@@ -338,99 +375,152 @@ func ValidateCVHTML(htmlContent string) error {
 }
 
 func GenerateCustomCV(ctx context.Context, cfg *config.Config, engine llm.Engine, contextDir, jobURL, company, role, reportPath string) ([]byte, error) {
-	// Create output dir if not exist
-	outputDir := filepath.Join(contextDir, "output")
-	_ = os.MkdirAll(outputDir, 0o755)
-
-	// Step 1: Run generate-cv-html.mjs
-	// FRAGILE: Shelling out to a node script for HTML generation depends on the local environment and path resolving.
-	// TODO: Rewrite the CV HTML generation logic natively in Go.
-	// Resolve script path: prefer scripts/generate-cv-html.mjs, fall back to root of contextDir.
-	cvHtmlScript := filepath.Join(contextDir, "scripts", "generate-cv-html.mjs")
-	if _, err := os.Stat(cvHtmlScript); os.IsNotExist(err) {
-		cvHtmlScript = filepath.Join(contextDir, "generate-cv-html.mjs")
-	}
-	cvHtmlScript, _ = filepath.Abs(cvHtmlScript)
-	cmdHtml := exec.CommandContext(ctx, "node", cvHtmlScript, jobURL, company, role, reportPath)
-	cmdHtml.Dir = contextDir
-	cmdHtml.Stderr = os.Stderr
-	cmdHtml.Stdout = os.Stderr
-
-	// Propagate LLM base URL and set model
-	var baseUrl, apiKey, llmModel string
-
-	if engine == llm.EngineOpenAI {
-		baseUrl = "https://api.openai.com/v1"
-		apiKey = os.Getenv("OPENAI_API_KEY")
-		if apiKey == "" {
-			apiKey = cfg.LLMAPIKey
-		}
-		llmModel = cfg.FreeLLMAPIModel
-		if llmModel == "" || llmModel == "auto" {
-			llmModel = "gpt-4o-mini"
-		}
-	} else {
-		baseUrl = cfg.FreeLLMAPIBaseURL
-		apiKey = cfg.LLMAPIKey
-		llmModel = cfg.FreeLLMAPIModel
-		if llmModel == "" {
-			llmModel = "auto"
-		}
-	}
-
-	cmdHtml.Env = append(os.Environ(),
-		"LLM_BASE_URL="+baseUrl,
-		"LLM_API_KEY="+apiKey,
-		"LLM_MODEL="+llmModel,
-	)
-
-	if err := cmdHtml.Run(); err != nil {
-		return nil, fmt.Errorf("failed running scripts/generate-cv-html.mjs: %w", err)
-	}
-
-	// Verify HTML is generated
-	htmlPath := filepath.Join(outputDir, fmt.Sprintf("test-cv-%s.html", company))
-	if _, err := os.Stat(htmlPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("expected HTML output not found at %s", htmlPath)
-	}
-	defer os.Remove(htmlPath) // Cleanup raw html
-
-	// Read and validate HTML for unresolved placeholders
-	htmlBytes, err := os.ReadFile(htmlPath)
+	profilePath := filepath.Join(contextDir, "config", "profile.yml")
+	profileData, err := os.ReadFile(profilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed reading generated CV HTML: %w", err)
+		return nil, fmt.Errorf("failed to read profile.yml: %w", err)
 	}
-	if err := ValidateCVHTML(string(htmlBytes)); err != nil {
+
+	var prof Profile
+	if err := yaml.Unmarshal(profileData, &prof); err != nil {
+		return nil, fmt.Errorf("failed to parse profile.yml: %w", err)
+	}
+
+	cvPath := filepath.Join(contextDir, "cv.md")
+	cvData, err := os.ReadFile(cvPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read cv.md: %w", err)
+	}
+
+	var reportText string
+	if reportPath != "" {
+		reportBytes, err := os.ReadFile(reportPath)
+		if err == nil {
+			reportText = string(reportBytes)
+		}
+	}
+
+	provider, err := llm.NewProvider(cfg, engine)
+	if err != nil {
 		return nil, err
 	}
 
-	// Step 2: Render HTML to PDF via generate-pdf.mjs (Playwright)
-	pdfRelPath := filepath.Join("output", fmt.Sprintf("cv-%s.pdf", company))
-	pdfAbsPath := filepath.Join(contextDir, pdfRelPath)
+	systemPrompt := `You are an expert CV writer. Generate a tailored CV in JSON for the candidate based on their profile and the target job.
 
-	// FRAGILE: Using Playwright via node to render PDFs adds heavy system requirements and runtime overhead.
-	// TODO: Transition to a Go-native PDF generation library or a specialized rendering microservice.
-	// Resolve script path: prefer root of contextDir, fall back to scripts/ subdirectory.
-	pdfScript := filepath.Join(contextDir, "generate-pdf.mjs")
-	if _, err := os.Stat(pdfScript); os.IsNotExist(err) {
-		pdfScript = filepath.Join(contextDir, "scripts", "generate-pdf.mjs")
-	}
-	pdfScript, _ = filepath.Abs(pdfScript)
-	cmdPdf := exec.CommandContext(ctx, "node", pdfScript, filepath.Join("output", fmt.Sprintf("test-cv-%s.html", company)), pdfRelPath)
-	cmdPdf.Dir = contextDir
-	cmdPdf.Stderr = os.Stderr
-	cmdPdf.Stdout = os.Stderr
+You MUST respond with a single JSON object (no markdown wrappers, no comments) matching this schema exactly:
+{
+  "summary_text": "Professional summary paragraph tailored to the role (2-3 sentences)",
+  "competencies_html": "HTML string of competency tags, each as <span class=\"competency-tag\">Skill</span>",
+  "experience_html": "Full HTML for work experience section - each job as a .job div with .job-header containing .job-company and .job-period, .job-role, and ul with li items describing achievements",
+  "projects_html": "Full HTML for projects section - each project as a .project div with .project-title and .project-desc",
+  "education_html": "Full HTML for education section - each item as .edu-item with .edu-header containing .edu-title, .edu-org, .edu-year, and optional .edu-desc",
+  "certifications_html": "Full HTML for certifications section - each as .cert-item with .cert-title, .cert-org, .cert-year",
+  "skills_html": "HTML string of skill items, each as <span class=\"skill-item\"><span class=\"skill-category\">Category:</span> skill list</span>"
+}
 
-	if err := cmdPdf.Run(); err != nil {
-		return nil, fmt.Errorf("failed running generate-pdf.mjs: %w", err)
-	}
-	defer os.Remove(pdfAbsPath) // Cleanup generated PDF after we read it
+All HTML must be clean, valid HTML fragments. Use <strong> for emphasis. Write in the same language as the job description. Never include markdown formatting.`
 
-	// Read generated PDF bytes
-	pdfBytes, err := os.ReadFile(pdfAbsPath)
+	userPrompt := fmt.Sprintf(`Candidate Profile:
+Name: %s
+Email: %s
+Location: %s
+LinkedIn: %s
+GitHub: %s
+
+CV/Resume:
+%s
+
+Target Job:
+Company: %s
+Role: %s
+Job URL: %s
+
+Job Report:
+%s
+
+Generate a tailored CV JSON for this candidate targeting the above role. Return JSON only.`,
+		prof.Candidate.FullName, prof.Candidate.Email, prof.Candidate.Location,
+		prof.Candidate.Linkedin, prof.Candidate.Github,
+		string(cvData), company, role, jobURL, reportText)
+
+	response, err := provider.GenerateText(ctx, systemPrompt, userPrompt)
 	if err != nil {
-		return nil, fmt.Errorf("failed reading generated CV PDF: %w", err)
+		return nil, fmt.Errorf("LLM CV generation failed: %w", err)
 	}
+
+	cleanJSON := response
+	if idx := strings.Index(cleanJSON, "{"); idx != -1 {
+		cleanJSON = cleanJSON[idx:]
+	}
+	if idx := strings.LastIndex(cleanJSON, "}"); idx != -1 {
+		cleanJSON = cleanJSON[:idx+1]
+	}
+
+	var content CVContent
+	if err := json.Unmarshal([]byte(cleanJSON), &content); err != nil {
+		return nil, fmt.Errorf("failed to parse LLM response JSON: %w (raw: %q)", err, response)
+	}
+
+	templatePath := filepath.Join(contextDir, "templates", "cv-template.html")
+	tmplBytes, err := os.ReadFile(templatePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CV template: %w", err)
+	}
+
+	linkedinDisplay := strings.TrimPrefix(prof.Candidate.Linkedin, "https://")
+	linkedinDisplay = strings.TrimPrefix(linkedinDisplay, "http://")
+	portfolioDisplay := strings.TrimPrefix(prof.Candidate.Github, "https://")
+	portfolioDisplay = strings.TrimPrefix(portfolioDisplay, "http://")
+
+	tmplData := map[string]string{
+		"LANG":                   "en",
+		"NAME":                   prof.Candidate.FullName,
+		"EMAIL":                  prof.Candidate.Email,
+		"LINKEDIN_URL":           prof.Candidate.Linkedin,
+		"LINKEDIN_DISPLAY":       linkedinDisplay,
+		"PORTFOLIO_URL":          prof.Candidate.Github,
+		"PORTFOLIO_DISPLAY":      portfolioDisplay,
+		"LOCATION":               prof.Candidate.Location,
+		"PAGE_WIDTH":             "900px",
+		"SECTION_SUMMARY":        "Professional Summary",
+		"SUMMARY_TEXT":           content.SummaryText,
+		"SECTION_COMPETENCIES":   "Core Competencies & Technologies",
+		"COMPETENCIES":           content.CompetenciesHTML,
+		"SECTION_EXPERIENCE":     "Professional Experience",
+		"EXPERIENCE":             content.ExperienceHTML,
+		"SECTION_PROJECTS":       "Projects",
+		"PROJECTS":               content.ProjectsHTML,
+		"SECTION_EDUCATION":      "Education",
+		"EDUCATION":              content.EducationHTML,
+		"SECTION_CERTIFICATIONS": "Certifications & Awards",
+		"CERTIFICATIONS":         content.CertificationsHTML,
+		"SECTION_SKILLS":         "Technical Skills",
+		"SKILLS":                 content.SkillsHTML,
+	}
+
+	tmpl, err := template.New("cv").Parse(preprocessTemplate(string(tmplBytes)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse CV template: %w", err)
+	}
+
+	var htmlBuf strings.Builder
+	if err := tmpl.Execute(&htmlBuf, tmplData); err != nil {
+		return nil, fmt.Errorf("failed to execute CV template: %w", err)
+	}
+
+	htmlStr := htmlBuf.String()
+
+	if err := ValidateCVHTML(htmlStr); err != nil {
+		return nil, err
+	}
+
+	pdfBytes, err := renderHTMLToPDF(ctx, htmlStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render CV PDF: %w", err)
+	}
+
+	outputDir := filepath.Join(contextDir, "output")
+	_ = os.MkdirAll(outputDir, 0755)
 
 	return pdfBytes, nil
 }
