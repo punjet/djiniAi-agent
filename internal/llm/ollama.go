@@ -16,19 +16,20 @@ import (
 // OllamaClient implements Provider by calling a local (or tunnelled) Ollama server
 // via the OpenAI-compatible /v1/chat/completions endpoint.
 type OllamaClient struct {
-	baseURL   string
-	model     string
-	timeoutMS int
-	apiKey    string // optional bearer token (for remote/tunnelled endpoints)
+	baseURL    string
+	model      string
+	timeoutMS  int
+	apiKey     string // optional bearer token (for remote/tunnelled endpoints)
 	httpClient *http.Client
 }
 
 // OllamaConfig holds configuration for the Ollama client.
 type OllamaConfig struct {
-	BaseURL   string // default: "http://localhost:11434"
-	Model     string // default: "llama3.3"
-	TimeoutMS int    // default: 300000 (5 min)
-	APIKey    string // optional
+	BaseURL     string // default: "http://localhost:11434"
+	Model       string // default: "llama3.3"
+	TimeoutMS   int    // default: 300000 (5 min)
+	APIKey      string // optional
+	AllowRemote bool   // skip the loopback guard (for compatible remote APIs)
 }
 
 // NewOllamaClient creates a new OllamaClient and runs a loopback guard
@@ -49,9 +50,7 @@ func NewOllamaClient(cfg OllamaConfig) (*OllamaClient, error) {
 		cfg.TimeoutMS = 300_000
 	}
 
-	// Loopback guard — only skip when LLM_BASE_URL is explicitly set
-	// (indicates intentional override, e.g. a different compatible API).
-	if os.Getenv("LLM_BASE_URL") == "" {
+	if !cfg.AllowRemote {
 		u, err := url.Parse(cfg.BaseURL)
 		if err != nil {
 			return nil, fmt.Errorf("invalid Ollama base URL %q: %w", cfg.BaseURL, err)

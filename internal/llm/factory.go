@@ -45,14 +45,14 @@ func (t *TraceProvider) Name() string {
 type Engine string
 
 const (
-	EngineGemini    Engine = "gemini"
-	EngineOllama    Engine = "ollama"
+	EngineGemini Engine = "gemini"
+	EngineOllama Engine = "ollama"
 	// EngineFreeLLMAPI routes requests through the local freellmapi aggregator
 	// (localhost:3001), which automatically falls back across 13 free LLM providers
 	// (Groq, Gemini, Cerebras, Ollama Cloud, OpenRouter, etc.) with built-in
 	// rate-limit tracking, sticky sessions, and penalty-based routing.
 	EngineFreeLLMAPI Engine = "freellmapi"
-	EngineOpenAI    Engine = "openai"
+	EngineOpenAI     Engine = "openai"
 )
 
 // NewProvider constructs the appropriate Provider from the application Config
@@ -74,24 +74,19 @@ func NewProvider(cfg *config.Config, engine Engine) (Provider, error) {
 			TimeoutMS: cfg.OllamaTimeoutMS,
 			APIKey:    cfg.LLMAPIKey,
 		})
-case EngineFreeLLMAPI:
-	// freellmapi is an OpenAI-compatible proxy that requires the unified
-	// LLM API key for non-localhost access (e.g. via docker bridge).
-	// We set LLM_BASE_URL in the environment to skip OllamaClient's loopback guard
-	// (the guard is for remote Ollama instances, not this local proxy).
-	os.Setenv("LLM_BASE_URL", cfg.FreeLLMAPIBaseURL)
+	case EngineFreeLLMAPI:
+		model := cfg.FreeLLMAPIModel
+		if model == "" {
+			model = "auto"
+		}
 
-	model := cfg.FreeLLMAPIModel
-	if model == "" {
-		model = "auto"
-	}
-
-	p, err = NewOllamaClient(OllamaConfig{
-		BaseURL:   cfg.FreeLLMAPIBaseURL + "/v1",
-		Model:     model,
-		TimeoutMS: cfg.FreeLLMAPITimeoutMS,
-		APIKey:    cfg.LLMAPIKey,
-	})
+		p, err = NewOllamaClient(OllamaConfig{
+			BaseURL:     cfg.FreeLLMAPIBaseURL + "/v1",
+			Model:       model,
+			TimeoutMS:   cfg.FreeLLMAPITimeoutMS,
+			APIKey:      cfg.LLMAPIKey,
+			AllowRemote: true,
+		})
 
 	case EngineOpenAI:
 		// OpenAI requires the API key and model name to be set
@@ -103,18 +98,17 @@ case EngineFreeLLMAPI:
 			return nil, fmt.Errorf("LLM_API_KEY or OPENAI_API_KEY is required for OpenAI engine")
 		}
 
-		os.Setenv("LLM_BASE_URL", "https://api.openai.com/v1")
-
-		model := cfg.FreeLLMAPIModel
+		model := cfg.OpenAIModel
 		if model == "" || model == "auto" {
 			model = "gpt-4o-mini"
 		}
 
 		p, err = NewOllamaClient(OllamaConfig{
-			BaseURL:   "https://api.openai.com/v1",
-			Model:     model,
-			TimeoutMS: cfg.FreeLLMAPITimeoutMS,
-			APIKey:    apiKey,
+			BaseURL:     "https://api.openai.com/v1",
+			Model:       model,
+			TimeoutMS:   cfg.OpenAITimeoutMS,
+			APIKey:      apiKey,
+			AllowRemote: true,
 		})
 
 	default:

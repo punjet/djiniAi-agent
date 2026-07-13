@@ -6,8 +6,6 @@ import (
 )
 
 func TestNewOllamaClient_LoopbackGuard_Blocks(t *testing.T) {
-	// Ensure LLM_BASE_URL and OLLAMA_ALLOW_REMOTE are not set
-	os.Unsetenv("LLM_BASE_URL")
 	os.Unsetenv("OLLAMA_ALLOW_REMOTE")
 
 	_, err := NewOllamaClient(OllamaConfig{
@@ -20,7 +18,6 @@ func TestNewOllamaClient_LoopbackGuard_Blocks(t *testing.T) {
 }
 
 func TestNewOllamaClient_LoopbackGuard_AllowsLocalhost(t *testing.T) {
-	os.Unsetenv("LLM_BASE_URL")
 	os.Unsetenv("OLLAMA_ALLOW_REMOTE")
 
 	_, err := NewOllamaClient(OllamaConfig{
@@ -33,7 +30,6 @@ func TestNewOllamaClient_LoopbackGuard_AllowsLocalhost(t *testing.T) {
 }
 
 func TestNewOllamaClient_LoopbackGuard_AllowsRemoteWithEnvVar(t *testing.T) {
-	os.Unsetenv("LLM_BASE_URL")
 	os.Setenv("OLLAMA_ALLOW_REMOTE", "1")
 	defer os.Unsetenv("OLLAMA_ALLOW_REMOTE")
 
@@ -46,22 +42,20 @@ func TestNewOllamaClient_LoopbackGuard_AllowsRemoteWithEnvVar(t *testing.T) {
 	}
 }
 
-func TestNewOllamaClient_LoopbackGuard_AllowsLLMBaseURLOverride(t *testing.T) {
-	// When LLM_BASE_URL is set the guard is skipped entirely
-	os.Setenv("LLM_BASE_URL", "http://some-compatible-api.example.com")
-	defer os.Unsetenv("LLM_BASE_URL")
+func TestNewOllamaClient_LoopbackGuard_AllowsWithAllowRemote(t *testing.T) {
+	os.Unsetenv("OLLAMA_ALLOW_REMOTE")
 
 	_, err := NewOllamaClient(OllamaConfig{
-		BaseURL: "http://some-compatible-api.example.com",
-		Model:   "gpt-4o",
+		BaseURL:     "http://remote-server.example.com:11434",
+		Model:       "gpt-4o",
+		AllowRemote: true,
 	})
 	if err != nil {
-		t.Fatalf("expected LLM_BASE_URL override to skip guard, got: %v", err)
+		t.Fatalf("expected AllowRemote=true to skip guard, got: %v", err)
 	}
 }
 
 func TestNewOllamaClient_Defaults(t *testing.T) {
-	os.Unsetenv("LLM_BASE_URL")
 	os.Unsetenv("OLLAMA_ALLOW_REMOTE")
 
 	client, err := NewOllamaClient(OllamaConfig{})
@@ -80,7 +74,6 @@ func TestNewOllamaClient_Defaults(t *testing.T) {
 }
 
 func TestOllamaClient_Name(t *testing.T) {
-	os.Unsetenv("LLM_BASE_URL")
 	client, err := NewOllamaClient(OllamaConfig{Model: "qwen2.5:72b"})
 	if err != nil {
 		t.Fatal(err)
