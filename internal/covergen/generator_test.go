@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"djinni-bot-go/internal/config"
+	"djinni-bot-go/internal/logger"
 )
 
 func TestPreprocessTemplate(t *testing.T) {
@@ -130,6 +131,7 @@ func TestGeneratedLetterJSON(t *testing.T) {
 
 func TestGenerateCoverLetter_MissingProfile(t *testing.T) {
 	td := t.TempDir()
+	logger.InitLogger(td)
 
 	_, _, err := GenerateCoverLetter(nil, nil, "", td, "", "", "test JD")
 	if err == nil {
