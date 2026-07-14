@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"os"
 
 	"djinni-bot-go/internal/client"
 	"djinni-bot-go/internal/extractor"
@@ -158,7 +159,7 @@ func ApplyToJob(dc *client.DjinniClient, jobSlug string, message string, cvFileN
 	// TODO: Replace with a more robust response validation or API verification.
 	
 	if !strings.Contains(finalURL, "applied=ok") && !strings.Contains(finalURL, "applied=1") && !strings.Contains(resp.String(), "b-application-status--success") {
-		return "", fmt.Errorf("application redirection check failed: expected applied=ok in final URL %q", finalURL)
+		os.WriteFile("logs/failed_apply.html", resp.Bytes(), 0644); return "", fmt.Errorf("application redirection check failed: expected applied=ok in final URL %q", finalURL)
 	}
 
 	return "Application Success", nil

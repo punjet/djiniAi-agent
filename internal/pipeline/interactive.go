@@ -10,7 +10,7 @@ import (
 )
 
 // AskUserForApplyReview blocks until the user confirms or rejects the job application in Telegram.
-func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company, role, jobURL string, score float64, cvFileName, coverLetter, jobSlug string) (string, bool, error) {
+func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company, role, jobURL string, score float64, cvFileName, coverLetter, jobSlug string, prevMsgID int64) (string, bool, int64, error) {
 	text := fmt.Sprintf(
 		"📋 *Job Review Required*\n\n"+
 			"*Company:* %s\n"+
@@ -31,29 +31,40 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 		},
 	}
 
-	msgID, err := notify.SendInlineKeyboard(text, keyboard)
+	var msgID int64
+	var err error
+	if prevMsgID != 0 {
+		msgID = prevMsgID
+		err = notify.EditMessageText(msgID, text)
+		if err == nil {
+			err = notify.EditMessageReplyMarkup(msgID, keyboard)
+		}
+	} else {
+		msgID, err = notify.SendInlineKeyboard(text, keyboard)
+	}
+
 	if err != nil {
-		return "", false, fmt.Errorf("failed to send TG review: %w", err)
+		return "", false, 0, fmt.Errorf("failed to send TG review: %w", err)
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
-			return "", false, ctx.Err()
+			return "", false, msgID, ctx.Err()
 		case u := <-bot.UpdateChan:
 			if u.CallbackQuery != nil {
 				data := u.CallbackQuery.Data
 				if strings.HasPrefix(data, "apply_accept:") && strings.HasSuffix(data, jobSlug) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Accepted!")
-					_ = notify.EditMessageText(msgID, text+"\n\n🟢 *Status:* Application accepted and submitted.")
+					_ = notify.EditMessageText(msgID, text+"\n\n⏳ *Status:* Submitting application to Djinni...")
 					_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
-					return "", true, nil
+					return "", true, msgID, nil
 				}
 				if strings.HasPrefix(data, "apply_reject:") && strings.HasSuffix(data, jobSlug) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Rejected!")
 					_ = notify.EditMessageText(msgID, text+"\n\n🔴 *Status:* Application rejected (skipped).")
 					_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
-					return "", false, nil
+					return "", false, msgID, nil
 				}
 				if strings.HasPrefix(data, "apply_edit:") && strings.HasSuffix(data, jobSlug) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Waiting for edit instructions...")
@@ -62,11 +73,11 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 
 					instruction, err := waitForUserMessage(ctx, bot)
 					if err != nil {
-						return "", false, err
+						return "", false, msgID, err
 					}
 
 					_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n🔄 *Status:* Regenerating cover letter using guidance: %q", instruction))
-					return "edit:" + instruction, false, nil
+					return "edit:" + instruction, false, msgID, nil
 				}
 			}
 		}

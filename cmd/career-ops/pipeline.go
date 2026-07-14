@@ -376,62 +376,78 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 				DryRun:  true,
 			})
 			return true, nil
-		} else {
-			cvFileName := fmt.Sprintf("CV-Kyrylo-Kirov-%s.pdf", details.Company)
+			} else {
+				cvFileName := fmt.Sprintf("CV-Kyrylo-Kirov-%s.pdf", details.Company)
+				var msgID int64
 
-			for {
-				instruction, accept, err := pipeline.AskUserForApplyReview(ctx, bot, details.Company, details.Title, j.URL, res.Score, cvFileName, introMsg, j.Slug)
-				if err != nil {
-					*errorCount++
-					logDeep("ERROR", fmt.Sprintf("AskUserForApplyReview failed: %v", err))
-					return false, err
-				}
-
-				if strings.HasPrefix(instruction, "edit:") {
-					editMsg := strings.TrimPrefix(instruction, "edit:")
-					fmt.Printf("🔄  Regenerating cover letter with instruction: %q\n", editMsg)
-					newMsg, err := regenerateCoverLetter(ctx, cfg, engine, details, introMsg, editMsg)
+				for {
+					instruction, accept, retMsgID, err := pipeline.AskUserForApplyReview(ctx, bot, details.Company, details.Title, j.URL, res.Score, cvFileName, introMsg, j.Slug, msgID)
+					msgID = retMsgID
 					if err != nil {
 						*errorCount++
-						logDeep("ERROR", fmt.Sprintf("regenerateCoverLetter failed: %v", err))
+						logDeep("ERROR", fmt.Sprintf("AskUserForApplyReview failed: %v", err))
 						return false, err
 					}
-					introMsg = newMsg
-					continue
+
+					if strings.HasPrefix(instruction, "edit:") {
+						editMsg := strings.TrimPrefix(instruction, "edit:")
+						fmt.Printf("🔄  Regenerating cover letter with instruction: %q\n", editMsg)
+						newMsg, err := regenerateCoverLetter(ctx, cfg, engine, details, introMsg, editMsg)
+						if err != nil {
+							*errorCount++
+							logDeep("ERROR", fmt.Sprintf("regenerateCoverLetter failed: %v", err))
+							return false, err
+						}
+						introMsg = newMsg
+						continue
+					}
+
+					if !accept {
+						fmt.Printf("🚫  Application to %s rejected by user.\n", details.Company)
+						return false, nil
+					}
+					break
 				}
 
-				if !accept {
-					fmt.Printf("🚫  Application to %s rejected by user.\n", details.Company)
-					return false, nil
+				text := fmt.Sprintf(
+					"📋 *Job Review Required*\n\n"+
+						"*Company:* %s\n"+
+						"*Role:* %s\n"+
+						"*Score:* %.1f/5\n"+
+						"*URL:* %s\n"+
+						"*CV:* %s\n\n"+
+						"*Cover Letter:*\n%s\n\n"+
+						"Should I apply to this role?",
+					details.Company, details.Title, res.Score, j.URL, cvFileName, introMsg,
+				)
+
+				logDeep("APPLY_SUBMIT", fmt.Sprintf("Submitting application to %s...", details.Company))
+				fmt.Printf("📤  Submitting application to %s...\n", details.Company)
+				
+				// Submit application with the tailored CV PDF (and quiz answers if any)
+				_, err = api.ApplyToJob(dc, j.Slug, introMsg, cvFileName, cvBytes, extraFormData)
+				if err != nil {
+					*errorCount++
+					logDeep("ERROR", fmt.Sprintf("Application submission failed to %s: %v", details.Company, err))
+					_ = notify.EditMessageText(msgID, text+"\n\n🔴 *Status:* Failed to apply: "+err.Error())
+					return false, fmt.Errorf("application submission failed: %w", err)
 				}
-				break
+
+				_ = notify.EditMessageText(msgID, text+"\n\n🟢 *Status:* Application accepted and submitted.")
+				logDeep("APPLY_SUCCESS", fmt.Sprintf("Successfully applied to %s", details.Company))
+				*pdfCount++
+				*appliedJobs = append(*appliedJobs, appliedJobInfo{
+					Company: details.Company,
+					Title:   details.Title,
+					Score:   res.Score,
+					DryRun:  false,
+				})
+
+				// Create applied TSV tracker entry so merge-tracker upgrades status to "Applied"
+				createAppliedTrackerAddition(flagContextDir, res, details.Company, details.Title, providerName(cfg, engine))
+				runMergeTracker(flagContextDir)
+				return true, nil
 			}
-
-			logDeep("APPLY_SUBMIT", fmt.Sprintf("Submitting application to %s...", details.Company))
-			fmt.Printf("📤  Submitting application to %s...\n", details.Company)
-			
-			// Submit application with the tailored CV PDF (and quiz answers if any)
-			_, err = api.ApplyToJob(dc, j.Slug, introMsg, cvFileName, cvBytes, extraFormData)
-			if err != nil {
-				*errorCount++
-				logDeep("ERROR", fmt.Sprintf("Application submission failed to %s: %v", details.Company, err))
-				return false, fmt.Errorf("application submission failed: %w", err)
-			}
-
-			logDeep("APPLY_SUCCESS", fmt.Sprintf("Successfully applied to %s", details.Company))
-			*pdfCount++
-			*appliedJobs = append(*appliedJobs, appliedJobInfo{
-				Company: details.Company,
-				Title:   details.Title,
-				Score:   res.Score,
-				DryRun:  false,
-			})
-
-			// Create applied TSV tracker entry so merge-tracker upgrades status to "Applied"
-			createAppliedTrackerAddition(flagContextDir, res, details.Company, details.Title, providerName(cfg, engine))
-			runMergeTracker(flagContextDir)
-			return true, nil
-		}
 	} else {
 		msg := fmt.Sprintf("Score (%.1f) below threshold (%.1f). Skipping apply.", res.Score, flagThreshold)
 		logDeep("SKIP_LOW_SCORE", msg)
