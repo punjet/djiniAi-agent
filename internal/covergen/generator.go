@@ -418,7 +418,7 @@ You MUST respond with a single JSON object (no markdown wrappers, no comments) m
   "skills_html": "HTML string of skill items, each as <span class=\"skill-item\"><span class=\"skill-category\">Category:</span> skill list</span>"
 }
 
-All HTML must be clean, valid HTML fragments. Use <strong> for emphasis. Write in the same language as the job description. Never include markdown formatting.`
+All HTML must be clean, valid HTML fragments. Use <strong> for emphasis. CRITICAL: Write the generated CV in the EXACT SAME language as the original CV/Resume provided. If the original CV is in English, the output MUST be in English, regardless of the job description language. Never include markdown formatting.`
 
 	userPrompt := fmt.Sprintf(`Candidate Profile:
 Name: %s
@@ -472,7 +472,7 @@ Generate a tailored CV JSON for this candidate targeting the above role. Return 
 	portfolioDisplay := strings.TrimPrefix(prof.Candidate.Github, "https://")
 	portfolioDisplay = strings.TrimPrefix(portfolioDisplay, "http://")
 
-	tmplData := map[string]string{
+	tmplData := map[string]interface{}{
 		"LANG":                   "en",
 		"NAME":                   prof.Candidate.FullName,
 		"EMAIL":                  prof.Candidate.Email,
@@ -485,17 +485,17 @@ Generate a tailored CV JSON for this candidate targeting the above role. Return 
 		"SECTION_SUMMARY":        "Professional Summary",
 		"SUMMARY_TEXT":           content.SummaryText,
 		"SECTION_COMPETENCIES":   "Core Competencies & Technologies",
-		"COMPETENCIES":           content.CompetenciesHTML,
+		"COMPETENCIES":           template.HTML(content.CompetenciesHTML),
 		"SECTION_EXPERIENCE":     "Professional Experience",
-		"EXPERIENCE":             content.ExperienceHTML,
+		"EXPERIENCE":             template.HTML(content.ExperienceHTML),
 		"SECTION_PROJECTS":       "Projects",
-		"PROJECTS":               content.ProjectsHTML,
+		"PROJECTS":               template.HTML(content.ProjectsHTML),
 		"SECTION_EDUCATION":      "Education",
-		"EDUCATION":              content.EducationHTML,
+		"EDUCATION":              template.HTML(content.EducationHTML),
 		"SECTION_CERTIFICATIONS": "Certifications & Awards",
-		"CERTIFICATIONS":         content.CertificationsHTML,
+		"CERTIFICATIONS":         template.HTML(content.CertificationsHTML),
 		"SECTION_SKILLS":         "Technical Skills",
-		"SKILLS":                 content.SkillsHTML,
+		"SKILLS":                 template.HTML(content.SkillsHTML),
 	}
 
 	tmpl, err := template.New("cv").Parse(preprocessTemplate(string(tmplBytes)))
