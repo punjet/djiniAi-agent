@@ -556,6 +556,17 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 	}
 }
 
+type daemonStats struct {
+	StartTime        time.Time
+	ScansCount       int
+	AppliedCount     int
+	SkippedThreshold int
+	SkippedDedupe    int
+	ErrorCount       int
+	PdfCount         int
+	AppliedJobs      []appliedJobInfo
+}
+
 func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Signal) error {
 	fmt.Println("🚀 Starting Career-Ops Pipeline in Daemon Mode (Debug/Continuous)...")
 	logDeep("START", "Daemon mode started with deep logging enabled.")
@@ -569,12 +580,38 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 	defer bot.Stop()
 	setupBotCommands(bot, dc, ctx)
 
+	stats := daemonStats{StartTime: time.Now()}
+
+	updateSummary := func() {
+		var summary strings.Builder
+		summary.WriteString("📊 *Daemon Mode Cumulative Summary*\n")
+		summary.WriteString(fmt.Sprintf("🕒 Started: %s\n", stats.StartTime.Format("2006-01-02 15:04")))
+		summary.WriteString(fmt.Sprintf("🔄 Scans: %d\n", stats.ScansCount))
+		summary.WriteString(fmt.Sprintf("✅ Applied: %d\n", stats.AppliedCount))
+		summary.WriteString(fmt.Sprintf("⏭ Skipped (low score): %d\n", stats.SkippedThreshold))
+		summary.WriteString(fmt.Sprintf("⏭ Skipped (already applied): %d\n", stats.SkippedDedupe))
+		summary.WriteString(fmt.Sprintf("📄 PDFs Generated: %d\n", stats.PdfCount))
+		summary.WriteString(fmt.Sprintf("❌ Errors: %d\n\n", stats.ErrorCount))
+
+		if len(stats.AppliedJobs) > 0 {
+			summary.WriteString("🚀 *Applied Positions:*\n")
+			for _, app := range stats.AppliedJobs {
+				summary.WriteString(fmt.Sprintf("- %s — %s (Score: %.1f)\n", app.Company, app.Title, app.Score))
+			}
+		}
+		bot.SetLastSummary(summary.String())
+	}
+	updateSummary()
+
+	lastScanTime := time.Time{}
+	scanInterval := 1 * time.Minute
+
 	for {
 		if panicStop.Load() {
 			fmt.Println("🛑  PanicStop triggered. Exiting daemon mode.")
 			return nil
 		}
-		
+
 		if !api.CheckToken(dc) {
 			notify.SendTelegramMessage("🚨 Djinni sessionid cookie expired or invalid! Waiting for update via `/set_session <your_sessionid>`.")
 			fmt.Println("🚨 Token invalid. Waiting 2 minutes...")
@@ -582,72 +619,88 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 			continue
 		}
 
-		logDeep("SCAN_START", "Scanning Djinni for new positions...")
-		// Load deduplicator
-		dedup, err := pipeline.LoadDedup(flagContextDir)
-		if err != nil {
-			msg := fmt.Sprintf("Failed to load deduplication history: %v", err)
-			logDeep("ERROR", msg)
-			fmt.Printf("⚠️ %s. Retrying in 1 minute...\n", msg)
-			time.Sleep(1 * time.Minute)
-			continue
-		}
+		now := time.Now()
+		var scanTriggered bool
+		if now.Sub(lastScanTime) >= scanInterval {
+			lastScanTime = now
+			scanTriggered = true
+			stats.ScansCount++
 
-		// Scan Djinni for new positions
-		fmt.Println("🔍  Scanning Djinni for new positions...")
-		jobs, err := pipeline.ScanDjinni(flagContextDir, dc, dedup)
-		if err != nil {
-			msg := fmt.Sprintf("Scan failed: %v", err)
-			logDeep("ERROR", msg)
-			fmt.Printf("⚠️ %s. Retrying in 1 minute...\n", msg)
-			time.Sleep(1 * time.Minute)
-			continue
-		}
-
-		if len(jobs) > 0 {
-			msg := fmt.Sprintf("Found %d relevant job(s) to process.", len(jobs))
-			logDeep("SCAN_RESULT", msg)
-			fmt.Printf("🎯 %s\n", msg)
-			
-			for _, j := range jobs {
-				if panicStop.Load() {
-					fmt.Println("🛑  PanicStop triggered. Halting job processing loop.")
-					break
-				}
-				interrupted := false
-				select {
-				case s := <-sigChan:
-					sigChan <- s
-					interrupted = true
-				default:
-				}
-				if interrupted {
-					break
-				}
-				logDeep("PROCESS_JOB", fmt.Sprintf("Starting evaluation for job: %s (%s)", j.Title, j.URL))
-				
-				skippedDedupe := 0
-				skippedThreshold := 0
-				errorCount := 0
-				pdfCount := 0
-				var appliedJobs []appliedJobInfo
-
-				_, err := processJobItem(ctx, panicStop, cfg, bot, dc, engine, dedup, j, &skippedDedupe, &skippedThreshold, &errorCount, &pdfCount, &appliedJobs)
+			logDeep("SCAN_START", "Scanning Djinni for new positions...")
+			dedup, err := pipeline.LoadDedup(flagContextDir)
+			if err != nil {
+				msg := fmt.Sprintf("Failed to load deduplication history: %v", err)
+				logDeep("ERROR", msg)
+				fmt.Printf("⚠️ %s. Retrying in 1 minute...\n", msg)
+			} else {
+				fmt.Println("🔍  Scanning Djinni for new positions...")
+				jobs, err := pipeline.ScanDjinni(flagContextDir, dc, dedup)
 				if err != nil {
-					errMsg := fmt.Sprintf("Error processing job %s: %v", j.Title, err)
-					logDeep("PROCESS_ERROR", errMsg)
-					fmt.Printf("⚠️ %s\n", errMsg)
+					msg := fmt.Sprintf("Scan failed: %v", err)
+					logDeep("ERROR", msg)
+					fmt.Printf("⚠️ %s. Retrying in 1 minute...\n", msg)
+				} else if len(jobs) > 0 {
+					msg := fmt.Sprintf("Found %d relevant job(s) to process.", len(jobs))
+					logDeep("SCAN_RESULT", msg)
+					fmt.Printf("🎯 %s\n", msg)
+
+					for _, j := range jobs {
+						if panicStop.Load() {
+							fmt.Println("🛑  PanicStop triggered. Halting job processing loop.")
+							break
+						}
+						interrupted := false
+						select {
+						case s := <-sigChan:
+							sigChan <- s
+							interrupted = true
+						default:
+						}
+						if interrupted {
+							break
+						}
+						logDeep("PROCESS_JOB", fmt.Sprintf("Starting evaluation for job: %s (%s)", j.Title, j.URL))
+
+						skippedDedupe := 0
+						skippedThreshold := 0
+						errorCount := 0
+						pdfCount := 0
+						var appliedJobs []appliedJobInfo
+
+						applied, err := processJobItem(ctx, panicStop, cfg, bot, dc, engine, dedup, j, &skippedDedupe, &skippedThreshold, &errorCount, &pdfCount, &appliedJobs)
+						if err != nil {
+							errMsg := fmt.Sprintf("Error processing job %s: %v", j.Title, err)
+							logDeep("PROCESS_ERROR", errMsg)
+							fmt.Printf("⚠️ %s\n", errMsg)
+						}
+
+						stats.SkippedDedupe += skippedDedupe
+						stats.SkippedThreshold += skippedThreshold
+						stats.ErrorCount += errorCount
+						stats.PdfCount += pdfCount
+						stats.AppliedJobs = append(stats.AppliedJobs, appliedJobs...)
+						if applied {
+							stats.AppliedCount++
+						}
+					}
+				} else {
+					logDeep("SCAN_RESULT", "No new relevant positions found.")
+					fmt.Println("✅ No new relevant positions found.")
 				}
-				// Process all jobs in one loop. No break.
 			}
-		} else {
-			logDeep("SCAN_RESULT", "No new relevant positions found.")
-			fmt.Println("✅ No new relevant positions found.")
+			updateSummary()
 		}
 
-		sleepDur := 1 * time.Minute
-		logDeep("SLEEP", fmt.Sprintf("Sleeping for %v before next scan.", sleepDur))
-		fmt.Printf("💤 Sleeping for %v...\n", sleepDur)
+		nextScan := lastScanTime.Add(scanInterval)
+		sleepDur := time.Until(nextScan)
+		if sleepDur <= 0 {
+			sleepDur = 1 * time.Second
+		}
+
+		if scanTriggered {
+			logDeep("SLEEP", fmt.Sprintf("Sleeping for %v before next scan.", sleepDur))
+			fmt.Printf("💤 Sleeping for %v...\n", sleepDur)
+		}
 
 		select {
 		case <-ctx.Done():
@@ -657,6 +710,47 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 			sigChan <- s
 			logDeep("STOP", "Interrupted, exiting daemon.")
 			return nil
+		case update := <-bot.UpdateChan:
+			if update.Message != nil && update.Message.Text != "" {
+				text := update.Message.Text
+				re := regexp.MustCompile(`https://djinni\.co/jobs/(\d+-[a-zA-Z0-9-]+)/?`)
+				match := re.FindStringSubmatch(text)
+				if len(match) > 1 {
+					slug := match[1]
+					url := match[0]
+
+					notify.SendTelegramMessage(fmt.Sprintf("🔍 Processing manual job URL: %s", url))
+					fmt.Printf("🔍 Processing manual job URL: %s\n", url)
+
+					j := extractor.JobSummary{
+						Slug:  slug,
+						URL:   url,
+						Title: "Manual Job",
+					}
+
+					skippedDedupe := 0
+					skippedThreshold := 0
+					errorCount := 0
+					pdfCount := 0
+					var appliedJobs []appliedJobInfo
+
+					applied, err := processJobItem(ctx, panicStop, cfg, bot, dc, engine, &pipeline.Dedup{}, j, &skippedDedupe, &skippedThreshold, &errorCount, &pdfCount, &appliedJobs)
+					if err != nil {
+						notify.SendTelegramMessage(fmt.Sprintf("❌ Failed to process manual job: %v", err))
+						stats.ErrorCount++
+					} else {
+						stats.SkippedDedupe += skippedDedupe
+						stats.SkippedThreshold += skippedThreshold
+						stats.ErrorCount += errorCount
+						stats.PdfCount += pdfCount
+						stats.AppliedJobs = append(stats.AppliedJobs, appliedJobs...)
+						if applied {
+							stats.AppliedCount++
+						}
+					}
+					updateSummary()
+				}
+			}
 		case <-time.After(sleepDur):
 		}
 	}
