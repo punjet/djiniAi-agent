@@ -25,6 +25,85 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func retryPendingApplications(ctx context.Context, dc *client.DjinniClient) {
+	fmt.Println("🔄 Retrying pending applications...")
+	apps, err := pipeline.LoadPendingApplications(flagContextDir)
+	if err != nil || len(apps) == 0 {
+		return
+	}
+
+	successCount := 0
+	var remaining []pipeline.PendingApplication
+
+	for _, app := range apps {
+		var cvBytes []byte
+		if app.CVPath != "" {
+			cvBytes, _ = os.ReadFile(app.CVPath)
+		}
+		
+		fmt.Printf("📤 Retrying application for %s...\n", app.JobSlug)
+		_, err := api.ApplyToJob(dc, app.JobSlug, app.Message, app.CVFileName, cvBytes, app.ExtraFormData)
+		if err != nil {
+			fmt.Printf("⚠️ Still failing for %s: %v\n", app.JobSlug, err)
+			remaining = append(remaining, app)
+		} else {
+			fmt.Printf("✅ Success for %s!\n", app.JobSlug)
+			successCount++
+		}
+	}
+
+	pipeline.ClearPendingApplications(flagContextDir)
+	for _, app := range remaining {
+		var cvBytes []byte
+		if app.CVPath != "" {
+			cvBytes, _ = os.ReadFile(app.CVPath)
+		}
+		pipeline.SavePendingApplication(flagContextDir, app, cvBytes)
+	}
+
+	notify.SendTelegramMessage(fmt.Sprintf("🔄 *Retry Complete*\nSuccessfully applied to %d out of %d pending jobs.", successCount, len(apps)))
+}
+
+func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx context.Context) {
+	bot.AddCommand("/set_token", func(m *notify.TGMessage) {
+		parts := strings.SplitN(m.Text, " ", 2)
+		if len(parts) < 2 {
+			notify.SendTelegramMessage("Usage: `/set_token <new_sessionid>`")
+			return
+		}
+		newToken := strings.TrimSpace(parts[1])
+		
+		err := config.UpdateEnvFile(flagContextDir, "DJINNI_SESSIONID", newToken)
+		if err != nil {
+			notify.SendTelegramMessage(fmt.Sprintf("Failed to update token: %v", err))
+			return
+		}
+		
+		godotenv.Overload(filepath.Join(flagContextDir, ".env"))
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			notify.SendTelegramMessage(fmt.Sprintf("Failed to reload config: %v", err))
+			return
+		}
+		
+		dc.Config = cfg
+		dc.Client.SetCommonCookies(nil)
+		
+		newDc := client.NewDjinniClient(cfg)
+		dc.Client = newDc.Client
+
+		notify.SendTelegramMessage("✅ Token updated successfully. Validating...")
+		
+		if api.CheckToken(dc) {
+			notify.SendTelegramMessage("✅ Token is valid! Retrying pending applications...")
+			go retryPendingApplications(ctx, dc)
+		} else {
+			notify.SendTelegramMessage("🚨 The new token appears to be invalid or expired. Please check and try again.")
+		}
+	})
+}
+
+
 var pipelineCmd = &cobra.Command{
 	Use:   "pipeline",
 	Short: "Manage the autonomous job scan and apply pipeline",
@@ -100,6 +179,11 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 	bot := notify.NewTelegramBot()
 	bot.Start()
 	defer bot.Stop()
+	setupBotCommands(bot, dc, ctx)
+
+	if !api.CheckToken(dc) {
+		notify.SendTelegramMessage("🚨 Djinni session token expired or invalid! Send `/set_token <your_token>` to update it.")
+	}
 
 	// 2. Load Deduplicator
 	fmt.Printf("📂  Loading deduplication history from %s...\n", flagContextDir)
@@ -429,8 +513,17 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 				if err != nil {
 					*errorCount++
 					logDeep("ERROR", fmt.Sprintf("Application submission failed to %s: %v", details.Company, err))
-					_ = notify.EditMessageText(msgID, text+"\n\n🔴 *Status:* Failed to apply: "+err.Error())
-					return false, fmt.Errorf("application submission failed: %w", err)
+					_ = notify.EditMessageText(msgID, text+"\n\n🔴 *Status:* Failed to apply (queued for retry): "+err.Error())
+					
+					app := pipeline.PendingApplication{
+						JobSlug:       j.Slug,
+						Message:       introMsg,
+						CVFileName:    cvFileName,
+						ExtraFormData: extraFormData,
+					}
+					pipeline.SavePendingApplication(flagContextDir, app, cvBytes)
+					
+					return false, fmt.Errorf("application submission failed (queued): %w", err)
 				}
 
 				_ = notify.EditMessageText(msgID, text+"\n\n🟢 *Status:* Application accepted and submitted.")
@@ -468,12 +561,21 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 	bot.Start()
 	bot.StartStatusBoard()
 	defer bot.Stop()
+	setupBotCommands(bot, dc, ctx)
 
 	for {
 		if panicStop.Load() {
 			fmt.Println("🛑  PanicStop triggered. Exiting daemon mode.")
 			return nil
 		}
+		
+		if !api.CheckToken(dc) {
+			notify.SendTelegramMessage("🚨 Djinni session token expired or invalid! Waiting for update via `/set_token <your_token>`.")
+			fmt.Println("🚨 Token invalid. Waiting 2 minutes...")
+			time.Sleep(2 * time.Minute)
+			continue
+		}
+
 		logDeep("SCAN_START", "Scanning Djinni for new positions...")
 		// Load deduplicator
 		dedup, err := pipeline.LoadDedup(flagContextDir)
@@ -581,6 +683,12 @@ func runPipelineInbox(cmd *cobra.Command, args []string) error {
 	bot := notify.NewTelegramBot()
 	bot.Start()
 	defer bot.Stop()
+	setupBotCommands(bot, dc, ctx)
+
+	if !api.CheckToken(dc) {
+		notify.SendTelegramMessage("🚨 Djinni session token expired or invalid! Send `/set_token <your_token>` to update it.")
+		return fmt.Errorf("invalid token, cannot process inbox")
+	}
 
 	panicStop := &atomic.Bool{}
 

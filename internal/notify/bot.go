@@ -86,6 +86,12 @@ func (b *TelegramBot) Commands(cmds map[string]func(*TGMessage)) {
 	b.commands = cmds
 }
 
+func (b *TelegramBot) AddCommand(cmd string, handler func(*TGMessage)) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.commands[cmd] = handler
+}
+
 func (b *TelegramBot) SetLastSummary(summary string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
