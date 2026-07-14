@@ -460,11 +460,17 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 				DryRun:  true,
 			})
 			return true, nil
-			} else {
-				cvFileName := fmt.Sprintf("CV-Kyrylo-Kirov-%s.pdf", details.Company)
-				var msgID int64
+				} else {
+					cvFileName := fmt.Sprintf("CV-Kyrylo-Kirov-%s.pdf", details.Company)
+					
+					_, errDoc := notify.SendDocument(cvFileName, cvBytes, fmt.Sprintf("CV tailored for %s", details.Company))
+					if errDoc != nil {
+						logDeep("WARNING", fmt.Sprintf("Failed to send CV document to Telegram: %v", errDoc))
+					}
 
-				for {
+					var msgID int64
+
+					for {
 					instruction, accept, retMsgID, err := pipeline.AskUserForApplyReview(ctx, bot, details.Company, details.Title, j.URL, res.Score, cvFileName, introMsg, j.Slug, msgID)
 					msgID = retMsgID
 					if err != nil {

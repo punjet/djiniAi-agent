@@ -418,7 +418,7 @@ You MUST respond with a single JSON object (no markdown wrappers, no comments) m
   "skills_html": "HTML string of skill items, each as <span class=\"skill-item\"><span class=\"skill-category\">Category:</span> skill list</span>"
 }
 
-All HTML must be clean, valid HTML fragments. Use <strong> for emphasis. CRITICAL: Write the generated CV in the EXACT SAME language as the original CV/Resume provided. If the original CV is in English, the output MUST be in English, regardless of the job description language. Never include markdown formatting.`
+All HTML must be clean, valid HTML fragments. Use <strong> for emphasis. Write in the exact same language as the job description provided. Never include markdown formatting.`
 
 	userPrompt := fmt.Sprintf(`Candidate Profile:
 Name: %s
