@@ -14,6 +14,7 @@ import (
 	"djinni-bot-go/internal/config"
 	"djinni-bot-go/internal/extractor"
 	"djinni-bot-go/internal/llm"
+	"djinni-bot-go/internal/logger"
 
 	"gopkg.in/yaml.v3"
 )
@@ -66,10 +67,20 @@ func getStringField(m map[string]interface{}, key string) string {
 	return ""
 }
 
+func sanitizeName(name string) string {
+	reg := regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
+	sanitized := reg.ReplaceAllString(name, "")
+	sanitized = strings.ReplaceAll(sanitized, " ", "-")
+	return strings.ToLower(sanitized)
+}
+
 // GenerateCoverLetter calls the LLM to draft a cover letter and then renders
 // it to PDF using Go html/template and chromedp.
 // Returns the PDF bytes, the Djinni message text, and any error.
 func GenerateCoverLetter(ctx context.Context, cfg *config.Config, engine llm.Engine, contextDir string, company string, role string, jdText string) ([]byte, string, error) {
+	logger.Log.Info("Starting cover letter generation for", "company", company, "role", role)
+
+
 	// 1. Load profile
 	profilePath := filepath.Join(contextDir, "config", "profile.yml")
 	profileData, err := os.ReadFile(profilePath)
@@ -206,7 +217,7 @@ JD Content:
 	today := time.Now().Format("2006-01-02")
 
 	tmplData := map[string]string{
-		"NAME":                   prof.Candidate.FullName,
+		"NAME":                   sanitizeName(prof.Candidate.FullName),
 		"CONTACT_LINE":           fmt.Sprintf("%s | %s", prof.Candidate.Email, prof.Candidate.Phone),
 		"CREDENTIALS_BLOCK":      "",
 		"ROLE_TITLE":             role,
@@ -474,7 +485,7 @@ Generate a tailored CV JSON for this candidate targeting the above role. Return 
 
 	tmplData := map[string]interface{}{
 		"LANG":                   "en",
-		"NAME":                   prof.Candidate.FullName,
+		"NAME":                   sanitizeName(prof.Candidate.FullName),
 		"EMAIL":                  prof.Candidate.Email,
 		"LINKEDIN_URL":           prof.Candidate.Linkedin,
 		"LINKEDIN_DISPLAY":       linkedinDisplay,

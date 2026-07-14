@@ -24,38 +24,29 @@ func TestApplyReviewEditLoop(t *testing.T) {
 		return nil
 	}
 
-	updatesCount := 0
-	notify.GetUpdatesFunc = func(offset int64) ([]notify.TGUpdate, error) {
-		updatesCount++
-		if updatesCount == 1 {
-			return []notify.TGUpdate{
-				{
-					UpdateID: 100,
-					CallbackQuery: &notify.TGCallback{
-						ID:   "cb1",
-						Data: "apply_edit:job-123",
-					},
-				},
-			}, nil
-		}
-		if updatesCount == 2 {
-			return []notify.TGUpdate{
-				{
-					UpdateID: 101,
-					Message: &notify.TGMessage{
-						Text: "Make it more enthusiastic",
-					},
-				},
-			}, nil
-		}
-		time.Sleep(100 * time.Millisecond)
-		return nil, nil
-	}
+	// Mock the external Telegram API functions to control test flow
+	var updatesToSend1 []notify.TGUpdate
+	updatesToSend1 = append(updatesToSend1, notify.TGUpdate{
+		UpdateID: 100,
+		CallbackQuery: &notify.TGCallback{
+			ID:   "cb1",
+			Data: "apply_edit:job-123",
+		},
+	})
+	updatesToSend1 = append(updatesToSend1, notify.TGUpdate{
+		UpdateID: 101,
+		Message: &notify.TGMessage{
+			Text: "Make it more enthusiastic",
+		},
+	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	bot.UpdateChan <- updatesToSend1[0] // CallbackQuery
+	bot.UpdateChan <- updatesToSend1[1] // Message
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	instruction, accept, err := AskUserForApplyReview(
+	instruction, accept, _, err := AskUserForApplyReview(
 		ctx,
 		bot,
 		"Test Co",
@@ -65,6 +56,7 @@ func TestApplyReviewEditLoop(t *testing.T) {
 		"cv.pdf",
 		"Dear hiring manager...",
 		"job-123",
+		0,
 	)
 
 	if err != nil {
@@ -80,20 +72,40 @@ func TestApplyReviewEditLoop(t *testing.T) {
 		t.Errorf("expected instruction %q, got %q", expectedInstr, instruction)
 	}
 
-	notify.GetUpdatesFunc = func(offset int64) ([]notify.TGUpdate, error) {
-		return []notify.TGUpdate{
-			{
-				UpdateID: 102,
-				CallbackQuery: &notify.TGCallback{
-					ID:   "cb2",
-					Data: "apply_accept:job-123",
-				},
-			},
-		}, nil
+	// Second phase: Recreate bot and re-mock GetUpdatesFunc for the second call to AskUserForApplyReview
+	bot = notify.NewTelegramBot() // Recreate bot to reset UpdateChan
+
+	// Reassign mock functions for the new bot instance
+	notify.SendInlineKeyboardFunc = func(text string, keyboard [][]notify.InlineButton) (int64, error) {
+		return 1, nil
+	}
+	notify.EditMessageTextFunc = func(messageID int64, text string) error {
+		return nil
+	}
+	notify.EditMessageReplyMarkupFunc = func(messageID int64, keyboard [][]notify.InlineButton) error {
+		return nil
+	}
+	notify.AnswerCallbackQueryFunc = func(callbackQueryID string, text string) error {
+		return nil
 	}
 
-	instruction, accept, err = AskUserForApplyReview(
-		ctx,
+	var updatesToSend2 []notify.TGUpdate
+	updatesToSend2 = append(updatesToSend2, notify.TGUpdate{
+		UpdateID: 102,
+		CallbackQuery: &notify.TGCallback{
+			ID:   "cb2",
+			Data: "apply_accept:job-123",
+		},
+	})
+
+	bot.UpdateChan <- updatesToSend2[0] // CallbackQuery
+
+	// Create a new context for the second call, as the previous one might have timed out or been cancelled.
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel2()
+
+	instruction, accept, _, err = AskUserForApplyReview(
+		ctx2, // Use the new context
 		bot,
 		"Test Co",
 		"Developer",
@@ -102,6 +114,7 @@ func TestApplyReviewEditLoop(t *testing.T) {
 		"cv.pdf",
 		"Dear hiring manager...",
 		"job-123",
+		0,
 	)
 
 	if err != nil {

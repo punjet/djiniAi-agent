@@ -4,10 +4,14 @@ import (
 	"strings"
 
 	"djinni-bot-go/internal/client"
+	"djinni-bot-go/internal/logger"
 )
 
 // CheckToken verifies if the current session token is valid by hitting the dashboard.
 func CheckToken(dc *client.DjinniClient) bool {
+	logger.Log.Info("Starting token validation", "operation", "CheckToken")
+
+
 	targetURL := "https://djinni.co/my/dashboard/"
 	if dc.Client.BaseURL != "" {
 		targetURL = dc.Client.BaseURL + "/my/dashboard/"
