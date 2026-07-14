@@ -65,10 +65,10 @@ func retryPendingApplications(ctx context.Context, dc *client.DjinniClient) {
 }
 
 func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx context.Context) {
-	bot.AddCommand("/set_token", func(m *notify.TGMessage) {
+	bot.AddCommand("/set_session", func(m *notify.TGMessage) {
 		parts := strings.SplitN(m.Text, " ", 2)
 		if len(parts) < 2 {
-			notify.SendTelegramMessage("Usage: `/set_token <new_sessionid>`")
+			notify.SendTelegramMessage("Usage: `/set_session <new_sessionid>`")
 			return
 		}
 		newToken := strings.TrimSpace(parts[1])
@@ -92,10 +92,10 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 		newDc := client.NewDjinniClient(cfg)
 		dc.Client = newDc.Client
 
-		notify.SendTelegramMessage("✅ Token updated successfully. Validating...")
+		notify.SendTelegramMessage("✅ Session ID updated successfully. Validating...")
 		
 		if api.CheckToken(dc) {
-			notify.SendTelegramMessage("✅ Token is valid! Retrying pending applications...")
+			notify.SendTelegramMessage("✅ Session ID is valid! Retrying pending applications...")
 			go retryPendingApplications(ctx, dc)
 		} else {
 			notify.SendTelegramMessage("🚨 The new token appears to be invalid or expired. Please check and try again.")
@@ -182,7 +182,7 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 	setupBotCommands(bot, dc, ctx)
 
 	if !api.CheckToken(dc) {
-		notify.SendTelegramMessage("🚨 Djinni session token expired or invalid! Send `/set_token <your_token>` to update it.")
+		notify.SendTelegramMessage("🚨 Djinni sessionid cookie expired or invalid! Send `/set_session <your_sessionid>` to update it.")
 	}
 
 	// 2. Load Deduplicator
@@ -570,7 +570,7 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 		}
 		
 		if !api.CheckToken(dc) {
-			notify.SendTelegramMessage("🚨 Djinni session token expired or invalid! Waiting for update via `/set_token <your_token>`.")
+			notify.SendTelegramMessage("🚨 Djinni sessionid cookie expired or invalid! Waiting for update via `/set_session <your_sessionid>`.")
 			fmt.Println("🚨 Token invalid. Waiting 2 minutes...")
 			time.Sleep(2 * time.Minute)
 			continue
@@ -686,7 +686,7 @@ func runPipelineInbox(cmd *cobra.Command, args []string) error {
 	setupBotCommands(bot, dc, ctx)
 
 	if !api.CheckToken(dc) {
-		notify.SendTelegramMessage("🚨 Djinni session token expired or invalid! Send `/set_token <your_token>` to update it.")
+		notify.SendTelegramMessage("🚨 Djinni sessionid cookie expired or invalid! Send `/set_session <your_sessionid>` to update it.")
 		return fmt.Errorf("invalid token, cannot process inbox")
 	}
 
