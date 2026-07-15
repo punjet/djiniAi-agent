@@ -106,7 +106,13 @@ func GenerateCoverLetter(ctx context.Context, cfg *config.Config, engine llm.Eng
 		return nil, "", err
 	}
 
-	systemPrompt := `You are an expert technical resume writer. Write a highly tailored cover letter and a short Djinni message hook for a candidate applying to a job.
+	lang, err := DetectJDLanguage(ctx, provider, jdText)
+	if err != nil {
+		logger.Log.Warn("Failed to detect JD language, defaulting to English", "error", err)
+		lang = "English"
+	}
+
+	systemPrompt := fmt.Sprintf(`You are an expert technical resume writer. Write a highly tailored cover letter and a short Djinni message hook for a candidate applying to a job.
 
 Instructions:
 Draft a cover letter and short message following these guidelines (inspired by Santiago's career-ops):
@@ -117,7 +123,7 @@ Draft a cover letter and short message following these guidelines (inspired by S
 5. Problems Section: explain how candidate's superpowers solve their specific challenges.
 6. Closing: selective, direct, confident.
 7. Djinni Message: A short, concise hook (3-4 sentences) for the initial message. Do not make it generic. Highlight the candidate's core value match.
-8. Language Rule: Write the Cover Letter and Djinni message in UKRAINIAN if the Job Description is in Ukrainian or Russian. Write in ENGLISH if the Job Description is in English. NEVER write in Russian under any circumstances.
+8. Language Rule: Write the Cover Letter and Djinni message STRICTLY in %s. NEVER write in Russian under any circumstances.
 9. NO MARKDOWN: Do not use ANY markdown formatting (like **, *, #) anywhere in your response. The output must be pure plain text.
 
 You MUST respond with a single JSON object (no markdown wrappers like ` + "`" + `json or comments) matching this schema exactly:
@@ -136,7 +142,7 @@ You MUST respond with a single JSON object (no markdown wrappers like ` + "`" + 
     "closing": "..."
   },
   "djinni_message": "..."
-}`
+}`, lang)
 
 	userPrompt := fmt.Sprintf(`Candidate Context:
 Name: %s
@@ -534,4 +540,30 @@ Generate a tailored CV JSON for this candidate targeting the above role. Return 
 	_ = os.MkdirAll(outputDir, 0755)
 
 	return pdfBytes, nil
+}
+
+func DetectJDLanguage(ctx context.Context, provider llm.Provider, jdText string) (string, error) {
+	systemPrompt := `You are a language detection bot. Analyze the job description and return the primary language in JSON format: {"language": "Ukrainian"} or {"language": "English"}. If it contains Russian or Ukrainian, return Ukrainian. Only output JSON.`
+
+	response, err := provider.GenerateText(ctx, systemPrompt, jdText)
+	if err != nil {
+		return "", fmt.Errorf("LLM language detection failed: %w", err)
+	}
+
+	cleanJSON := response
+	if idx := strings.Index(cleanJSON, "{"); idx != -1 {
+		cleanJSON = cleanJSON[idx:]
+	}
+	if idx := strings.LastIndex(cleanJSON, "}"); idx != -1 {
+		cleanJSON = cleanJSON[:idx+1]
+	}
+
+	var result struct {
+		Language string `json:"language"`
+	}
+	if err := json.Unmarshal([]byte(cleanJSON), &result); err != nil {
+		return "", fmt.Errorf("failed to parse LLM response JSON: %w (raw response: %q)", err, response)
+	}
+
+	return result.Language, nil
 }
