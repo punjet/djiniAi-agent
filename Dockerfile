@@ -48,12 +48,15 @@ RUN mkdir -p /app/career-ops/output \
              /app/career-ops/batch/tracker-additions \
              /app/career-ops/reports
 
+# ---- Persist logs across container restarts ----
+# Mount a volume here so logs survive restarts and are accessible from host:
+#   docker run -v djinni-logs:/app/career-ops/logs ...
+VOLUME ["/app/career-ops/logs"]
+
 # =============================================================================
 # Default entrypoint
 # =============================================================================
-# Runs the autonomous scan-evaluate-apply pipeline in daemon mode using OpenAI.
-# The container sends interactive Telegram messages (inline keyboards) when a
-# high-scoring job is found, and waits for your ✅ / ✍️ / ❌ decision.
+# Logs go to BOTH stdout (visible via `docker logs`) and /app/career-ops/logs/
 #
 # Required environment variables at runtime:
 #
@@ -76,6 +79,7 @@ RUN mkdir -p /app/career-ops/output \
 # Example run:
 #   docker run -d \
 #     --name djinni-bot \
+#     -v djinni-logs:/app/career-ops/logs \
 #     -e OPENAI_API_KEY="sk-..." \
 #     -e DJINNI_SESSIONID="..." \
 #     -e DJINNI_CSRFTOKEN="..." \
