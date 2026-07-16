@@ -1,0 +1,12 @@
+Task: T6 inbox robustness — 5 edits to inbox.go
+
+go build ./... → exit 0 - clean build
+go vet ./...   → exit 0 - clean vet
+
+Final file line count: 264 (was 238)
+Changes:
+- EDIT 1: Added ConversationState field to InboxReplyResult struct
+- EDIT 2: Updated system prompt JSON schema with conversation_state enum + rules
+- EDIT 3: Added thread context injection (d.Messages) into userPrompt
+- EDIT 4: Added concluded-skip check after JSON unmarshal with notify.SendTelegramMessage
+- EDIT 5: Added notify import

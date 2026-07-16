@@ -1,0 +1,453 @@
+[2026-07-05T13:48:16+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T13:48:16+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T13:48:16+03:00] [PROCESS_JOB_ITEM] Fetching details for 835217-ai-product-engineer-ai-solutions-engineer
+[2026-07-05T13:48:17+03:00] [EVALUATE] Evaluating role at Red Rocket Software...
+[2026-07-05T13:48:52+03:00] [EVAL_RESULT] Score: 4.4/5 | Archetype: Agentic / Automation | Legitimacy: High Confidence
+[2026-07-05T13:48:52+03:00] [APPLY_START] Score 4.4 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T13:49:12+03:00] [CV_GENERATE] Generating tailored CV PDF for Red Rocket Software
+[2026-07-05T13:49:41+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for Red Rocket Software
+[2026-07-05T13:49:47+03:00] [APPLY_SUBMIT] Submitting application to Red Rocket Software...
+[2026-07-05T13:49:48+03:00] [APPLY_SUCCESS] Successfully applied to Red Rocket Software
+[2026-07-05T13:49:48+03:00] [PROCESS_JOB_ITEM] Fetching details for 835208-ai-engineer
+[2026-07-05T13:49:48+03:00] [EVALUATE] Evaluating role at Kadroland Academy...
+[2026-07-05T13:50:21+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T13:50:22+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T13:50:22+03:00] [PROCESS_JOB_ITEM] Fetching details for 835208-ai-engineer
+[2026-07-05T13:50:22+03:00] [EVALUATE] Evaluating role at Kadroland Academy...
+[2026-07-05T13:51:11+03:00] [EVAL_RESULT] Score: 4.1/5 | Archetype: AI Platform / LLMOps | Legitimacy: Proceed with Caution
+[2026-07-05T13:51:11+03:00] [APPLY_START] Score 4.1 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T13:51:31+03:00] [CV_GENERATE] Generating tailored CV PDF for Kadroland Academy
+[2026-07-05T13:51:41+03:00] [ERROR] Custom CV generation failed for Kadroland Academy: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T13:51:41+03:00] [PROCESS_JOB_ITEM] Fetching details for 835087-ai-ml-engineer
+[2026-07-05T13:51:41+03:00] [EVALUATE] Evaluating role at Interloom Technologies GmbH...
+[2026-07-05T13:52:16+03:00] [EVAL_RESULT] Score: 4.4/5 | Archetype: Agentic / Automation | Legitimacy: High Confidence
+[2026-07-05T13:52:16+03:00] [APPLY_START] Score 4.4 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T13:52:36+03:00] [CV_GENERATE] Generating tailored CV PDF for Interloom Technologies GmbH
+[2026-07-05T13:53:06+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for Interloom Technologies GmbH
+[2026-07-05T13:53:11+03:00] [APPLY_SUBMIT] Submitting application to Interloom Technologies GmbH...
+[2026-07-05T13:53:12+03:00] [APPLY_SUCCESS] Successfully applied to Interloom Technologies GmbH
+[2026-07-05T13:53:13+03:00] [PROCESS_JOB_ITEM] Fetching details for 798849-genai-developer
+[2026-07-05T13:53:13+03:00] [EVALUATE] Evaluating role at Lagoteam...
+[2026-07-05T13:53:47+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: AI Platform / LLMOps | Legitimacy: High Confidence
+[2026-07-05T13:53:47+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T13:54:07+03:00] [CV_GENERATE] Generating tailored CV PDF for Lagoteam
+[2026-07-05T13:54:15+03:00] [ERROR] Custom CV generation failed for Lagoteam: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T13:54:15+03:00] [PROCESS_JOB_ITEM] Fetching details for 830377-ai-ml-research-scientist
+[2026-07-05T13:54:16+03:00] [EVALUATE] Evaluating role at Commit Offshore...
+[2026-07-05T13:54:49+03:00] [EVAL_RESULT] Score: 2.2/5 | Archetype: AI Platform / LLMOps | Legitimacy: Proceed with Caution
+[2026-07-05T13:54:49+03:00] [SKIP_LOW_SCORE] Score (2.2) below threshold (3.5). Skipping apply.
+[2026-07-05T13:54:49+03:00] [PROCESS_JOB_ITEM] Fetching details for 834930-ai-ml-engineer-middle-defence-ai-center-a1
+[2026-07-05T13:54:50+03:00] [EVALUATE] Evaluating role at Міністерство Оборони України...
+[2026-07-05T14:08:36+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T14:08:36+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T14:08:36+03:00] [PROCESS_JOB_ITEM] Fetching details for 834930-ai-ml-engineer-middle-defence-ai-center-a1
+[2026-07-05T14:08:36+03:00] [EVALUATE] Evaluating role at Міністерство Оборони України...
+[2026-07-05T14:09:16+03:00] [ERROR] EvaluateJob failed for Міністерство Оборони України: evaluation failed: LLM output failed validation: LLM returned an invalid career-ops report: missing Block A; missing Block B; missing Block C; missing Block D; missing Block E; missing Block F; missing Block G; missing SCORE_SUMMARY block
+[2026-07-05T14:10:16+03:00] [PROCESS_JOB_ITEM] Fetching details for 776935-ai-ml-engineer
+[2026-07-05T14:10:17+03:00] [EVALUATE] Evaluating role at WebLegends...
+[2026-07-05T14:10:41+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T14:10:41+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T14:10:41+03:00] [PROCESS_JOB_ITEM] Fetching details for 834930-ai-ml-engineer-middle-defence-ai-center-a1
+[2026-07-05T14:10:41+03:00] [EVALUATE] Evaluating role at Міністерство Оборони України...
+[2026-07-05T14:11:18+03:00] [ERROR] EvaluateJob failed for Міністерство Оборони України: evaluation failed: LLM call failed: Ollama API error: HTTP 429 — {"error":{"message":"All models rate-limited. Last error: Google API error 503: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.","type":"rate_limit_error"}}
+[2026-07-05T14:12:18+03:00] [PROCESS_JOB_ITEM] Fetching details for 776935-ai-ml-engineer
+[2026-07-05T14:12:18+03:00] [EVALUATE] Evaluating role at WebLegends...
+[2026-07-05T14:13:31+03:00] [ERROR] EvaluateJob failed for WebLegends: evaluation failed: LLM call failed: Ollama API error: HTTP 429 — {"error":{"message":"All models rate-limited. Last error: Google API error 503: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.","type":"rate_limit_error"}}
+[2026-07-05T14:14:31+03:00] [PROCESS_JOB_ITEM] Fetching details for 832671-ai-website-designer-builder
+[2026-07-05T14:14:31+03:00] [EVALUATE] Evaluating role at dNovo Group...
+[2026-07-05T14:15:28+03:00] [ERROR] EvaluateJob failed for dNovo Group: evaluation failed: LLM call failed: Ollama API error: HTTP 429 — {"error":{"message":"All models rate-limited. Last error: Google API error 503: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.","type":"rate_limit_error"}}
+[2026-07-05T14:16:28+03:00] [PROCESS_JOB_ITEM] Fetching details for 834647-full-stack-ai-engineer-ml-engineer
+[2026-07-05T14:16:29+03:00] [EVALUATE] Evaluating role at Black Horse...
+[2026-07-05T14:17:36+03:00] [ERROR] EvaluateJob failed for Black Horse: evaluation failed: LLM call failed: Ollama API error: HTTP 429 — {"error":{"message":"All models rate-limited. Last error: Google API error 503: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.","type":"rate_limit_error"}}
+[2026-07-05T14:18:36+03:00] [PROCESS_JOB_ITEM] Fetching details for 834612-python-ai-engineer
+[2026-07-05T14:18:36+03:00] [EVALUATE] Evaluating role at Antagosoft...
+[2026-07-05T14:19:43+03:00] [ERROR] EvaluateJob failed for Antagosoft: evaluation failed: LLM call failed: Ollama API error: HTTP 429 — {"error":{"message":"All models rate-limited. Last error: Google API error 503: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.","type":"rate_limit_error"}}
+[2026-07-05T14:42:21+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T14:42:21+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T14:42:21+03:00] [PROCESS_JOB_ITEM] Fetching details for 834930-ai-ml-engineer-middle-defence-ai-center-a1
+[2026-07-05T14:42:21+03:00] [EVALUATE] Evaluating role at Міністерство Оборони України...
+[2026-07-05T14:42:55+03:00] [EVAL_RESULT] Score: 3.2/5 | Archetype: AI Platform / LLMOps Engineer (Hybrid with Agentic Automation) | Legitimacy: High Confidence
+[2026-07-05T14:42:56+03:00] [SKIP_LOW_SCORE] Score (3.2) below threshold (3.5). Skipping apply.
+[2026-07-05T14:42:56+03:00] [PROCESS_JOB_ITEM] Fetching details for 776935-ai-ml-engineer
+[2026-07-05T14:42:56+03:00] [EVALUATE] Evaluating role at WebLegends...
+[2026-07-05T14:43:30+03:00] [EVAL_RESULT] Score: 4.6/5 | Archetype: AI Platform / LLMOps Engineer (with Agentic elements) | Legitimacy: Proceed with Caution
+[2026-07-05T14:43:30+03:00] [APPLY_START] Score 4.6 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T14:43:50+03:00] [CV_GENERATE] Generating tailored CV PDF for WebLegends
+[2026-07-05T14:44:23+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T14:44:24+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T14:44:24+03:00] [PROCESS_JOB_ITEM] Fetching details for 832671-ai-website-designer-builder
+[2026-07-05T14:44:24+03:00] [EVALUATE] Evaluating role at dNovo Group...
+[2026-07-05T14:44:57+03:00] [EVAL_RESULT] Score: 3.4/5 | Archetype: AI Forward Deployed Engineer | Legitimacy: High Confidence
+[2026-07-05T14:44:58+03:00] [SKIP_LOW_SCORE] Score (3.4) below threshold (3.5). Skipping apply.
+[2026-07-05T14:44:58+03:00] [PROCESS_JOB_ITEM] Fetching details for 834647-full-stack-ai-engineer-ml-engineer
+[2026-07-05T14:44:58+03:00] [EVALUATE] Evaluating role at Black Horse...
+[2026-07-05T14:45:32+03:00] [EVAL_RESULT] Score: 4.6/5 | Archetype: AI Platform / LLMOps Engineer (Hybrid with Agentic Automation) | Legitimacy: High Confidence
+[2026-07-05T14:45:32+03:00] [APPLY_START] Score 4.6 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T14:45:52+03:00] [CV_GENERATE] Generating tailored CV PDF for Black Horse
+[2026-07-05T14:46:00+03:00] [ERROR] Custom CV generation failed for Black Horse: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T14:46:00+03:00] [PROCESS_JOB_ITEM] Fetching details for 834612-python-ai-engineer
+[2026-07-05T14:46:01+03:00] [EVALUATE] Evaluating role at Antagosoft...
+[2026-07-05T14:46:35+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: Agentic / Automation | Legitimacy: Proceed with Caution
+[2026-07-05T14:46:35+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T14:46:55+03:00] [CV_GENERATE] Generating tailored CV PDF for Antagosoft
+[2026-07-05T14:47:05+03:00] [ERROR] Custom CV generation failed for Antagosoft: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T14:47:05+03:00] [PROCESS_JOB_ITEM] Fetching details for 814368-ai-integration-specialist
+[2026-07-05T14:47:05+03:00] [ERROR] GetJobDetails failed for 814368-ai-integration-specialist: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T14:47:05+03:00] [PROCESS_JOB_ITEM] Fetching details for 829107-ai-integration-specialist
+[2026-07-05T14:47:06+03:00] [EVALUATE] Evaluating role at ABXplay...
+[2026-07-05T14:47:39+03:00] [EVAL_RESULT] Score: 4.3/5 | Archetype: Agentic / Automation | Legitimacy: High Confidence
+[2026-07-05T14:47:40+03:00] [APPLY_START] Score 4.3 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T14:48:00+03:00] [CV_GENERATE] Generating tailored CV PDF for ABXplay
+[2026-07-05T14:48:28+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for ABXplay
+[2026-07-05T14:48:34+03:00] [APPLY_SUBMIT] Submitting application to ABXplay...
+[2026-07-05T14:48:35+03:00] [APPLY_SUCCESS] Successfully applied to ABXplay
+[2026-07-05T14:48:35+03:00] [PROCESS_JOB_ITEM] Fetching details for 834540-ai-prompt-engineer
+[2026-07-05T14:48:36+03:00] [EVALUATE] Evaluating role at Luxoft...
+[2026-07-05T14:49:10+03:00] [EVAL_RESULT] Score: 4.4/5 | Archetype: Agentic / Automation (Hybrid with AI Platform / LLMOps) | Legitimacy: High Confidence
+[2026-07-05T14:49:10+03:00] [APPLY_START] Score 4.4 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T14:49:30+03:00] [CV_GENERATE] Generating tailored CV PDF for Luxoft
+[2026-07-05T14:50:00+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for Luxoft
+[2026-07-05T14:50:06+03:00] [APPLY_SUBMIT] Submitting application to Luxoft...
+[2026-07-05T14:50:07+03:00] [APPLY_SUCCESS] Successfully applied to Luxoft
+[2026-07-05T14:50:07+03:00] [PROCESS_JOB_ITEM] Fetching details for 822590-strong-middle-ml-ai-engineer
+[2026-07-05T14:50:07+03:00] [EVALUATE] Evaluating role at YTC...
+[2026-07-05T14:50:42+03:00] [EVAL_RESULT] Score: 3.4/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: Proceed with Caution
+[2026-07-05T14:50:42+03:00] [SKIP_LOW_SCORE] Score (3.4) below threshold (3.5). Skipping apply.
+[2026-07-05T14:50:42+03:00] [PROCESS_JOB_ITEM] Fetching details for 834388-middle-ai-prompt-engineer
+[2026-07-05T14:50:42+03:00] [EVALUATE] Evaluating role at Luxoft...
+[2026-07-05T15:14:08+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T15:14:08+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:14:08+03:00] [PROCESS_JOB_ITEM] Fetching details for 814368-ai-integration-specialist
+[2026-07-05T15:14:08+03:00] [ERROR] GetJobDetails failed for 814368-ai-integration-specialist: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:14:08+03:00] [PROCESS_JOB_ITEM] Fetching details for 834388-middle-ai-prompt-engineer
+[2026-07-05T15:14:08+03:00] [EVALUATE] Evaluating role at Luxoft...
+[2026-07-05T15:14:42+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: AI Platform / LLMOps Engineer (Hybrid with Agentic Automation) | Legitimacy: Proceed with Caution
+[2026-07-05T15:14:43+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:15:03+03:00] [CV_GENERATE] Generating tailored CV PDF for Luxoft
+[2026-07-05T15:15:11+03:00] [ERROR] Custom CV generation failed for Luxoft: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T15:15:11+03:00] [PROCESS_JOB_ITEM] Fetching details for 834353-cto-chief-technology-officer-ai-product
+[2026-07-05T15:15:11+03:00] [EVALUATE] Evaluating role at CRYPTORSY...
+[2026-07-05T15:15:45+03:00] [EVAL_RESULT] Score: 3.7/5 | Archetype: AI Solutions Architect | Legitimacy: Proceed with Caution
+[2026-07-05T15:15:45+03:00] [APPLY_START] Score 3.7 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:16:14+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T15:16:14+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:16:14+03:00] [PROCESS_JOB_ITEM] Fetching details for 814368-ai-integration-specialist
+[2026-07-05T15:16:14+03:00] [ERROR] GetJobDetails failed for 814368-ai-integration-specialist: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:16:14+03:00] [PROCESS_JOB_ITEM] Fetching details for 818606-ai-computer-vision-engineer
+[2026-07-05T15:16:14+03:00] [EVALUATE] Evaluating role at Quantum Systems Ukraine...
+[2026-07-05T15:16:50+03:00] [EVAL_RESULT] Score: 2.6/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: High Confidence
+[2026-07-05T15:16:51+03:00] [SKIP_LOW_SCORE] Score (2.6) below threshold (3.5). Skipping apply.
+[2026-07-05T15:16:51+03:00] [PROCESS_JOB_ITEM] Fetching details for 834173-ai-automation-engineer
+[2026-07-05T15:16:51+03:00] [ERROR] GetJobDetails failed for 834173-ai-automation-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:16:51+03:00] [PROCESS_JOB_ITEM] Fetching details for 828563-ai-systems-engineer-ai-engineer
+[2026-07-05T15:16:51+03:00] [EVALUATE] Evaluating role at Blumbit...
+[2026-07-05T15:17:26+03:00] [EVAL_RESULT] Score: 4.3/5 | Archetype: Agentic / Automation | Legitimacy: Proceed with Caution
+[2026-07-05T15:17:26+03:00] [APPLY_START] Score 4.3 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:17:46+03:00] [CV_GENERATE] Generating tailored CV PDF for Blumbit
+[2026-07-05T15:17:55+03:00] [ERROR] Custom CV generation failed for Blumbit: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T15:17:55+03:00] [PROCESS_JOB_ITEM] Fetching details for 822642-ai-engineer
+[2026-07-05T15:17:55+03:00] [EVALUATE] Evaluating role at VCHASNO GROUP...
+[2026-07-05T15:18:30+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: Agentic / Automation | Legitimacy: Proceed with Caution
+[2026-07-05T15:18:30+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:18:50+03:00] [CV_GENERATE] Generating tailored CV PDF for VCHASNO GROUP
+[2026-07-05T15:18:58+03:00] [ERROR] Custom CV generation failed for VCHASNO GROUP: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T15:18:58+03:00] [PROCESS_JOB_ITEM] Fetching details for 786976-ai-optimization-specialist-ai-integrator
+[2026-07-05T15:18:58+03:00] [ERROR] GetJobDetails failed for 786976-ai-optimization-specialist-ai-integrator: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:18:58+03:00] [PROCESS_JOB_ITEM] Fetching details for 833790-ai-integration-engineer
+[2026-07-05T15:18:59+03:00] [ERROR] GetJobDetails failed for 833790-ai-integration-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:18:59+03:00] [PROCESS_JOB_ITEM] Fetching details for 825506-ai-ml-computer-vision-engineer
+[2026-07-05T15:18:59+03:00] [EVALUATE] Evaluating role at Альфа Віжн...
+[2026-07-05T15:19:32+03:00] [EVAL_RESULT] Score: 2.5/5 | Archetype: AI Solutions Architect (Hybrid) | Legitimacy: Proceed with Caution
+[2026-07-05T15:19:32+03:00] [SKIP_LOW_SCORE] Score (2.5) below threshold (3.5). Skipping apply.
+[2026-07-05T15:19:32+03:00] [PROCESS_JOB_ITEM] Fetching details for 830223-senior-ai-platform-engineer-mlops-cv
+[2026-07-05T15:19:33+03:00] [EVALUATE] Evaluating role at PaiDefence...
+[2026-07-05T15:20:06+03:00] [EVAL_RESULT] Score: 4.1/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: High Confidence
+[2026-07-05T15:20:06+03:00] [APPLY_START] Score 4.1 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:32:18+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T15:32:18+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:32:18+03:00] [PROCESS_JOB_ITEM] Fetching details for 814368-ai-integration-specialist
+[2026-07-05T15:32:18+03:00] [ERROR] GetJobDetails failed for 814368-ai-integration-specialist: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:32:18+03:00] [PROCESS_JOB_ITEM] Fetching details for 834173-ai-automation-engineer
+[2026-07-05T15:32:18+03:00] [ERROR] GetJobDetails failed for 834173-ai-automation-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:32:18+03:00] [PROCESS_JOB_ITEM] Fetching details for 786976-ai-optimization-specialist-ai-integrator
+[2026-07-05T15:32:19+03:00] [ERROR] GetJobDetails failed for 786976-ai-optimization-specialist-ai-integrator: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:32:19+03:00] [PROCESS_JOB_ITEM] Fetching details for 833790-ai-integration-engineer
+[2026-07-05T15:32:19+03:00] [ERROR] GetJobDetails failed for 833790-ai-integration-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:32:19+03:00] [PROCESS_JOB_ITEM] Fetching details for 827204-middle-senior-ai-ml-engineer-genai-and-chatbo
+[2026-07-05T15:32:20+03:00] [EVALUATE] Evaluating role at PrivatBank...
+[2026-07-05T15:32:55+03:00] [EVAL_RESULT] Score: 4.3/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: High Confidence
+[2026-07-05T15:32:55+03:00] [APPLY_START] Score 4.3 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:33:15+03:00] [CV_GENERATE] Generating tailored CV PDF for PrivatBank
+[2026-07-05T15:33:22+03:00] [ERROR] Custom CV generation failed for PrivatBank: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T15:33:22+03:00] [PROCESS_JOB_ITEM] Fetching details for 833382-ai-engineer
+[2026-07-05T15:33:23+03:00] [EVALUATE] Evaluating role at LLC Youcontrol Ukraine...
+[2026-07-05T15:33:57+03:00] [EVAL_RESULT] Score: 4.1/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: High Confidence
+[2026-07-05T15:33:57+03:00] [APPLY_START] Score 4.1 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:34:43+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T15:34:43+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:34:43+03:00] [PROCESS_JOB_ITEM] Fetching details for 814368-ai-integration-specialist
+[2026-07-05T15:34:44+03:00] [ERROR] GetJobDetails failed for 814368-ai-integration-specialist: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:34:44+03:00] [PROCESS_JOB_ITEM] Fetching details for 834173-ai-automation-engineer
+[2026-07-05T15:34:44+03:00] [ERROR] GetJobDetails failed for 834173-ai-automation-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:34:44+03:00] [PROCESS_JOB_ITEM] Fetching details for 786976-ai-optimization-specialist-ai-integrator
+[2026-07-05T15:34:44+03:00] [ERROR] GetJobDetails failed for 786976-ai-optimization-specialist-ai-integrator: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:34:44+03:00] [PROCESS_JOB_ITEM] Fetching details for 833790-ai-integration-engineer
+[2026-07-05T15:34:44+03:00] [ERROR] GetJobDetails failed for 833790-ai-integration-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T15:34:44+03:00] [PROCESS_JOB_ITEM] Fetching details for 780935-tech-artist-assets-manager-who-would-shape-th
+[2026-07-05T15:34:45+03:00] [EVALUATE] Evaluating role at WonderBrains agency...
+[2026-07-05T15:35:19+03:00] [EVAL_RESULT] Score: 3.2/5 | Archetype: Agentic / Automation | Legitimacy: Proceed with Caution
+[2026-07-05T15:35:19+03:00] [SKIP_LOW_SCORE] Score (3.2) below threshold (3.5). Skipping apply.
+[2026-07-05T15:35:19+03:00] [PROCESS_JOB_ITEM] Fetching details for 783546-ai-engineer
+[2026-07-05T15:35:20+03:00] [EVALUATE] Evaluating role at WEBXLOO...
+[2026-07-05T15:35:54+03:00] [ERROR] EvaluateJob failed for WEBXLOO: evaluation failed: LLM output failed validation: LLM returned an invalid career-ops report: missing Block A; missing Block B; missing Block C; missing Block D; missing Block E; missing Block F; missing Block G
+[2026-07-05T15:36:54+03:00] [PROCESS_JOB_ITEM] Fetching details for 833101-ai-engineer
+[2026-07-05T15:36:54+03:00] [EVALUATE] Evaluating role at Streamline...
+[2026-07-05T15:37:28+03:00] [EVAL_RESULT] Score: 4.3/5 | Archetype: Agentic / Automation | Legitimacy: High Confidence
+[2026-07-05T15:37:28+03:00] [APPLY_START] Score 4.3 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:37:48+03:00] [CV_GENERATE] Generating tailored CV PDF for Streamline
+[2026-07-05T15:38:19+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for Streamline
+[2026-07-05T15:38:25+03:00] [APPLY_SUBMIT] Submitting application to Streamline...
+[2026-07-05T15:38:26+03:00] [APPLY_SUCCESS] Successfully applied to Streamline
+[2026-07-05T15:38:26+03:00] [PROCESS_JOB_ITEM] Fetching details for 833053-middle-ai-engineer
+[2026-07-05T15:38:27+03:00] [EVALUATE] Evaluating role at InProject...
+[2026-07-05T15:39:01+03:00] [EVAL_RESULT] Score: 4.0/5 | Archetype: Agentic / Automation (hybrid with AI Platform / LLMOps) | Legitimacy: High Confidence
+[2026-07-05T15:39:01+03:00] [APPLY_START] Score 4.0 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:39:21+03:00] [CV_GENERATE] Generating tailored CV PDF for InProject
+[2026-07-05T15:39:29+03:00] [ERROR] Custom CV generation failed for InProject: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T15:39:29+03:00] [PROCESS_JOB_ITEM] Fetching details for 829508-computer-vision-generative-ai-engineer
+[2026-07-05T15:39:30+03:00] [EVALUATE] Evaluating role at DRESSX...
+[2026-07-05T15:40:04+03:00] [EVAL_RESULT] Score: 3.4/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: High Confidence
+[2026-07-05T15:40:04+03:00] [SKIP_LOW_SCORE] Score (3.4) below threshold (3.5). Skipping apply.
+[2026-07-05T15:40:04+03:00] [PROCESS_JOB_ITEM] Fetching details for 825994-middle-senior-ai-engineer
+[2026-07-05T15:40:05+03:00] [EVALUATE] Evaluating role at Mirko...
+[2026-07-05T15:40:38+03:00] [EVAL_RESULT] Score: 3.6/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: Proceed with Caution
+[2026-07-05T15:40:39+03:00] [APPLY_START] Score 3.6 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:40:59+03:00] [CV_GENERATE] Generating tailored CV PDF for Mirko
+[2026-07-05T15:41:07+03:00] [ERROR] Custom CV generation failed for Mirko: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T15:41:07+03:00] [PROCESS_JOB_ITEM] Fetching details for 832697-ai-advisor
+[2026-07-05T15:41:07+03:00] [EVALUATE] Evaluating role at LITSLINK...
+[2026-07-05T15:41:41+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: AI Solutions Architect | Legitimacy: Proceed with Caution
+[2026-07-05T15:41:41+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:42:01+03:00] [CV_GENERATE] Generating tailored CV PDF for LITSLINK
+[2026-07-05T15:42:30+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for LITSLINK
+[2026-07-05T15:42:35+03:00] [APPLY_SUBMIT] Submitting application to LITSLINK...
+[2026-07-05T15:42:36+03:00] [APPLY_SUCCESS] Successfully applied to LITSLINK
+[2026-07-05T15:42:36+03:00] [PROCESS_JOB_ITEM] Fetching details for 832660-ai-solutions-engineer
+[2026-07-05T15:42:37+03:00] [EVALUATE] Evaluating role at Frontline Robotics...
+[2026-07-05T15:43:11+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: AI Solutions Architect | Legitimacy: High Confidence
+[2026-07-05T15:43:11+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:43:31+03:00] [CV_GENERATE] Generating tailored CV PDF for Frontline Robotics
+[2026-07-05T15:43:39+03:00] [ERROR] Custom CV generation failed for Frontline Robotics: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T15:43:39+03:00] [PROCESS_JOB_ITEM] Fetching details for 816267-ai-engineer
+[2026-07-05T15:43:40+03:00] [EVALUATE] Evaluating role at appflame...
+[2026-07-05T15:44:14+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: High Confidence
+[2026-07-05T15:44:14+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T15:44:34+03:00] [CV_GENERATE] Generating tailored CV PDF for appflame
+[2026-07-05T16:00:26+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T16:00:26+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:00:26+03:00] [PROCESS_JOB_ITEM] Fetching details for 814368-ai-integration-specialist
+[2026-07-05T16:00:27+03:00] [ERROR] GetJobDetails failed for 814368-ai-integration-specialist: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:00:27+03:00] [PROCESS_JOB_ITEM] Fetching details for 834173-ai-automation-engineer
+[2026-07-05T16:00:27+03:00] [ERROR] GetJobDetails failed for 834173-ai-automation-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:00:27+03:00] [PROCESS_JOB_ITEM] Fetching details for 786976-ai-optimization-specialist-ai-integrator
+[2026-07-05T16:00:27+03:00] [ERROR] GetJobDetails failed for 786976-ai-optimization-specialist-ai-integrator: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:00:27+03:00] [PROCESS_JOB_ITEM] Fetching details for 833790-ai-integration-engineer
+[2026-07-05T16:00:27+03:00] [ERROR] GetJobDetails failed for 833790-ai-integration-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:00:27+03:00] [PROCESS_JOB_ITEM] Fetching details for 783546-ai-engineer
+[2026-07-05T16:00:28+03:00] [EVALUATE] Evaluating role at WEBXLOO...
+[2026-07-05T16:01:02+03:00] [EVAL_RESULT] Score: 3.2/5 | Archetype: Agentic / Automation | Legitimacy: Proceed with Caution
+[2026-07-05T16:01:02+03:00] [SKIP_LOW_SCORE] Score (3.2) below threshold (3.5). Skipping apply.
+[2026-07-05T16:01:02+03:00] [PROCESS_JOB_ITEM] Fetching details for 832565-ai-solutions-and-innovation-specialist
+[2026-07-05T16:01:02+03:00] [EVALUATE] Evaluating role at LITSLINK...
+[2026-07-05T16:01:36+03:00] [ERROR] EvaluateJob failed for LITSLINK: evaluation failed: LLM output failed validation: LLM returned an invalid career-ops report: SCORE_SUMMARY LEGITIMACY is required
+[2026-07-05T16:02:36+03:00] [PROCESS_JOB_ITEM] Fetching details for 832530-senior-ai-developer-next-js-typescript
+[2026-07-05T16:02:37+03:00] [EVALUATE] Evaluating role at CRYPTORSY...
+[2026-07-05T16:03:10+03:00] [EVAL_RESULT] Score: 3.7/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: High Confidence
+[2026-07-05T16:03:11+03:00] [APPLY_START] Score 3.7 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:03:31+03:00] [CV_GENERATE] Generating tailored CV PDF for CRYPTORSY
+[2026-07-05T16:03:38+03:00] [ERROR] Custom CV generation failed for CRYPTORSY: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T16:03:38+03:00] [PROCESS_JOB_ITEM] Fetching details for 832535-ai-engineer
+[2026-07-05T16:03:38+03:00] [EVALUATE] Evaluating role at EveryMatrix...
+[2026-07-05T16:04:12+03:00] [EVAL_RESULT] Score: 3.8/5 | Archetype: Agentic / Automation | Legitimacy: High Confidence
+[2026-07-05T16:04:12+03:00] [APPLY_START] Score 3.8 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:04:32+03:00] [CV_GENERATE] Generating tailored CV PDF for EveryMatrix
+[2026-07-05T16:05:01+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for EveryMatrix
+[2026-07-05T16:05:08+03:00] [QUIZ_DETECTED] 1 question(s) for quiz 56283
+[2026-07-05T16:05:28+03:00] [QUIZ_ANSWERING] Calling LLM to answer quiz questions
+[2026-07-05T16:05:36+03:00] [ERROR] Quiz answering failed for EveryMatrix: failed to parse LLM response JSON: invalid character '`' after top-level value (raw: "The user wants me to answer a recruiter's quiz based on a specific persona (Kyrylo Kirov) and his CV.\n\n**Persona:** Kyrylo Kirov, Senior AI Automation Expert.\n**CV Context:**\n*   **Name:** Kirillo Kirov (Кирилло Кіров).\n*   **Role:** AI Agent Architect / AI Solutions Specialist for Business.\n*   **Key Skills:** AI Agents, RAG pipelines, Embeddings, Vector Search, Orchestration, Prompt Engineering, Integrations (CRM, APIs), Marketing/Sales optimization, Python, n8n, Docker.\n*   **Experience:**\n    *   Freelance AI Agent Architect (Sep 2025 - Present): Built voice agents (RAG, scoring, hybrid search), legal consultation agents (embeddings, PDF parsing), support agents (RAG, State Machine, API integration), lead qualification (n8n, OpenAI, CRM).\n    *   Marketer (Softsvit, Jan 2026 - Mar 2026) - Note: Dates seem futuristic or inconsistent with \"Sep 2025\", but I must stick to the provided text.\n    *   System Administrator (Sheraton, May 2025 - Oct 2025).\n*   **Education:** Student in Hotel/Restaurant business (2024 - Present).\n*   **Languages:** Ukrainian/Russian (Native), English (B2).\n*   **Location:** Kyiv, Ukraine.\n\n**Job Details:**\n*   **Company:** EveryMatrix.\n*   **Role:** AI Engineer.\n*   **Requirements:** Python, LLMs, RAG, Vector DBs, AI Agents, REST APIs, Microservices, Docker, CI/CD, Cloud (GCP), 3+ years experience.\n\n**Quiz Question:**\n1.  `[name=answer_151040] Так` (This looks like a Yes/No question or a confirmation, but the text provided is literally just \"Так\" (Yes) in the prompt's list of questions. Wait, looking closer at the prompt structure: `1. [name=answer_151040] Так`. It seems the question text is missing or it's a placeholder, or perhaps the user pasted the answer \"Так\" into the question field by mistake, or the question is \"Do you agree?\" and the user provided the answer \"Так\" in the prompt text as an example? No, usually these prompts contain the question text. Let me re-read carefully: \"Recruiter Quiz Questions: 1. [name=answer_151040] Так\". This is ambiguous. Is \"Так\" the question? Or is the question missing and \"Так\" is part of the label?\n    *   *Hypothesis 1:* The question is missing, and \"Так\" is a typo or artifact.\n    *   *Hypothesis 2:* The question is \"Так\" (Yes) - maybe asking if I confirm something?\n    *   *Hypothesis 3:* The user copied the quiz interface where the default answer or a previous answer was \"Так\".\n    *   *Hypothesis 4:* The question is actually \"Так\" (meaning \"So\" or \"Yes\" in Russian/Ukrainian), but that doesn't make sense as a question.\n\n    *Let's look at the context.* The user says: \"Answer each quiz question professionally...\". The input shows: `1. [name=answer_151040] Так`.\n    If I treat \"Так\" as the question, it's unanswerable.\n    However, often in these scraped quiz formats, the text after the name is the question. If the text is \"Так\", it might be a truncated question.\n    *Alternative interpretation:* The user might have meant to paste a question but pasted \"Так\" instead.\n    *Another possibility:* The question is \"Are you willing to relocate?\" or \"Do you have experience?\" and the user accidentally pasted the answer they want me to give? No, the prompt says \"Answer each quiz question...\".\n\n    Let's look at the prompt again. `Recruiter Quiz Questions: 1. [name=answer_151040] Так`.\n    Maybe the question is simply missing. But I must provide a JSON.\n    Let's assume the question is a standard screening question often found in these quizzes, or perhaps the user made a mistake.\n    *Wait*, looking at the prompt again, maybe the user *is* the recruiter testing me, or the user copied the text wrong.\n    However, there is a high chance the question is actually missing and \"Так\" is just noise.\n    BUT, if I look at the structure `[name=answer_151040]`, usually the text follows.\n    Let's consider if \"Так\" is the question. In Russian/Ukrainian \"Так\" means \"Yes\" or \"So\".\n    Maybe the question is \"Yes?\" (Confirmation of availability?).\n\n    Let's try to find a logical question that fits the context of an AI Engineer application. Often there is a question like \"Are you willing to work in Lviv?\" or \"Do you have 3+ years experience?\".\n    Since I cannot invent a question, I have to deal with what is there.\n    If the text is literally \"Так\", and I must answer it...\n    Maybe the question is \"Do you confirm your data?\" and the text \"Так\" is the button label?\n    \n    *Let's reconsider the prompt source.* The prompt is generated by a user simulating a scenario.\n    \"Recruiter Quiz Questions: 1. [name=answer_151040] Так\"\n    It is highly likely the user made a copy-paste error and the actual question is missing.\n    However, I must output a JSON.\n    If I look at the CV, Kyrylo is in Kyiv. The job is in Lviv (Ukraine). The job requires relocation or commuting (Hybrid/Office).\n    Maybe the question was \"Are you willing to relocate?\" and the answer \"Так\" was pasted in.\n    \n    *Decision:* I will treat \"Так\" as a placeholder or a malformed input. I will provide a generic professional confirmation or address the likely intent (confirmation of interest/availability).\n    *Actually*, looking at the prompt instructions: \"Answer each quiz question...\".\n    If the question is just \"Так\", it's impossible to answer meaningfully.\n    *However*, if I look at the provided text `1. [name=answer_151040] Так`, maybe \"Так\" *is* the answer the user *wants* me to put? No, the user says \"Your task: Answer each quiz question\".\n    \n    Let's look at the possibility that the question is missing and I should just answer \"Yes\" or \"Confirmed\" based on the persona's willingness.\n    Or, perhaps the question is \"Так\" (Yes) as in \"Is this correct?\".\n    \n    Let's try to interpret \"Так\" as a typo for a question like \"Task\" or something? Unlikely.\n    \n    Let's assume the question is \"Do you agree to the terms?\" or \"Are you available?\".\n    Given the CV, Kyrylo is a freelancer in Kyiv. The job is in Lviv. The job description mentions \"We are looking for... to join our team in Lviv\".\n    If the question is \"Are you willing to work in Lviv?\", the answer would be \"Yes, I am open to relocation or hybrid work in Lviv.\"\n    \n    *Wait*, let's look at the prompt again. `1. [name=answer_151040] Так`.\n    Could \"Так\" be the *question*? In Russian \"Так\" can be an interjection.\n    Maybe the question is \"Так?\" (So? / And?).\n    \n    Let's look at the provided text again. It's very short.\n    Maybe the user meant to paste a question but pasted the answer key?\n    \n    *Safe bet:* Since I cannot ask for clarification, and I must return JSON, I will assume the question is a standard confirmation question (e.g., \"Do you confirm your interest?\") or I will answer \"Yes\" (which corresponds to \"Так\") if the question implies a Yes/No answer.\n    \n    *However*, looking at the persona's profile (Kyrylo Kirov), he is an AI expert.\n    Let's assume the question is \"Are you willing to relocate to Lviv?\" (Common for EveryMatrix Lviv roles).\n    Or maybe the question is \"Do you have experience with Python?\".\n    \n    *Let's look at the text \"Так\" again.* It is Ukrainian/Russian for \"Yes\".\n    Is it possible the question is \"Yes?\" (As in \"Can you do this?\").\n    \n    Let's try to find a pattern. Often these quizzes have a question like \"Are you ready to complete the test?\".\n    \n    *Alternative strategy:* If the input is garbage, I should probably output a polite placeholder or a generic \"Yes, I am interested.\"\n    BUT, the instruction says \"Answer each quiz question... truthfully based on your CV\".\n    If the question is \"Так\", and I answer \"Yes\", it's tautological.\n    \n    Let's assume the question is missing and the user made a mistake. I will provide a generic affirmative response suitable for a job application quiz, likely confirming availability or interest.\n    \n    *Wait*, let's look at the prompt again.\n    `1. [name=answer_151040] Так`\n    Maybe the question is \"Так\" (Yes) and the answer is expected to be \"Так\" (Yes)?\n    Or maybe the question is \"Are you Kyrylo Kirov?\" -> \"Yes\".\n    \n    Let's assume the question is \"Do you confirm your consent to process personal data?\" (Standard in Ukraine).\n    \n    Let's go with a generic \"Yes\" or \"Confirmed\" in the language of the question (Russian/Ukrainian).\n    The text \"Так\" is Russian/Ukrainian.\n    So I will answer in Russian/Ukrainian.\n    \"Да\" (Yes) or \"Подтверждаю\" (I confirm).\n    \n    *Refined thought:* The prompt says \"Write each answer in the SAME LANGUAGE as the question itself\".\n    The question text is \"Так\". This is Russian/Ukrainian.\n    So I will answer in Russian.\n    If the question is \"Так\" (which implies a confirmation), I will answer \"Да\" (Yes).\n    \n    *Wait*, is it possible the question is \"Так\" as in \"So?\" and the user wants me to continue? No, it's a quiz.\n    \n    Let's assume the question is \"Are you willing to work in Lviv?\" (Context: EveryMatrix Lviv).\n    Answer: \"Yes, I am open to relocation to Lviv for this role.\" (Russian: \"Да, я открыт к переезду во Львов для этой роли.\")\n    \n    Let's assume the question is \"Do you have 3+ years experience?\".\n    Answer: \"Yes, I have over 3 years of experience in AI engineering.\" (Russian: \"Да, у меня более 3 лет опыта в AI-инжиниринге.\")\n    \n    Since the question text is ambiguous (\"Так\"), I will provide a generic affirmative statement that fits a job application context, likely confirming interest or availability.\n    \n    \"Да, я подтверждаю своё участие и заинтересованность в позиции.\" (Yes, I confirm my participation and interest in the position.)\n    \n    *Self-Correction:* The prompt might be a trick. \"Так\" might be the *answer* the user wants me to format? No, \"Your task: Answer each quiz question\".\n    \n    Let's look at the CV. Kyrylo is in Kyiv. Job is Lviv.\n    Maybe the question is \"Ready to move?\".\n    \n    Let's try to be safe. I will answer \"Да\" (Yes) and add a brief context if possible, but the instruction says \"concise — 1-3 sentences\".\n    \n    If I look at the provided text: `1. [name=answer_151040] Так`.\n    It looks like a label.\n    I will assume the question is \"Do you agree?\" or \"Are you available?\".\n    Answer: \"Да, я согласен и готов приступить к работе.\" (Yes, I agree and am ready to start work).\n    \n    *Actually*, looking at the CV, the candidate is a freelancer.\n    Maybe the question is \"Are you willing to work in an office?\".\n    Job description: \"Hybrid work schedule... office-based work\".\n    Answer: \"Да, я готов работать по гибридному графику и посещать офис.\" (Yes, I am ready to work hybrid and visit the office).\n    \n    Given the ambiguity, I will provide a general affirmative response in Russian.\n    \"Да, я подтверждаю.\" (Yes, I confirm).\n    \n    *Wait*, let's check if \"Так\" could be a typo for a specific word.\n    Maybe \"Task\"? No.\n    \n    Let's assume the question is missing and the user wants me to acknowledge the prompt or just fill the JSON.\n    I will provide a generic \"Yes\" in Russian.\n    \n    *Final Decision:* The question text is likely \"Так\" (Yes) acting as a placeholder or a copy-paste error for a confirmation question. I will answer \"Да, подтверждаю.\" (Yes, I confirm) in Russian.\n\n    *Wait*, looking at the prompt again, the user provided the CV for \"Jane Smith\" in the profile header but the CV content is for \"Kirillo Kirov\".\n    \"Candidate Profile: Name: Jane Smith ... Resume/CV: # КИРИЛЛО КІРОВ\".\n    The instructions say: \"You are Kyrylo Kirov... Answer each quiz question... based on your CV\".\n    So I ignore \"Jane Smith\" and use \"Kirillo Kirov\".\n    \n    The question is `[name=answer_151040] Так`.\n    I will treat \"Так\" as the question text (even if it's weird).\n    Language: Russian (or Ukrainian, \"Так\" is common in both, but the CV uses \"Профессиональный профиль\" - Russian).\n    Answer: \"Да.\" (Yes).\n    \n    Let's try to make it slightly more professional. \"Да, я готов.\" (Yes, I am ready).\n    \n    Let's check if there are any other questions. No, just one.\n    \n    Let's verify the JSON structure.\n    `{\"answers\": [{\"name\": \"answer_151040\", \"answer\": \"text\"}]}`\n    \n    Let's refine the answer.\n    If the question is \"Так\", it might be asking \"Is that so?\" or \"Correct?\".\n    I will answer: \"Да, всё верно.\" (Yes, that is correct).\n    \n    *Alternative:* Maybe the question is \"Так\" meaning \"So?\" (as in \"So, tell me about yourself?\"). No, that's too long.\n    \n    Let's assume it's a standard checkbox question \"Are you willing to relocate?\" which is common for EveryMatrix Lviv.\n    Answer: \"Да, я открыт к переезду во Львов.\" (Yes, I am open to relocating to Lviv).\n    This is a safe, professional guess based on the job description (\"join our team in Lviv\").\n    \n    However, if the question is literally just \"Так\", answering about relocation might be too specific if the question was about something else.\n    But \"Так\" usually implies a confirmation.\n    \n    Let's go with a generic confirmation.\n    \"Да, я подтверждаю свою заинтересованность и готовность к работе.\" (Yes, I confirm my interest and readiness to work).\n    \n    Wait, the prompt says \"Answer each quiz question... truthfully based on your CV\".\n    If the question is \"Так\", and I answer \"Yes\", it's circular.\n    \n    Let's look at the prompt again.\n    `1. [name=answer_151040] Так`\n    Maybe the user meant `1. [name=answer_151040] Do you agree?` and pasted the answer \"Так\" from a previous attempt?\n    Or maybe the question is \"Так\" (Yes) and the answer is \"Так\" (Yes) - i.e. \"Is this true?\" -> \"Yes\".\n    \n    I will answer \"Да, это так.\" (Yes, that is so).\n    \n    Let's try to be helpful. If I were Kyrylo, and I saw \"Так\" as a question, I'd be confused. But I have to answer.\n    I will answer \"Да\" (Yes) in Russian.\n    \n    Let's check the language of the CV. It is mixed (Ukrainian header, Russian body).\n    \"Так\" is valid in both.\n    I will answer in Russian as the body of the CV is in Russian.\n    \n    Answer: \"Да, я подтверждаю.\"\n    \n    Let's double check the job description requirements.\n    \"3+ years of hands-on experience\".\n    CV says \"Sep 2025 — Present\" for Freelance. \"May 2025 — Oct 2025\" for SysAdmin. \"Jan 2026 — Mar 2026\" for Marketer.\n    Wait, the dates in the CV are in the future (2025, 2026).\n    \"Сентябрь 2025 — Настоящее время\" (September 2025 - Present).\n    \"Январь 2026 — Март 2026\" (January 2026 - March 2026).\n    \"07.05.2025 — 10.10.2025\".\n    This is a \"future\" CV or the current date in the simulation is late 2026.\n    Or the user made a typo in the CV dates (meant 2023, 2024?).\n    If the current date is 2024 (real world), this CV is fake/future.\n    However, I must act as the candidate. If the CV says \"Sept 2025 - Present\", I assume I am currently in late 2025 or 2026.\n    The experience listed under \"AI Agent Architect\" seems substantial (Voice agent, Legal agent, Support agent).\n    The prompt asks me to answer \"truthfully based on your CV\".\n    So I assume I have the experience listed.\n    \n    Back to the question \"Так\".\n    I will stick to \"Да, подтверждаю.\" (Yes, I confirm).\n    \n    Let's check if \"Так\" could be a name. \"Tak\"? No.\n    \n    Okay, I will provide the JSON.\n    \n    One more check: Is it possible the question is \"Так\" (So) and the user wants me to continue the sentence? No, it's a quiz field.\n    \n    I will answer: \"Да, я готов.\" (Yes, I am ready).\n    \n    Let's try to interpret \"Так\" as \"Yes\" (the question is \"Yes?\"). Answer: \"Да\".\n    \n    Let's go with: \"Да, я согласен.\" (Yes, I agree).\n    \n    Final check on language: \"Так\" is Russian/Ukrainian. I will answer in Russian.\n    \n    JSON structure:\n    ```json\n    {\n      \"answers\": [\n        {\n          \"name\": \"answer_151040\",\n          \"answer\": \"Да, я подтверждаю.\"\n        }\n      ]\n    }\n    ```\n    \n    Wait, if the question is \"Так\" (Yes), maybe it's a question about the location? \"Lviv?\" -> \"Yes\".\n    I'll stick to the generic confirmation. It's the safest bet for a malformed prompt.\n    \n    Actually, looking at the CV, the location is Kyiv. Job is Lviv.\n    Maybe the question is \"Так\" (So/Yes) regarding relocation?\n    \n    Let's assume the question is \"Are you willing to relocate?\".\n    Answer: \"Да, я готов рассмотреть переезд во Львов.\" (Yes, I am ready to consider relocation to Lviv).\n    \n    But if the question is \"Do you have 3+ years experience?\", answering about relocation is wrong.\n    \n    Let's look at the CV again.\n    \"3+ years of hands-on experience\"")
+[2026-07-05T16:05:36+03:00] [PROCESS_JOB_ITEM] Fetching details for 832407-ai-engineer-creative-performance-automation
+[2026-07-05T16:05:37+03:00] [EVALUATE] Evaluating role at Zeely...
+[2026-07-05T16:06:10+03:00] [EVAL_RESULT] Score: 4.6/5 | Archetype: AI Platform / LLMOps Engineer (with Agentic/Automation elements) | Legitimacy: Proceed with Caution
+[2026-07-05T16:06:10+03:00] [APPLY_START] Score 4.6 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:06:30+03:00] [CV_GENERATE] Generating tailored CV PDF for Zeely
+[2026-07-05T16:06:39+03:00] [ERROR] Custom CV generation failed for Zeely: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T16:06:39+03:00] [PROCESS_JOB_ITEM] Fetching details for 824826-ai-engineer-image-video-generation
+[2026-07-05T16:06:40+03:00] [EVALUATE] Evaluating role at Zeely...
+[2026-07-05T16:07:14+03:00] [EVAL_RESULT] Score: 4.4/5 | Archetype: Agentic / Automation (hybrid with AI Platform / LLMOps) | Legitimacy: High Confidence
+[2026-07-05T16:07:14+03:00] [APPLY_START] Score 4.4 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:07:34+03:00] [CV_GENERATE] Generating tailored CV PDF for Zeely
+[2026-07-05T16:07:43+03:00] [ERROR] Custom CV generation failed for Zeely: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T16:07:43+03:00] [PROCESS_JOB_ITEM] Fetching details for 830253-ai-engineer
+[2026-07-05T16:07:44+03:00] [EVALUATE] Evaluating role at Pronomy...
+[2026-07-05T16:08:18+03:00] [EVAL_RESULT] Score: 4.6/5 | Archetype: Agentic / Automation | Legitimacy: Proceed with Caution
+[2026-07-05T16:08:18+03:00] [APPLY_START] Score 4.6 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:08:38+03:00] [CV_GENERATE] Generating tailored CV PDF for Pronomy
+[2026-07-05T16:08:46+03:00] [ERROR] Custom CV generation failed for Pronomy: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T16:08:46+03:00] [PROCESS_JOB_ITEM] Fetching details for 728342-ai-developer
+[2026-07-05T16:08:46+03:00] [ERROR] GetJobDetails failed for 728342-ai-developer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:08:46+03:00] [PROCESS_JOB_ITEM] Fetching details for 805836-ai-solutions-specialist-ai-engineer
+[2026-07-05T16:08:46+03:00] [ERROR] GetJobDetails failed for 805836-ai-solutions-specialist-ai-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:08:46+03:00] [PROCESS_JOB_ITEM] Fetching details for 831142-middle-ai-engineer
+[2026-07-05T16:08:47+03:00] [EVALUATE] Evaluating role at Excelente Ukraine...
+[2026-07-05T16:09:20+03:00] [EVAL_RESULT] Score: 2.8/5 | Archetype: Agentic / Automation (hybrid with AI Platform / LLMOps) | Legitimacy: Proceed with Caution
+[2026-07-05T16:09:21+03:00] [SKIP_LOW_SCORE] Score (2.8) below threshold (3.5). Skipping apply.
+[2026-07-05T16:09:21+03:00] [PROCESS_JOB_ITEM] Fetching details for 831176-ai-specialist
+[2026-07-05T16:09:21+03:00] [EVALUATE] Evaluating role at De Novo...
+[2026-07-05T16:09:55+03:00] [EVAL_RESULT] Score: 3.4/5 | Archetype: Agentic / Automation (hybrid with AI Platform / LLMOps) | Legitimacy: Proceed with Caution
+[2026-07-05T16:09:55+03:00] [SKIP_LOW_SCORE] Score (3.4) below threshold (3.5). Skipping apply.
+[2026-07-05T16:09:55+03:00] [PROCESS_JOB_ITEM] Fetching details for 817794-ai-ml-engineer
+[2026-07-05T16:09:56+03:00] [EVALUATE] Evaluating role at OBRIO...
+[2026-07-05T16:10:31+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T16:10:31+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:10:31+03:00] [PROCESS_JOB_ITEM] Fetching details for 814368-ai-integration-specialist
+[2026-07-05T16:10:31+03:00] [ERROR] GetJobDetails failed for 814368-ai-integration-specialist: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:10:31+03:00] [PROCESS_JOB_ITEM] Fetching details for 834173-ai-automation-engineer
+[2026-07-05T16:10:31+03:00] [ERROR] GetJobDetails failed for 834173-ai-automation-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:10:31+03:00] [PROCESS_JOB_ITEM] Fetching details for 786976-ai-optimization-specialist-ai-integrator
+[2026-07-05T16:10:32+03:00] [ERROR] GetJobDetails failed for 786976-ai-optimization-specialist-ai-integrator: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:10:32+03:00] [PROCESS_JOB_ITEM] Fetching details for 833790-ai-integration-engineer
+[2026-07-05T16:10:32+03:00] [ERROR] GetJobDetails failed for 833790-ai-integration-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:10:32+03:00] [PROCESS_JOB_ITEM] Fetching details for 832565-ai-solutions-and-innovation-specialist
+[2026-07-05T16:10:32+03:00] [EVALUATE] Evaluating role at LITSLINK...
+[2026-07-05T16:11:06+03:00] [EVAL_RESULT] Score: 4.3/5 | Archetype: AI Solutions Architect (Hybrid with Technical AI PM) | Legitimacy: Proceed with Caution
+[2026-07-05T16:11:06+03:00] [APPLY_START] Score 4.3 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:11:26+03:00] [CV_GENERATE] Generating tailored CV PDF for LITSLINK
+[2026-07-05T16:11:34+03:00] [ERROR] Custom CV generation failed for LITSLINK: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T16:11:34+03:00] [PROCESS_JOB_ITEM] Fetching details for 728342-ai-developer
+[2026-07-05T16:11:34+03:00] [ERROR] GetJobDetails failed for 728342-ai-developer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:11:34+03:00] [PROCESS_JOB_ITEM] Fetching details for 805836-ai-solutions-specialist-ai-engineer
+[2026-07-05T16:11:35+03:00] [ERROR] GetJobDetails failed for 805836-ai-solutions-specialist-ai-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T16:11:35+03:00] [PROCESS_JOB_ITEM] Fetching details for 817794-ai-ml-engineer
+[2026-07-05T16:11:35+03:00] [EVALUATE] Evaluating role at OBRIO...
+[2026-07-05T16:12:09+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: Agentic / Automation (secondary: AI Platform / LLMOps) | Legitimacy: Proceed with Caution
+[2026-07-05T16:12:09+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:12:29+03:00] [CV_GENERATE] Generating tailored CV PDF for OBRIO
+[2026-07-05T16:12:37+03:00] [ERROR] Custom CV generation failed for OBRIO: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T16:12:37+03:00] [PROCESS_JOB_ITEM] Fetching details for 830945-ai-python-engineer
+[2026-07-05T16:12:37+03:00] [EVALUATE] Evaluating role at Uvik Software...
+[2026-07-05T16:13:10+03:00] [EVAL_RESULT] Score: 4.1/5 | Archetype: Agentic / Automation | Legitimacy: High Confidence
+[2026-07-05T16:13:10+03:00] [APPLY_START] Score 4.1 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:13:30+03:00] [CV_GENERATE] Generating tailored CV PDF for Uvik Software
+[2026-07-05T16:13:39+03:00] [ERROR] Custom CV generation failed for Uvik Software: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T16:13:39+03:00] [PROCESS_JOB_ITEM] Fetching details for 830767-ai-engineer-production-llm-rag-agents
+[2026-07-05T16:13:39+03:00] [EVALUATE] Evaluating role at Nova Digital...
+[2026-07-05T16:14:14+03:00] [EVAL_RESULT] Score: 3.8/5 | Archetype: Agentic / Automation | Legitimacy: Proceed with Caution
+[2026-07-05T16:14:14+03:00] [APPLY_START] Score 3.8 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:14:34+03:00] [CV_GENERATE] Generating tailored CV PDF for Nova Digital
+[2026-07-05T16:14:42+03:00] [ERROR] Custom CV generation failed for Nova Digital: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T16:14:42+03:00] [PROCESS_JOB_ITEM] Fetching details for 830607-python-ai-engineer-llm-applied-ai
+[2026-07-05T16:14:42+03:00] [EVALUATE] Evaluating role at "!FEST" Lviv...
+[2026-07-05T16:15:17+03:00] [EVAL_RESULT] Score: 3.9/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: Proceed with Caution
+[2026-07-05T16:15:17+03:00] [APPLY_START] Score 3.9 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:15:37+03:00] [CV_GENERATE] Generating tailored CV PDF for "!FEST" Lviv
+[2026-07-05T16:15:45+03:00] [ERROR] Custom CV generation failed for "!FEST" Lviv: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T16:15:45+03:00] [PROCESS_JOB_ITEM] Fetching details for 781041-ai-ml-engineer-build-autonomous-reasoning-age
+[2026-07-05T16:15:45+03:00] [EVALUATE] Evaluating role at VeraData...
+[2026-07-05T16:16:20+03:00] [EVAL_RESULT] Score: 4.1/5 | Archetype: Agentic / Automation (Hybrid with LLMOps) | Legitimacy: Proceed with Caution
+[2026-07-05T16:16:21+03:00] [APPLY_START] Score 4.1 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:32:32+03:00] [CV_GENERATE] Generating tailored CV PDF for VeraData
+[2026-07-05T16:32:40+03:00] [ERROR] Custom CV generation failed for VeraData: failed running scripts/generate-cv-html.mjs: exit status 1
+[2026-07-05T16:32:40+03:00] [PROCESS_JOB_ITEM] Fetching details for 822941-ai-ml-engineer-nlp-senior-aicoe
+[2026-07-05T16:32:41+03:00] [EVALUATE] Evaluating role at Diia...
+[2026-07-05T16:33:15+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: High Confidence
+[2026-07-05T16:33:15+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T16:33:35+03:00] [CV_GENERATE] Generating tailored CV PDF for Diia
+[2026-07-05T16:33:42+03:00] [ERROR] Custom CV generation failed for Diia: generated CV contains unresolved template placeholders (found '{{' or '}}')
+[2026-07-05T16:33:42+03:00] [PROCESS_JOB_ITEM] Fetching details for 830114-junior-strong-middle-ai-ml-engineer
+[2026-07-05T16:33:42+03:00] [EVALUATE] Evaluating role at Linkup ST...
+[2026-07-05T17:54:08+03:00] [ERROR] EvaluateJob failed for Linkup ST: evaluation failed: LLM call failed: Ollama API error: HTTP 502 — {"error":{"message":"Provider error (Liquid LFM 2.5 1.2B (free)): OpenRouter returned 200 with a non-JSON body — the endpoint is not OpenAI-compatible. Check the base URL (for Ollama use [redacted-url] for llama.cpp/vLLM/LM Studio the /v1 path).","type":"provider_error"}}
+[2026-07-05T18:47:28+03:00] [PROCESS_JOB_ITEM] Fetching details for 808679-video-designer-ai-driven-content
+[2026-07-05T18:47:28+03:00] [EVALUATE] Evaluating role at Brynextech...
+[2026-07-05T19:05:57+03:00] [EVAL_RESULT] Score: 2.2/5 | Archetype: None (Video Design) | Legitimacy: Proceed with Caution
+[2026-07-05T19:05:57+03:00] [SKIP_LOW_SCORE] Score (2.2) below threshold (3.5). Skipping apply.
+[2026-07-05T19:05:57+03:00] [PROCESS_JOB_ITEM] Fetching details for 835512-lead-generation-manager-younet-ai
+[2026-07-05T19:05:58+03:00] [EVALUATE] Evaluating role at ...
+[2026-07-05T20:13:48+03:00] [ERROR] EvaluateJob failed for : evaluation failed: LLM call failed: Ollama API error: HTTP 502 — {"error":{"message":"Provider error (Nemotron 3 Nano 30B (free)): OpenRouter returned 200 with a non-JSON body — the endpoint is not OpenAI-compatible. Check the base URL (for Ollama use [redacted-url] for llama.cpp/vLLM/LM Studio the /v1 path).","type":"provider_error"}}
+[2026-07-05T20:22:15+03:00] [PROCESS_JOB_ITEM] Fetching details for 835511-meta-ads-media-buyer-build-our-paid-social-ch
+[2026-07-05T20:22:16+03:00] [EVALUATE] Evaluating role at Alba Talent...
+[2026-07-05T20:23:08+03:00] [EVAL_RESULT] Score: 2.3/5 | Archetype: Publicidad Digital (Meta Ads) | Legitimacy: Proceed with Caution
+[2026-07-05T20:23:08+03:00] [SKIP_LOW_SCORE] Score (2.3) below threshold (3.5). Skipping apply.
+[2026-07-05T20:23:08+03:00] [PROCESS_JOB_ITEM] Fetching details for 835508-ai-seo-specialist-backlinks-directories-haro-
+[2026-07-05T20:23:08+03:00] [EVALUATE] Evaluating role at Alba Talent...
+[2026-07-05T20:25:06+03:00] [EVAL_RESULT] Score: 2.0/5 | Archetype: None (SEO/Content Specialist - not in target archetypes) | Legitimacy: High Confidence
+[2026-07-05T20:25:07+03:00] [SKIP_LOW_SCORE] Score (2.0) below threshold (3.5). Skipping apply.
+[2026-07-05T23:17:39+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T23:17:39+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T23:17:39+03:00] [PROCESS_JOB_ITEM] Fetching details for 835217-ai-product-engineer-ai-solutions-engineer
+[2026-07-05T23:17:40+03:00] [ERROR] GetJobDetails failed for 835217-ai-product-engineer-ai-solutions-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T23:17:40+03:00] [PROCESS_JOB_ITEM] Fetching details for 835208-ai-engineer
+[2026-07-05T23:17:40+03:00] [EVALUATE] Evaluating role at Kadroland Academy...
+[2026-07-05T23:18:02+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: AI Platform / LLMOps | Legitimacy: High Confidence
+[2026-07-05T23:18:02+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T23:18:02+03:00] [CV_GENERATE] Generating tailored CV PDF for Kadroland Academy
+[2026-07-05T23:18:18+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for Kadroland Academy
+[2026-07-05T23:18:49+03:00] [APPLY_SUBMIT] Submitting application to Kadroland Academy...
+[2026-07-05T23:18:50+03:00] [APPLY_SUCCESS] Successfully applied to Kadroland Academy
+[2026-07-05T23:18:50+03:00] [PROCESS_JOB_ITEM] Fetching details for 835087-ai-ml-engineer
+[2026-07-05T23:18:50+03:00] [ERROR] GetJobDetails failed for 835087-ai-ml-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T23:18:50+03:00] [PROCESS_JOB_ITEM] Fetching details for 798849-genai-developer
+[2026-07-05T23:18:51+03:00] [EVALUATE] Evaluating role at Lagoteam...
+[2026-07-05T23:19:16+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: AI Platform / LLMOps | Legitimacy: Proceed with Caution
+[2026-07-05T23:19:17+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T23:19:17+03:00] [CV_GENERATE] Generating tailored CV PDF for Lagoteam
+[2026-07-05T23:41:34+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T23:41:34+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T23:41:34+03:00] [PROCESS_JOB_ITEM] Fetching details for 835217-ai-product-engineer-ai-solutions-engineer
+[2026-07-05T23:41:35+03:00] [ERROR] GetJobDetails failed for 835217-ai-product-engineer-ai-solutions-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T23:41:35+03:00] [PROCESS_JOB_ITEM] Fetching details for 835087-ai-ml-engineer
+[2026-07-05T23:41:35+03:00] [ERROR] GetJobDetails failed for 835087-ai-ml-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T23:41:35+03:00] [PROCESS_JOB_ITEM] Fetching details for 830377-ai-ml-research-scientist
+[2026-07-05T23:41:35+03:00] [EVALUATE] Evaluating role at Commit Offshore...
+[2026-07-05T23:41:51+03:00] [EVAL_RESULT] Score: 2.0/5 | Archetype: AI Research Scientist | Legitimacy: Suspicious
+[2026-07-05T23:41:51+03:00] [SKIP_LOW_SCORE] Score (2.0) below threshold (3.5). Skipping apply.
+[2026-07-05T23:41:51+03:00] [PROCESS_JOB_ITEM] Fetching details for 834930-ai-ml-engineer-middle-defence-ai-center-a1
+[2026-07-05T23:41:52+03:00] [EVALUATE] Evaluating role at Міністерство Оборони України...
+[2026-07-05T23:42:17+03:00] [EVAL_RESULT] Score: 4.5/5 | Archetype: AI Platform / LLMOps / MLOps | Legitimacy: High Confidence
+[2026-07-05T23:42:17+03:00] [APPLY_START] Score 4.5 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T23:42:17+03:00] [CV_GENERATE] Generating tailored CV PDF for Міністерство Оборони України
+[2026-07-05T23:42:36+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for Міністерство Оборони України
+[2026-07-05T23:42:51+03:00] [APPLY_SUBMIT] Submitting application to Міністерство Оборони України...
+[2026-07-05T23:42:52+03:00] [APPLY_SUCCESS] Successfully applied to Міністерство Оборони України
+[2026-07-05T23:42:52+03:00] [PROCESS_JOB_ITEM] Fetching details for 776935-ai-ml-engineer
+[2026-07-05T23:42:53+03:00] [EVALUATE] Evaluating role at WebLegends...
+[2026-07-05T23:43:20+03:00] [EVAL_RESULT] Score: 4.2/5 | Archetype: AI/ML Engineer | Legitimacy: Proceed with Caution
+[2026-07-05T23:43:20+03:00] [APPLY_START] Score 4.2 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T23:43:20+03:00] [CV_GENERATE] Generating tailored CV PDF for WebLegends
+[2026-07-05T23:51:37+03:00] [PROCESS_JOB_ITEM] Fetching details for 756942-data-scientist-llm-langchain-rag
+[2026-07-05T23:51:37+03:00] [ERROR] GetJobDetails failed for 756942-data-scientist-llm-langchain-rag: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T23:51:37+03:00] [PROCESS_JOB_ITEM] Fetching details for 835217-ai-product-engineer-ai-solutions-engineer
+[2026-07-05T23:51:38+03:00] [ERROR] GetJobDetails failed for 835217-ai-product-engineer-ai-solutions-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T23:51:38+03:00] [PROCESS_JOB_ITEM] Fetching details for 835087-ai-ml-engineer
+[2026-07-05T23:51:38+03:00] [ERROR] GetJobDetails failed for 835087-ai-ml-engineer: job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)
+[2026-07-05T23:51:38+03:00] [PROCESS_JOB_ITEM] Fetching details for 832671-ai-website-designer-builder
+[2026-07-05T23:51:38+03:00] [EVALUATE] Evaluating role at dNovo Group...
+[2026-07-05T23:52:02+03:00] [EVAL_RESULT] Score: 3.8/5 | Archetype: AI Solutions Architect | Legitimacy: Proceed with Caution
+[2026-07-05T23:52:02+03:00] [APPLY_START] Score 3.8 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T23:52:02+03:00] [CV_GENERATE] Generating tailored CV PDF for dNovo Group
+[2026-07-05T23:52:21+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for dNovo Group
+[2026-07-05T23:52:30+03:00] [APPLY_SUBMIT] Submitting application to dNovo Group...
+[2026-07-05T23:52:31+03:00] [APPLY_SUCCESS] Successfully applied to dNovo Group
+[2026-07-05T23:52:31+03:00] [PROCESS_JOB_ITEM] Fetching details for 834647-full-stack-ai-engineer-ml-engineer
+[2026-07-05T23:52:31+03:00] [EVALUATE] Evaluating role at Black Horse...
+[2026-07-05T23:52:54+03:00] [EVAL_RESULT] Score: 4.4/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: High Confidence
+[2026-07-05T23:52:55+03:00] [APPLY_START] Score 4.4 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T23:52:55+03:00] [CV_GENERATE] Generating tailored CV PDF for Black Horse
+[2026-07-05T23:53:01+03:00] [ERROR] Custom CV generation failed for Black Horse: failed running scripts/generate-cv-html.mjs: signal: interrupt
+[2026-07-05T23:53:01+03:00] [PROCESS_JOB_ITEM] Fetching details for 834612-python-ai-engineer
+[2026-07-05T23:53:01+03:00] [EVALUATE] Evaluating role at Antagosoft...
+[2026-07-05T23:53:22+03:00] [EVAL_RESULT] Score: 4.5/5 | Archetype: AI Platform / LLMOps Engineer | Legitimacy: High Confidence
+[2026-07-05T23:53:22+03:00] [APPLY_START] Score 4.5 >= 3.5. Proceeding to auto-apply.
+[2026-07-05T23:53:22+03:00] [CV_GENERATE] Generating tailored CV PDF for Antagosoft
+[2026-07-05T23:53:41+03:00] [COVER_LETTER_GENERATE] Generating Cover Letter for Antagosoft
+[2026-07-05T23:53:50+03:00] [APPLY_SUBMIT] Submitting application to Antagosoft...
+[2026-07-05T23:53:51+03:00] [APPLY_SUCCESS] Successfully applied to Antagosoft

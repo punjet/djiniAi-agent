@@ -10,6 +10,7 @@ require (
 	github.com/imroc/req/v3 v3.57.0
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.10.2
+	github.com/stretchr/testify v1.11.1
 	google.golang.org/api v0.186.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -24,6 +25,7 @@ require (
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-json-experiment/json v0.0.0-20260214004413-d219187c3433 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
@@ -42,6 +44,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.57.1 // indirect
 	github.com/refraction-networking/utls v1.8.1 // indirect

@@ -1,0 +1,43 @@
+package notify
+
+import (
+	"os"
+	"testing"
+	"time"
+)
+
+func TestTelegramBot(t *testing.T) {
+	// Temporarily set env vars
+	oldToken := os.Getenv("TG_BOT_TOKEN")
+	defer os.Setenv("TG_BOT_TOKEN", oldToken)
+
+	os.Setenv("TG_BOT_TOKEN", "mock-token")
+
+	bot := NewTelegramBot()
+	
+	cmds := map[string]func(*TGMessage){
+		"/test": func(msg *TGMessage) {},
+	}
+	bot.Commands(cmds)
+
+	bot.SetLastSummary("hello summary")
+	if bot.GetLastSummary() != "hello summary" {
+		t.Errorf("expected summary to be 'hello summary'")
+	}
+
+	bot.Start()
+	time.Sleep(100 * time.Millisecond) // let goroutine run a bit
+	bot.Stop()
+	
+	// Double stop should be safe
+	bot.Stop()
+	
+	// PanicStop should be safe
+	bot.PanicStop()
+
+	// start and stop without token
+	os.Setenv("TG_BOT_TOKEN", "")
+	bot2 := NewTelegramBot()
+	bot2.Start()
+	bot2.Stop()
+}

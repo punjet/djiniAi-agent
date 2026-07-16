@@ -1,0 +1,50 @@
+{
+  "schema_version": 2,
+  "active_work_id": "tg-dashboard-001",
+  "works": {
+    "inbox-robustness-001": {
+      "work_id": "inbox-robustness-001",
+      "active_plan": ".omo/plans/inbox-robustness.md",
+      "plan_name": "inbox-robustness",
+      "session_ids": [
+        "codex:current"
+      ],
+      "status": "completed",
+      "worktree_path": null,
+      "session_origins": {}
+    },
+    "tg-dashboard-001": {
+      "work_id": "tg-dashboard-001",
+      "active_plan": ".omo/plans/tg-dashboard.md",
+      "plan_name": "tg-dashboard",
+      "session_ids": [
+        "codex:ses_current_tg_dashboard",
+        "opencode:ses_09e8ae1edffe2rhQpn7WhXf7qN",
+        "opencode:ses_09e873ba3ffe2HuIQQatNqCTv8"
+      ],
+      "status": "active",
+      "worktree_path": null,
+      "session_origins": {
+        "opencode:ses_09e873ba3ffe2HuIQQatNqCTv8": "direct"
+      },
+      "agent": "atlas",
+      "task_sessions": {},
+      "updated_at": "2026-07-14T16:32:12.430Z"
+    }
+  },
+  "session_ids": [
+    "codex:ses_current_tg_dashboard",
+    "opencode:ses_09e8ae1edffe2rhQpn7WhXf7qN",
+    "opencode:ses_09e873ba3ffe2HuIQQatNqCTv8"
+  ],
+  "session_origins": {
+    "opencode:ses_09e873ba3ffe2HuIQQatNqCTv8": "direct"
+  },
+  "task_sessions": {},
+  "active_plan": ".omo/plans/tg-dashboard.md",
+  "plan_name": "tg-dashboard",
+  "status": "active",
+  "agent": "atlas",
+  "worktree_path": null,
+  "updated_at": "2026-07-14T16:32:12.430Z"
+}

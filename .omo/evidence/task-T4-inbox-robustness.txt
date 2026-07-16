@@ -1,0 +1,12 @@
+FUNCTIONS ADDED:
+1. loadSeenIDs (in internal/pipeline/inbox.go)
+
+CHANGES MADE:
+- Guard added to ProcessInbox to skip already-processed dialogs using loadSeenIDs
+- Added TestLoadSeenIDs to internal/pipeline/inbox_test.go
+
+TEST OUTPUT:
+=== RUN   TestLoadSeenIDs
+--- PASS: TestLoadSeenIDs (0.00s)
+PASS
+ok  	djinni-bot-go/internal/pipeline	0.333s

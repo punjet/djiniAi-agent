@@ -361,7 +361,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 		time.Sleep(30 * time.Second)
 	}
 
-	res, err := pipeline.EvaluateJob(ctx, details.Description, cfg, engine, flagContextDir)
+	res, err := pipeline.EvaluateJob(ctx, details.Description, cfg, engine, flagContextDir, "evaluation")
 	if err != nil {
 		*errorCount++
 		logDeep("ERROR", fmt.Sprintf("EvaluateJob failed for %s: %v", details.Company, err))

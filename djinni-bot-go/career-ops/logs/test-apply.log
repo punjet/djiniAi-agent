@@ -1,0 +1,14 @@
+[2026-07-02T23:16:10+03:00] ========================================
+[2026-07-02T23:16:10+03:00] STARTING test-apply (dry-run: true)
+[2026-07-02T23:16:10+03:00] ERROR: Failed to load config: DJINNI_SESSIONID is missing
+To get these values:
+  1. Log in to https://djinni.co in your browser
+  2. Open DevTools (F12) → Application (Chrome) or Storage (Firefox) → Cookies
+  3. Copy the "sessionid" and "csrftoken" cookie values
+  4. Set them as environment variables:
+     export DJINNI_SESSIONID="<value>"
+     export DJINNI_CSRFTOKEN="<value>"
+  Or add them to a .env file in the project root:
+     DJINNI_SESSIONID="<value>"
+     DJINNI_CSRFTOKEN="<value>"
+

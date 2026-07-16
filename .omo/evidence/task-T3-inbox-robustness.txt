@@ -1,0 +1,4 @@
+=== RUN   TestGetThreadMessages
+--- PASS: TestGetThreadMessages (0.00s)
+PASS
+ok  	djinni-bot-go/internal/api	0.427s

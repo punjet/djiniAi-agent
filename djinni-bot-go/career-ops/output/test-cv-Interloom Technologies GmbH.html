@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jane Smith — CV</title>
+<style>
+  @font-face {
+    font-family: 'Space Grotesk';
+    src: url('./fonts/space-grotesk-latin.woff2') format('woff2');
+    font-weight: 300 700;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  @font-face {
+    font-family: 'Space Grotesk';
+    src: url('./fonts/space-grotesk-latin-ext.woff2') format('woff2');
+    font-weight: 300 700;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+
+  @font-face {
+    font-family: 'DM Sans';
+    src: url('./fonts/dm-sans-latin.woff2') format('woff2');
+    font-weight: 100 1000;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  @font-face {
+    font-family: 'DM Sans';
+    src: url('./fonts/dm-sans-latin-ext.woff2') format('woff2');
+    font-weight: 100 1000;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #1a1a2e;
+    background: #ffffff;
+    padding: 0;
+    margin: 0;
+  }
+
+  .page {
+    width: 100%;
+    max-width: a4;
+    margin: 0 auto;
+    padding: 2px 0;
+  }
+
+  /* === HEADER === */
+  .header {
+    margin-bottom: 20px;
+  }
+
+  .header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+    line-height: 1.1;
+  }
+
+  .header-gradient {
+    height: 2px;
+    background: linear-gradient(to right, hsl(187, 74%, 32%), hsl(270, 70%, 45%));
+    border-radius: 1px;
+    margin-bottom: 10px;
+  }
+
+  .contact-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10.5px;
+    line-height: 1.4;
+    color: #555;
+  }
+
+  .contact-row a {
+    color: #555;
+    text-decoration: none;
+  }
+
+  .contact-row .separator {
+    color: #ccc;
+  }
+
+  /* === SECTIONS === */
+  .section {
+    margin-bottom: 18px;
+  }
+
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: hsl(187, 74%, 32%);
+    border-bottom: 1.5px solid #e2e2e2;
+    padding-bottom: 4px;
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+
+  /* === PROFESSIONAL SUMMARY === */
+  .summary-text {
+    font-size: 11px;
+    line-height: 1.7;
+    color: #2f2f2f;
+  }
+
+  /* Links must never break across lines */
+  a {
+    white-space: nowrap;
+  }
+
+  /* === CORE COMPETENCIES === */
+  .competencies-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .competency-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    color: hsl(187, 74%, 28%);
+    background: hsl(187, 40%, 95%);
+    padding: 4px 10px;
+    border-radius: 3px;
+    border: 1px solid hsl(187, 40%, 88%);
+  }
+
+  /* === WORK EXPERIENCE === */
+  .job {
+    margin-bottom: 14px;
+  }
+
+  .job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+
+  .job-company {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: hsl(270, 70%, 45%);
+  }
+
+  .job-period {
+    font-size: 10.5px;
+    color: #777;
+    white-space: nowrap;
+  }
+
+  .job-role {
+    font-size: 11px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+  }
+
+  .job-location {
+    font-size: 10px;
+    color: #888;
+  }
+
+  .job ul {
+    padding-left: 18px;
+    margin-top: 6px;
+  }
+
+  .job li {
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: #333;
+    margin-bottom: 4px;
+  }
+
+  .job li strong {
+    font-weight: 600;
+  }
+
+  /* === PROJECTS === */
+  .project {
+    margin-bottom: 12px;
+  }
+
+  .project-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: hsl(270, 70%, 45%);
+  }
+
+  .project-badge {
+    font-size: 9px;
+    font-weight: 500;
+    color: hsl(187, 74%, 32%);
+    background: hsl(187, 40%, 95%);
+    padding: 1px 6px;
+    border-radius: 2px;
+    margin-left: 6px;
+  }
+
+  .project-desc {
+    font-size: 10.5px;
+    color: #444;
+    margin-top: 3px;
+    line-height: 1.55;
+  }
+
+  .project-tech {
+    font-size: 9.5px;
+    color: #888;
+    margin-top: 3px;
+  }
+
+  /* === EDUCATION === */
+  .edu-item {
+    margin-bottom: 8px;
+  }
+
+  .edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .edu-title {
+    font-weight: 600;
+    font-size: 11px;
+    color: #333;
+  }
+
+  .edu-org {
+    color: hsl(270, 70%, 45%);
+    font-weight: 500;
+  }
+
+  .edu-year {
+    font-size: 10px;
+    color: #777;
+    white-space: nowrap;
+  }
+
+  .edu-desc {
+    font-size: 10px;
+    color: #666;
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+
+  /* === CERTIFICATIONS === */
+  .cert-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .cert-title {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .cert-org {
+    color: hsl(270, 70%, 45%);
+  }
+
+  .cert-year {
+    font-size: 10px;
+    color: #777;
+    white-space: nowrap;
+  }
+
+  /* === SKILLS === */
+  .skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+  }
+
+  .skill-item {
+    font-size: 10.5px;
+    color: #444;
+  }
+
+  .skill-category {
+    font-weight: 600;
+    color: #333;
+    font-size: 10.5px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      padding: 0;
+    }
+  }
+
+  /* === PAGE BREAK CONTROL === */
+  .avoid-break,
+  .job,
+  .project,
+  .edu-item,
+  .cert-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header avoid-break">
+    <h1>Jane Smith</h1>
+    <div class="header-gradient"></div>
+    <div class="contact-row">
+      <span>jane@example.com</span>
+      <span class="separator">|</span>
+      <a href="https://linkedin.com/in/janesmith">linkedin.com/in/janesmith</a>
+      <span class="separator">|</span>
+      <a href="https://janesmith.dev">janesmith.dev</a>
+      <span class="separator">|</span>
+      <span>San Francisco, CA</span>
+    </div>
+  </div>
+
+  <!-- PROFESSIONAL SUMMARY -->
+  <div class="section avoid-break">
+    <div class="section-title">Professional Summary</div>
+    <div class="summary-text">Senior AI Engineer with 5+ years of experience delivering production‑grade, multi‑agent AI systems that automate enterprise workflows. Expert in designing Retrieval‑Augmented Generation (RAG) pipelines, tool‑calling integrations, and end‑to‑end orchestration using Python, PostgreSQL and FastAPI. Strong focus on reliability – implemented Prometheus/Grafana monitoring, comprehensive unit‑test suites with pytest and type‑checked code (mypy). Demonstrated ability to reduce operational load (off‑loaded a 10‑person support team) and accelerate time‑to‑value (prototype to production in <2 weeks). Passionate about translating business requirements into robust, observable AI products.</div>
+  </div>
+
+  <!-- CORE COMPETENCIES -->
+  <div class="section">
+    <div class="section-title">Core Competencies</div>
+    <div class="competencies-grid">
+      <span class="competency-tag">AI Agent Architecture</span><span class="competency-tag">RAG & Retrieval‑Augmented Generation</span><span class="competency-tag">Tool Calling</span><span class="competency-tag">Workflow Orchestration</span><span class="competency-tag">Python Backend Development</span><span class="competency-tag">PostgreSQL & SQL</span><span class="competency-tag">API Design (FastAPI)</span><span class="competency-tag">Observability & Monitoring (Prometheus, Grafana)</span><span class="competency-tag">Testing & Type‑Checking (pytest, mypy)</span><span class="competency-tag">Prompt Engineering (CoT, ReAct, Few‑shot)</span>
+    </div>
+  </div>
+
+  <!-- WORK EXPERIENCE -->
+  <div class="section">
+    <div class="section-title">Work Experience</div>
+    <div class="experience-item"><h3>AI Agent Architect / AI Developer (Freelance)</h3><p class="date">Sep 2025 – Present</p><ul><li>Designed and delivered production‑grade multi‑agent AI systems for enterprise clients, handling end‑to‑end pipeline creation, tool‑calling, and API integration.</li><li>Implemented RAG pipelines with hybrid keyword‑vector search, query rewriting, and re‑ranking to achieve a 40% reduction in inference latency.</li><li>Built robust orchestration using Python state‑machines and integrated real‑time data via internal APIs (booking, routing, etc.).</li><li>Added observability stack (Prometheus metrics, Grafana dashboards) and set up alerts, cutting failure‑rate by 85%.</li><li>Ensured code quality with 80%+ unit‑test coverage (pytest) and static type checking (mypy), enabling safe refactoring and rapid iteration.</li><li>Automated lead qualification workflows with n8n, reducing first‑response time from 4 hours to 3 minutes and increasing conversion rate.</li></ul></div><div class="experience-item"><h3>Marketing Analyst</h3><p class="date">Jan 2026 – Mar 2026</p><ul><li>Analyzed sales funnels and introduced AI‑driven lead scoring, boosting qualified lead volume by 25%.</li><li>Collaborated with product teams to align AI prototypes with market needs, shortening proof‑of‑concept cycles.</li></ul></div><div class="experience-item"><h3>System Administrator / IT Specialist</h3><p class="date">May 2025 – Oct 2025</p><ul><li>Managed Windows and Linux infrastructure, including PostgreSQL instances supporting AI services.</li><li>Provided 24/7 support for mission‑critical hardware, ensuring 99.9% uptime for client‑facing applications.</li></ul></div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="section avoid-break">
+    <div class="section-title">Projects</div>
+    <div class="project-item"><h3>AI Support Agent – Bus Ticketing Platform</h3><p class="date">2025</p><ul><li>RAG‑based customer support system that reduced manual handling by 10 agents.</li><li>Integrated tool‑calling to fetch real‑time booking data; built a Python state‑machine to manage dialogue stages.</li><li>Deployed via Docker‑Compose with PostgreSQL persistence; added Prometheus monitoring and Grafana dashboards.</li></ul></div><div class="project-item"><h3>n8n Lead Qualification Agent</h3><p class="date">2025</p><ul><li>Automated lead capture from web forms, Telegram, and email; AI‑scored leads using OpenAI API.</li><li>Created deals automatically in Pipedrive CRM, cutting first‑response time from 4 hours to 3 minutes.</li></ul></div><div class="project-item"><h3>AI Voice Agent for Real Estate</h3><p class="date">2025</p><ul><li>Voice‑enabled RAG agent that performed hybrid search over property documents and performed outbound calls.</li><li>Implemented query rewriting, hybrid search, and HITL escalation to maintain high conversion quality.</li></ul></div><div class="project-item"><h3>AI Legal Consultation Agent</h3><p class="date">2025</p><ul><li>Built a pipeline to parse legal PDFs, generate domain‑specific embeddings, and provide citation‑backed answers.</li><li>Achieved 88% precision in precedent retrieval compared to baseline.</li></ul></div>
+  </div>
+
+  <!-- EDUCATION -->
+  <div class="section avoid-break">
+    <div class="section-title">Education</div>
+    <div class="education-item"><h3>East Ukrainian National University named after Vladimir Dal</h3><p class="date">2024 – Present</p><p>Bachelor’s degree in Hospitality Management</p></div>
+  </div>
+
+  <!-- CERTIFICATIONS -->
+  <div class="section avoid-break">
+    <div class="section-title">Certifications</div>
+    
+  </div>
+
+  <!-- SKILLS -->
+  <div class="section avoid-break">
+    <div class="section-title">Skills</div>
+    <ul><li>Programming: Python, FastAPI, SQL, Docker</li><li>AI/ML: LangChain, OpenAI API, Retrieval‑Augmented Generation, Prompt Engineering</li><li>Data Stores: PostgreSQL, PostgreSQL‑based vector extensions, Redis</li><li>Observability: Prometheus, Grafana, ELK Stack</li><li>Workflow Engines: n8n, custom Python state‑machines (experience with Temporal concepts)</li><li>Testing: pytest, unittest, mypy, coverage</li><li>Version Control: Git, GitHub</li></ul>
+  </div>
+
+</div>
+</body>
+</html>
