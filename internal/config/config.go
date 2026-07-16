@@ -11,14 +11,14 @@ import (
 
 // Config holds the application configuration loaded from environment variables.
 type Config struct {
-	SessionID           string
-	CSRFToken           string
-	GeminiAPIKey        string
-	GeminiModel         string
-	OllamaModel         string
-	OllamaBaseURL       string
-	OllamaTimeoutMS     int
-	LLMAPIKey           string
+	SessionID       string
+	CSRFToken       string
+	GeminiAPIKey    string
+	GeminiModel     string
+	OllamaModel     string
+	OllamaBaseURL   string
+	OllamaTimeoutMS int
+	LLMAPIKey       string
 	// FreeLLMAPI — local OpenAI-compatible aggregator (freellmapi project).
 	// Runs on localhost:3001 and provides automatic fallback across 13 free LLM providers.
 	FreeLLMAPIBaseURL   string // default: http://localhost:3001
@@ -90,7 +90,7 @@ func loadEnvDefaults() *Config {
 		openAIModel = os.Getenv("LLM_MODEL")
 	}
 	if openAIModel == "" {
-		openAIModel = "gpt-4o-mini"
+		openAIModel = "gpt-5-mini"
 	}
 
 	openAITimeoutMSStr := os.Getenv("OPENAI_TIMEOUT_MS")
