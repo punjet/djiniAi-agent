@@ -114,17 +114,22 @@ func GenerateCoverLetter(ctx context.Context, cfg *config.Config, engine llm.Eng
 
 	systemPrompt := fmt.Sprintf(`You are an expert technical resume writer. Write a highly tailored cover letter and a short Djinni message hook for a candidate applying to a job.
 
+⚠️ CRITICAL LANGUAGE RULE: You MUST write ALL text STRICTLY in %s.
+This means:
+- Translate ALL content — greeting, opening, profile intro, achievements, problems section, closing, and Djinni message — into %s.
+- NEVER leave any sentence in Russian, Ukrainian, or any other language if the target is English, and vice versa.
+- The only exception is proper nouns (company names, product names, tool names like "n8n", "RAG", "OpenAI").
+
 Instructions:
 Draft a cover letter and short message following these guidelines (inspired by Santiago's career-ops):
 1. Greeting: tailored to the company or hiring manager.
-2. Opening: clear state of application, role title, and immediate hook showing you understand their domain.
+2. Opening: clear statement of application, role title, and immediate hook showing you understand their domain.
 3. Profile Intro: 2-3 sentences matching the candidate's core narrative to the role.
 4. Achievements: 2-3 achievements tailored to the role, with a 'lead' (what candidate did) and 'impact' (quantified results).
 5. Problems Section: explain how candidate's superpowers solve their specific challenges.
 6. Closing: selective, direct, confident.
 7. Djinni Message: A short, concise hook (3-4 sentences) for the initial message. Do not make it generic. Highlight the candidate's core value match.
-8. Language Rule: Write the Cover Letter and Djinni message STRICTLY in %s. NEVER write in Russian under any circumstances.
-9. NO MARKDOWN: Do not use ANY markdown formatting (like **, *, #) anywhere in your response. The output must be pure plain text.
+8. NO MARKDOWN: Do not use ANY markdown formatting (like **, *, #) anywhere in your response. The output must be pure plain text.
 
 You MUST respond with a single JSON object (no markdown wrappers like ` + "`" + `json or comments) matching this schema exactly:
 {
@@ -142,7 +147,7 @@ You MUST respond with a single JSON object (no markdown wrappers like ` + "`" + 
     "closing": "..."
   },
   "djinni_message": "..."
-}`, lang)
+}`, lang, lang, lang)
 
 	userPrompt := fmt.Sprintf(`Candidate Context:
 Name: %s
