@@ -422,7 +422,30 @@ func GenerateCustomCV(ctx context.Context, cfg *config.Config, engine llm.Engine
 		return nil, err
 	}
 
-	systemPrompt := `You are an expert CV writer. Generate a tailored CV in JSON for the candidate based on their profile and the target job.
+	// Detect JD language — same mechanism used in GenerateCoverLetter
+	var jobText string
+	if reportText != "" {
+		jobText = reportText
+	} else {
+		jobText = fmt.Sprintf("%s %s", company, role)
+	}
+	lang, err := DetectJDLanguage(ctx, provider, jobText)
+	if err != nil {
+		logger.Log.Warn("Failed to detect JD language for CV, defaulting to English", "error", err)
+		lang = "English"
+	}
+	logger.Log.Info("CV language detected", "language", lang)
+
+	systemPrompt := fmt.Sprintf(`You are an expert CV writer. Generate a tailored CV in JSON for the candidate based on their profile and the target job.
+
+⚠️ CRITICAL LANGUAGE RULE: You MUST write ALL text content STRICTLY in %s.
+This means:
+- Translate ALL experience descriptions, project descriptions, education entries from their original language into %s.
+- Write the professional summary in %s.
+- Write competency tags in %s.
+- Write skill items in %s.
+- NEVER leave any text in Russian, Ukrainian, or any other language if the target is English, and vice versa.
+- The only exception is proper nouns (company names, product names, tool names).
 
 You MUST respond with a single JSON object (no markdown wrappers, no comments) matching this schema exactly:
 {
@@ -435,7 +458,7 @@ You MUST respond with a single JSON object (no markdown wrappers, no comments) m
   "skills_html": "HTML string of skill items, each as <span class=\"skill-item\"><span class=\"skill-category\">Category:</span> skill list</span>"
 }
 
-All HTML must be clean, valid HTML fragments. Use <strong> for emphasis. Write in the exact same language as the job description provided. Never include markdown formatting.`
+All HTML must be clean, valid HTML fragments. Use <strong> for emphasis. Never include markdown formatting.`, lang, lang, lang, lang, lang)
 
 	userPrompt := fmt.Sprintf(`Candidate Profile:
 Name: %s
@@ -455,10 +478,10 @@ Job URL: %s
 Job Report:
 %s
 
-Generate a tailored CV JSON for this candidate targeting the above role. Return JSON only.`,
+Remember: translate ALL content to %s. Generate a tailored CV JSON for this candidate targeting the above role. Return JSON only.`,
 		prof.Candidate.FullName, prof.Candidate.Email, prof.Candidate.Location,
 		prof.Candidate.Linkedin, prof.Candidate.Github,
-		string(cvData), company, role, jobURL, reportText)
+		string(cvData), company, role, jobURL, reportText, lang)
 
 	response, err := provider.GenerateText(ctx, systemPrompt, userPrompt)
 	if err != nil {
@@ -489,9 +512,28 @@ Generate a tailored CV JSON for this candidate targeting the above role. Return 
 	portfolioDisplay := strings.TrimPrefix(prof.Candidate.Github, "https://")
 	portfolioDisplay = strings.TrimPrefix(portfolioDisplay, "http://")
 
+	// Section labels — localized based on detected JD language
+	sectionSummary := "Professional Summary"
+	sectionCompetencies := "Core Competencies & Technologies"
+	sectionExperience := "Professional Experience"
+	sectionProjects := "Projects"
+	sectionEducation := "Education"
+	sectionCertifications := "Certifications & Awards"
+	sectionSkills := "Technical Skills"
+
+	if lang == "Ukrainian" {
+		sectionSummary = "Професійне резюме"
+		sectionCompetencies = "Ключові компетенції та технології"
+		sectionExperience = "Досвід роботи"
+		sectionProjects = "Проєкти"
+		sectionEducation = "Освіта"
+		sectionCertifications = "Сертифікати та нагороди"
+		sectionSkills = "Технічні навички"
+	}
+
 	tmplData := map[string]interface{}{
 		"LANG":                   "en",
-		"NAME":                   sanitizeName(prof.Candidate.FullName),
+		"NAME":                   prof.Candidate.FullName,
 		"EMAIL":                  prof.Candidate.Email,
 		"LINKEDIN_URL":           prof.Candidate.Linkedin,
 		"LINKEDIN_DISPLAY":       linkedinDisplay,
@@ -499,19 +541,19 @@ Generate a tailored CV JSON for this candidate targeting the above role. Return 
 		"PORTFOLIO_DISPLAY":      portfolioDisplay,
 		"LOCATION":               prof.Candidate.Location,
 		"PAGE_WIDTH":             "900px",
-		"SECTION_SUMMARY":        "Professional Summary",
+		"SECTION_SUMMARY":        sectionSummary,
 		"SUMMARY_TEXT":           content.SummaryText,
-		"SECTION_COMPETENCIES":   "Core Competencies & Technologies",
+		"SECTION_COMPETENCIES":   sectionCompetencies,
 		"COMPETENCIES":           template.HTML(content.CompetenciesHTML),
-		"SECTION_EXPERIENCE":     "Professional Experience",
+		"SECTION_EXPERIENCE":     sectionExperience,
 		"EXPERIENCE":             template.HTML(content.ExperienceHTML),
-		"SECTION_PROJECTS":       "Projects",
+		"SECTION_PROJECTS":       sectionProjects,
 		"PROJECTS":               template.HTML(content.ProjectsHTML),
-		"SECTION_EDUCATION":      "Education",
+		"SECTION_EDUCATION":      sectionEducation,
 		"EDUCATION":              template.HTML(content.EducationHTML),
-		"SECTION_CERTIFICATIONS": "Certifications & Awards",
+		"SECTION_CERTIFICATIONS": sectionCertifications,
 		"CERTIFICATIONS":         template.HTML(content.CertificationsHTML),
-		"SECTION_SKILLS":         "Technical Skills",
+		"SECTION_SKILLS":         sectionSkills,
 		"SKILLS":                 template.HTML(content.SkillsHTML),
 	}
 
