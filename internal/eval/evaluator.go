@@ -90,6 +90,33 @@ func loadContextFiles(contextDir string) (contextFiles, error) {
 // ---------------------------------------------------------------------------
 
 func buildSystemPrompt(cf contextFiles) string {
+
+func checkSummaryLanguage(summary string) bool {
+	func detectLanguage(summary string) string {
+	// Use a language detection library
+	detector := langdetect.NewDetector()
+	lang, _ := detector.Detect(summary)
+	return lang
+}
+
+func generateSummary(cf contextFiles, jdLanguage string) string {
+	 summary := buildSystemPrompt(cf)
+	 if detectLanguage(summary) != "ru" {
+		 // Retry with stricter prompt
+		 cf.shared += "\n\nCRITICAL: Output MUST be in [[REQUIRED_LANG]] language. Use detailed analysis in [[REQUIRED_LANG]]."
+		 summary = buildSystemPrompt(cf)
+requiredLang := jdLanguage
+	if requiredLang == "" {
+		requiredLang = "en" // Default to English if JD language detection fails
+	}
+	if detectLanguage(summary) != requiredLang {
+			 log.Fatalf("Failed to generate summary in %s after retry", requiredLang)
+		 }
+	 }
+	 return summary
+}
+
+// Update all buildSystemPrompt calls to use generateSummary
 	sep := strings.Repeat("═", 55)
 	return fmt.Sprintf(`You are career-ops, an AI-powered job search assistant.
 You evaluate job offers against the user's CV using a structured A-G scoring system.
@@ -129,7 +156,7 @@ IMPORTANT OPERATING RULES FOR THIS CLI SESSION
    - For Block G (Legitimacy): analyze the JD text only; skip URL/page freshness checks.
    - Post-evaluation file saving is handled by the script, not by you.
 2. CRITICAL FILTERING RULE: If the job description is for a "classic" software engineer (e.g., standard Python backend, standard React frontend, standard Java enterprise) with NO focus on AI Agents, LLM Integrations, Process Automation (n8n, Make), or AI features, you MUST give it a SCORE below 3.0. The candidate is an AI Automation Expert / AI Integrator, not a generic developer.
-3. Generate Blocks A through G in RUSSIAN language. The SCORE_SUMMARY block must keep its machine-parseable English format (COMPANY:, ROLE:, SCORE:, ARCHETYPE:, LEGITIMACY:) — this format is parsed by the tooling. But ALL analysis blocks A-G content must be in Russian. Even if the JD is in English or Ukrainian, the analysis/report blocks must be in Russian (this is for internal team use only).
+3. Generate Blocks A through G in [[JD_LANG]] language (Ukrainian or English, NEVER Russian). Ensure the summary is detailed and at least 200 words long. The SCORE_SUMMARY block must keep its machine-parseable English format (COMPANY:, ROLE:, SCORE:, ARCHETYPE:, LEGITIMACY:). All analysis blocks A-G MUST be in [[JD_LANG]] language.
 4. At the very end, output a machine-readable summary block in this exact format:
 
 ---SCORE_SUMMARY---
