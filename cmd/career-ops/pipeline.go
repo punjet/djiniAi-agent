@@ -574,6 +574,21 @@ type daemonStats struct {
 func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Signal) error {
 	fmt.Println("🚀 Starting Career-Ops Pipeline in Daemon Mode (Debug/Continuous)...")
 	logDeep("START", "Daemon mode started with deep logging enabled.")
+
+	// ── Restore persisted session token ──────────────────────────────────────
+	// /set_session saves the token to career-ops/.env (mounted as a Docker volume).
+	// We reload it here so the bot remembers the token across container restarts.
+	savedEnvPath := filepath.Join(flagContextDir, ".env")
+	if err := godotenv.Overload(savedEnvPath); err == nil {
+		fmt.Printf("🔑 Loaded persisted session from %s\n", savedEnvPath)
+		// Rebuild config with the restored token
+		if reloaded, err := config.LoadConfig(); err == nil {
+			cfg = reloaded
+		}
+	} else {
+		fmt.Printf("ℹ️  No persisted .env found at %s (will use environment vars)\n", savedEnvPath)
+	}
+
 	dc := client.NewDjinniClient(cfg)
 	engine := llm.Engine(flagEngine)
 	panicStop := &atomic.Bool{}
@@ -583,6 +598,17 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 	bot.StartStatusBoard()
 	defer bot.Stop()
 	setupBotCommands(bot, dc, ctx)
+
+	// ── Initial silent token check ────────────────────────────────────────────
+	// Validate token on startup WITHOUT notifying Telegram — it may be perfectly
+	// valid (just restored from .env). Only alert if it's actually expired.
+	fmt.Println("🔍 Validating session token on startup...")
+	if api.CheckToken(dc) {
+		fmt.Println("✅ Session token is valid. Starting pipeline.")
+	} else {
+		fmt.Println("🚨 Session token is invalid or expired. Waiting for /set_session.")
+		notify.SendTelegramMessage("🚨 *Djinni session expired after restart!*\nPlease send your new session cookie:\n`/set_session <your_sessionid>`")
+	}
 
 	stats := daemonStats{StartTime: time.Now()}
 
@@ -609,6 +635,7 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 
 	lastScanTime := time.Time{}
 	scanInterval := 1 * time.Minute
+	tokenInvalidNotified := false // track so we only send Telegram alert once per cycle
 
 	for {
 		if panicStop.Load() {
@@ -617,11 +644,15 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 		}
 
 		if !api.CheckToken(dc) {
-			notify.SendTelegramMessage("🚨 Djinni sessionid cookie expired or invalid! Waiting for update via `/set_session <your_sessionid>`.")
+			if !tokenInvalidNotified {
+				notify.SendTelegramMessage("🚨 Djinni sessionid cookie expired or invalid! Waiting for update via `/set_session <your_sessionid>`.")
+				tokenInvalidNotified = true
+			}
 			fmt.Println("🚨 Token invalid. Waiting 2 minutes...")
 			time.Sleep(2 * time.Minute)
 			continue
 		}
+		tokenInvalidNotified = false // reset when token becomes valid again
 
 		now := time.Now()
 		var scanTriggered bool
