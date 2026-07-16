@@ -18,6 +18,7 @@ import (
 	"djinni-bot-go/internal/covergen"
 	"djinni-bot-go/internal/extractor"
 	"djinni-bot-go/internal/llm"
+	"djinni-bot-go/internal/logger"
 	"djinni-bot-go/internal/notify"
 	"djinni-bot-go/internal/pipeline"
 
@@ -168,6 +169,9 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to load Djinni config (session credentials required for scan/apply): %w", err)
 	}
+
+	// Init logger early so all subsystems (api, covergen, etc.) have a non-nil logger
+	logger.InitLogger(flagContextDir)
 
 	if flagDaemon {
 		return runDaemonMode(ctx, cfg, sigChan)

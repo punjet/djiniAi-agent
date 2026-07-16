@@ -9,9 +9,14 @@ import (
 	"time"
 )
 
-var Log *slog.Logger
+// Log is the main structured logger. Initialized with a stdout handler by default
+// so it is never nil — even if InitLogger has not been called yet.
+var Log *slog.Logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	Level: slog.LevelDebug,
+}))
 
-// DeepTraceLogger handles deep tracing to a separate file
+// DeepTraceLogger handles deep tracing to a separate file.
+// It is nil until InitLogger is called.
 var DeepTraceLogger *slog.Logger
 
 // LogDeep writes a deep trace log entry with timestamp and stage
