@@ -48,10 +48,14 @@ RUN mkdir -p /app/career-ops/output \
              /app/career-ops/batch/tracker-additions \
              /app/career-ops/reports
 
-# ---- Persist logs across container restarts ----
-# Mount a volume here so logs survive restarts and are accessible from host:
-#   docker run -v djinni-logs:/app/career-ops/logs ...
-VOLUME ["/app/career-ops/logs"]
+# ---- Persist session token and logs across container restarts ----
+# The bot saves DJINNI_SESSIONID to career-ops/.env via /set_session command.
+# Mount volumes here so tokens and logs survive restarts and redeploys:
+#   -v djinni-env:/app/career-ops   (preserves .env with session token)
+#   -v djinni-logs:/app/career-ops/logs  (preserves logs)
+#
+# In Coolify: add persistent storage → container path /app/career-ops
+VOLUME ["/app/career-ops"]
 
 # =============================================================================
 # Default entrypoint
