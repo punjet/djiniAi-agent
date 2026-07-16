@@ -449,15 +449,16 @@ This means:
 
 You MUST respond with a single JSON object (no markdown wrappers, no comments) matching this schema exactly:
 {
-  "summary_text": "Professional summary paragraph tailored to the role (2-3 sentences)",
-  "competencies_html": "HTML string of competency tags, each as <span class=\"competency-tag\">Skill</span>",
-  "experience_html": "Full HTML for work experience section - each job as a .job div with .job-header containing .job-company and .job-period, .job-role, and ul with li items describing achievements",
-  "projects_html": "Full HTML for projects section - each project as a .project div with .project-title and .project-desc",
-  "education_html": "Full HTML for education section - each item as .edu-item with .edu-header containing .edu-title, .edu-org, .edu-year, and optional .edu-desc",
-  "certifications_html": "Full HTML for certifications section - each as .cert-item with .cert-title, .cert-org, .cert-year",
-  "skills_html": "HTML string of skill items, each as <span class=\"skill-item\"><span class=\"skill-category\">Category:</span> skill list</span>"
+  "summary_text": "Comprehensive professional summary tailored to the role (4-6 sentences). Highlight the candidate's unique value proposition, core expertise, and fit for this specific role.",
+  "competencies_html": "HTML string of ALL competency tags from the CV, each as <span class=\"competency-tag\">Skill</span>. Include all relevant skills, do not omit any.",
+  "experience_html": "Full detailed HTML for ALL work experience entries. Each job as a .job div with .job-header containing .job-company and .job-period, .job-role, and a ul with li items. Include ALL bullet points from the CV for each role — do NOT summarize or truncate.",
+  "projects_html": "Full detailed HTML for ALL projects. Each project as a .project div with .project-title and .project-desc. Translate and include ALL project details, technical stack, and outcomes from the CV.",
+  "education_html": "Full HTML for ALL education entries - each item as .edu-item with .edu-header containing .edu-title, .edu-org, .edu-year, and optional .edu-desc",
+  "certifications_html": "Full HTML for ALL certifications and awards - each as .cert-item with .cert-title, .cert-org, .cert-year",
+  "skills_html": "HTML string of ALL skill categories, each as <span class=\"skill-item\"><span class=\"skill-category\">Category:</span> skill list</span>"
 }
 
+IMPORTANT: Be detailed and comprehensive. Include ALL information from the candidate's CV. Do not summarize or shorten. The output should be a full, rich CV — not a skeleton.
 All HTML must be clean, valid HTML fragments. Use <strong> for emphasis. Never include markdown formatting.`, lang, lang, lang, lang, lang)
 
 	userPrompt := fmt.Sprintf(`Candidate Profile:
