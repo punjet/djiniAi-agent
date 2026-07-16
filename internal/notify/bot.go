@@ -14,6 +14,7 @@ type TelegramBot struct {
 	lastSummary string
 	mu          sync.RWMutex
 	stopChan    chan struct{}
+	stopOnce    sync.Once
 	running     bool
 	offset      int64
 	statusMsgID int64
@@ -116,6 +117,7 @@ func (b *TelegramBot) Start() {
 	}
 	b.running = true
 	b.stopChan = make(chan struct{})
+	b.stopOnce = sync.Once{} // reset so Stop() can be called again after re-Start
 	b.mu.Unlock()
 
 	// Drain stale updates
@@ -125,6 +127,11 @@ func (b *TelegramBot) Start() {
 	}
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[TelegramBot poller] recovered from panic: %v", r)
+			}
+		}()
 		ticker := time.NewTicker(2 * time.Second)
 		defer ticker.Stop()
 
@@ -163,10 +170,18 @@ func (b *TelegramBot) Start() {
 
 func (b *TelegramBot) Stop() {
 	b.mu.Lock()
-	defer b.mu.Unlock()
-	if b.running {
-		close(b.stopChan)
+	isRunning := b.running
+	if isRunning {
 		b.running = false
+	}
+	b.mu.Unlock()
+
+	if isRunning {
+		// sync.Once guarantees stopChan is closed exactly once,
+		// preventing "close of closed channel" panic on double Stop().
+		b.stopOnce.Do(func() {
+			close(b.stopChan)
+		})
 	}
 }
 
@@ -196,6 +211,11 @@ func (b *TelegramBot) StartStatusBoard() {
 	b.mu.Unlock()
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[TelegramBot status board] recovered from panic: %v", r)
+			}
+		}()
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 
