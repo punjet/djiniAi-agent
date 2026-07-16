@@ -23,8 +23,8 @@ type EvalResult struct {
 
 // EvaluateJob performs an in-process evaluation of a job description,
 // saves the markdown report and TSV tracker addition, and returns the result.
-func EvaluateJob(ctx context.Context, jdText string, cfg *config.Config, engine llm.Engine, contextDir string) (*EvalResult, error) {
-	provider, err := llm.NewProvider(cfg, engine)
+func EvaluateJob(ctx context.Context, jdText string, cfg *config.Config, engine llm.Engine, contextDir string, taskType string) (*EvalResult, error) {
+	provider, err := llm.NewProvider(cfg, engine, taskType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create LLM provider: %w", err)
 	}

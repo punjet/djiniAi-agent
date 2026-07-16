@@ -11,6 +11,9 @@ import (
 
 // Config holds the application configuration loaded from environment variables.
 type Config struct {
+	ResumeModel string `env:"RESUME_MODEL" default:"gpt-5-mini"`
+	EvalModel   string `env:"EVAL_MODEL" default:"gpt-5-nano"`
+
 	SessionID       string
 	CSRFToken       string
 	GeminiAPIKey    string

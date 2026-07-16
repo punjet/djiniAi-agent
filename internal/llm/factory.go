@@ -57,7 +57,11 @@ const (
 
 // NewProvider constructs the appropriate Provider from the application Config
 // and the selected engine name.
-func NewProvider(cfg *config.Config, engine Engine) (Provider, error) {
+func NewProvider(cfg *config.Config, engine Engine, task string) (Provider, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("config is nil")
+	}
+
 	var p Provider
 	var err error
 
@@ -98,7 +102,15 @@ func NewProvider(cfg *config.Config, engine Engine) (Provider, error) {
 			return nil, fmt.Errorf("LLM_API_KEY or OPENAI_API_KEY is required for OpenAI engine")
 		}
 
-		model := cfg.OpenAIModel
+		var model string
+	switch task {
+	case "resume":
+		model = cfg.ResumeModel
+	case "evaluation":
+		model = cfg.EvalModel
+	default:
+		model = cfg.OpenAIModel
+	}
 		if model == "" || model == "auto" {
 			model = "gpt-4o-mini"
 		}

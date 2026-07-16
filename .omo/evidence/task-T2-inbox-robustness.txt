@@ -1,0 +1,60 @@
+== Evidence: Task T2 — Inbox Robustness (thread_page.html fixture) ==
+
+--- grep count ---
+$ grep -c "message" djinni-bot-go/internal/api/testdata/thread_page.html
+31
+(PASS: >= 3)
+
+--- First 50 lines of thread_page.html ---
+<!--
+  Djinni inbox thread page fixture (GET /my/inbox/{dialogID}/)
+
+  PARSER SELECTORS (must match Go goquery parser in thread.go):
+  - Message container: .b-message
+  - Role detection: .b-message--recruiter  / .b-message--candidate  (CSS class modifier)
+  - Message text:     .message-text-inner
+  - Timestamp:        time.message-date   (text content, parsed as "Jan 2, 2006 15:04" Kyiv time)
+  - Sender name:      .b-message__sender
+-->
+<div class="page-width">
+  <div class="b-dialog">
+    <div class="b-dialog__header">
+      <div class="company_name">
+        <a href="/jobs/company-techcorp/">TechCorp</a>
+        <span> · </span>
+        Alex Recruiter
+      </div>
+      <div class="b-dialog__subject">AI Agent Developer</div>
+    </div>
+
+    <div class="b-dialog__messages">
+      <!-- Message 1: recruiter -->
+      <div class="b-message b-message--recruiter" data-message-id="1001">
+        <div class="b-message__info">
+          <span class="b-message__sender">TechCorp / Alex Recruiter</span>
+          <time class="message-date" datetime="2026-07-01T10:30:00+03:00">Jul 1, 2026 10:30</time>
+        </div>
+        <div class="message-text">
+          <div class="message-text-inner">
+            Hello, we have an exciting AI Agent position. Budget: $3000/month. Are you interested?
+          </div>
+        </div>
+      </div>
+
+      <!-- Message 2: candidate -->
+      <div class="b-message b-message--candidate" data-message-id="1002">
+        <div class="b-message__info">
+          <span class="b-message__sender">You</span>
+          <time class="message-date" datetime="2026-07-01T11:15:00+03:00">Jul 1, 2026 11:15</time>
+        </div>
+        <div class="message-text">
+          <div class="message-text-inner">
+            Hi, yes I am interested. Can you share more details about the tech stack?
+          </div>
+        </div>
+      </div>
+
+      <!-- Message 3: recruiter -->
+      <div class="b-message b-message--recruiter" data-message-id="1003">
+
+--- Full file read OK ---

@@ -1,0 +1,61 @@
+# Scope Fidelity Check — Final F4: Inbox Robustness
+
+**Date:** 2026-07-07
+**Project Root:** `/Users/punjet/Documents/01_PROJECTS/djiniAi-agent/djinni-bot-go`
+**Repo Root:** `/Users/punjet/Documents/01_PROJECTS/djiniAi-agent`
+
+---
+
+## Full Git Status Output
+
+```
+ M djinni-bot-go/internal/api/inbox.go
+ M djinni-bot-go/internal/api/inbox_test.go
+ M djinni-bot-go/internal/api/models.go
+ M djinni-bot-go/internal/pipeline/inbox.go
+ M djinni-bot-go/internal/pipeline/interactive.go
+?? .omo/boulder.json
+?? .omo/drafts/
+?? .omo/evidence/
+?? .omo/notepads/djinni-debug-plan/decisions.md
+?? .omo/notepads/djinni-debug-plan/issues.md
+?? .omo/notepads/djinni-debug-plan/problems.md
+?? .omo/plans/
+?? .omo/run-continuation/
+?? djinni-bot-go/djinni-bot-go-bin
+?? djinni-bot-go/internal/api/testdata/
+?? djinni-bot-go/internal/pipeline/inbox_test.go
+?? test_sig.go
+```
+
+---
+
+## Out-of-Scope Check — NONE of these patterns are modified
+
+| Pattern | Status |
+|---|---|
+| `internal/pipeline/dedup.go` | ✅ NOT modified |
+| `internal/pipeline/scanner*.go` / `evaluate*.go` | ✅ NOT modified |
+| `cmd/career-ops/` | ✅ NOT modified |
+| `career-ops/` (JS directory) | ✅ NOT modified |
+| `internal/api/` other than `inbox.go`, `inbox_test.go`, `models.go`, `testdata/` | ✅ NOT modified |
+
+## Allowed Changes — All present
+
+| Expected File | Present? | Notes |
+|---|---|---|
+| `internal/api/models.go` | ✅ Modified | |
+| `internal/api/inbox.go` | ✅ Modified | |
+| `internal/api/inbox_test.go` | ✅ Modified | |
+| `internal/api/testdata/thread_page.html` | ✅ Untracked (present on disk) | Under `testdata/` |
+| `internal/pipeline/inbox.go` | ✅ Modified | |
+| `internal/pipeline/inbox_test.go` | ✅ Untracked (present on disk) | |
+| `internal/pipeline/interactive.go` | ✅ Modified | |
+
+---
+
+## VERDICT: PASS
+
+**Scope fidelity confirmed.** All 5 modified source files are within the allowed set. The 2 untracked source files (`testdata/thread_page.html`, `inbox_test.go`) are explicitly allowed patterns. No out-of-scope files were touched.
+
+**Non-scope artifacts** (`.omo/`, `djinni-bot-go-bin`, `test_sig.go`) are either agent workspace files, build artifacts, or unrelated root-level files — none affect the `djinni-bot-go/` source tree in a scoped area.

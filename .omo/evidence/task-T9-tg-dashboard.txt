@@ -1,0 +1,31 @@
+Task 9 Verification: Telegram Bot Human-in-the-Loop Fixes
+=========================================================
+
+Verification Date: 2026-07-14 20:50:49 EEST
+Verification Status: COMPLETE
+
+Verification Items:
+
+1. TestApplyReviewEditLoop Race Condition Fixed: ✓
+   - Command: `go test ./internal/pipeline/... -race -count=1`
+   - Result: OK (12 tests passed, no race conditions detected)
+   - Details: Fixed data race in TestApplyReviewEditLoop by replacing reassigned mock function with a thread-safe sequencer using mutex protection.
+
+2. lastOffset Removal Verification: ✓
+   - Command: `grep -n "lastOffset" internal/pipeline/interactive.go`
+   - Result: No matches found
+   - Details: Confirmed that the problematic `lastOffset` variable has been removed from internal/pipeline/interactive.go
+
+3. AskUserForInboxReview Call Site Verification: ✓
+   - Location: internal/pipeline/inbox.go line 176
+   - Call: `actionText, err := AskUserForInboxReview(ctx, bot, d.Sender, d.Message, res.ReplyText, d.ID, d.Messages)`
+   - Status: Correctly passes the `bot` parameter as the second argument
+   - Details: The function signature requires (ctx, bot, sender, message, replyText, jobID, messages) and the call site matches this signature.
+
+Additional Notes:
+- The fix for TestApplyReviewEditLoop uses a thread-safe sequencer pattern with a mutex-protected updates slice and index counter
+- This eliminates the data race caused by reassigning the mock function variable while the bot goroutine is running
+- All pipeline tests now pass with the race detector enabled
+- External Djinni API 500 errors in TestScanDjinni are tolerated as noted in the original task description
+
+Evidence Collection Complete.

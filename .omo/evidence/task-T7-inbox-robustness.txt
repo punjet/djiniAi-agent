@@ -1,0 +1,17 @@
+Task: Update AskUserForInboxReview to show last 3 thread messages in Telegram card
+Date: 2026-07-07T17:43:33Z
+Project: djinni-bot-go
+
+=== go build ./... ===
+exit: 0
+
+=== go vet ./... ===
+exit: 0
+
+=== Files changed ===
+  internal/pipeline/interactive.go
+    - Added api import
+    - Updated AskUserForInboxReview signature (added threadMsgs []api.ThreadMessage)
+    - Injected last-3-messages thread snippet into Telegram card text
+  internal/pipeline/inbox.go
+    - Updated call site to pass d.Messages

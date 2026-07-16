@@ -3,6 +3,7 @@ package eval
 import (
 	"context"
 	"fmt"
+	// "log" // TODO: Re-enable langdetect and log once go get issue is resolved.
 	"os"
 	"path/filepath"
 	"regexp"
@@ -10,6 +11,9 @@ import (
 	"strings"
 
 	"djinni-bot-go/internal/llm"
+	"djinni-bot-go/internal/config" // Added missing import
+	// "github.com/rylans/langdetect"
+	// _ "github.com/rylans/langdetect/profiles"
 )
 
 // EvalResult holds the parsed output of a job evaluation.
@@ -37,7 +41,9 @@ type contextFiles struct {
 //  3. Calls the LLM provider
 //  4. Validates the A-G block structure and SCORE_SUMMARY
 //  5. Parses and returns EvalResult
-func Evaluate(ctx context.Context, provider llm.Provider, contextDir, jdText string) (*EvalResult, error) {
+func Evaluate(ctx context.Context, cfg *config.Config, contextDir, jdText string) (*EvalResult, error) {
+	provider, err := llm.NewProvider(cfg, llm.EngineOpenAI, "evaluation")
+
 	cf, err := loadContextFiles(contextDir)
 	if err != nil {
 		return nil, fmt.Errorf("loading context files: %w", err)
@@ -90,36 +96,12 @@ func loadContextFiles(contextDir string) (contextFiles, error) {
 // ---------------------------------------------------------------------------
 
 func buildSystemPrompt(cf contextFiles) string {
+	// TODO: Re-enable langdetect logic and calls here once the 'go get' issue is resolved.
+	// For now, this function directly builds the prompt without language validation.
 
-func checkSummaryLanguage(summary string) bool {
-	func detectLanguage(summary string) string {
-	// Use a language detection library
-	detector := langdetect.NewDetector()
-	lang, _ := detector.Detect(summary)
-	return lang
-}
-
-func generateSummary(cf contextFiles, jdLanguage string) string {
-	 summary := buildSystemPrompt(cf)
-	 if detectLanguage(summary) != "ru" {
-		 // Retry with stricter prompt
-		 cf.shared += "\n\nCRITICAL: Output MUST be in [[REQUIRED_LANG]] language. Use detailed analysis in [[REQUIRED_LANG]]."
-		 summary = buildSystemPrompt(cf)
-requiredLang := jdLanguage
-	if requiredLang == "" {
-		requiredLang = "en" // Default to English if JD language detection fails
-	}
-	if detectLanguage(summary) != requiredLang {
-			 log.Fatalf("Failed to generate summary in %s after retry", requiredLang)
-		 }
-	 }
-	 return summary
-}
-
-// Update all buildSystemPrompt calls to use generateSummary
 	sep := strings.Repeat("═", 55)
 	return fmt.Sprintf(`You are career-ops, an AI-powered job search assistant.
-You evaluate job offers against the user's CV using a structured A-G scoring system.
+You evaluate job offers against the user\'s CV using a structured A-G scoring system.
 
 Your evaluation methodology is defined below. Follow it exactly.
 
