@@ -153,7 +153,7 @@ func runPipelineTestApply(cmd *cobra.Command, args []string) error {
 	logTestApply("Evaluating job description with %s...", engine)
 
 	evalStart := time.Now()
-	res, err := pipeline.EvaluateJob(ctx, details.Description, cfg, engine, flagContextDir)
+	res, err := pipeline.EvaluateJob(ctx, details.Description, cfg, engine, flagContextDir, "evaluation")
 	evalLatency := time.Since(evalStart)
 
 	if err != nil {

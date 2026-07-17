@@ -101,7 +101,7 @@ func GenerateCoverLetter(ctx context.Context, cfg *config.Config, engine llm.Eng
 	}
 
 	// 3. Setup LLM provider
-	provider, err := llm.NewProvider(cfg, engine)
+	provider, err := llm.NewProvider(cfg, engine, "resume")
 	if err != nil {
 		return nil, "", err
 	}
@@ -296,7 +296,7 @@ func AnswerQuizQuestions(ctx context.Context, cfg *config.Config, engine llm.Eng
 	}
 
 	// 3. Setup LLM provider
-	provider, err := llm.NewProvider(cfg, engine)
+	provider, err := llm.NewProvider(cfg, engine, "resume")
 	if err != nil {
 		return nil, err
 	}
@@ -422,7 +422,7 @@ func GenerateCustomCV(ctx context.Context, cfg *config.Config, engine llm.Engine
 		}
 	}
 
-	provider, err := llm.NewProvider(cfg, engine)
+	provider, err := llm.NewProvider(cfg, engine, "resume")
 	if err != nil {
 		return nil, err
 	}
