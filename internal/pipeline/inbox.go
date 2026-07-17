@@ -39,7 +39,7 @@ func ProcessInbox(ctx context.Context, bot *notify.TelegramBot, panicStop *atomi
 		return []string{"No unread messages in inbox."}, nil
 	}
 
-	provider, err := llm.NewProvider(cfg, engine)
+	provider, err := llm.NewProvider(cfg, engine, "inbox")
 	if err != nil {
 		return nil, err
 	}

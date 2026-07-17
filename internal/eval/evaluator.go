@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"djinni-bot-go/internal/llm"
-	"djinni-bot-go/internal/config" // Added missing import
 	// "github.com/rylans/langdetect"
 	// _ "github.com/rylans/langdetect/profiles"
 )
@@ -41,9 +40,7 @@ type contextFiles struct {
 //  3. Calls the LLM provider
 //  4. Validates the A-G block structure and SCORE_SUMMARY
 //  5. Parses and returns EvalResult
-func Evaluate(ctx context.Context, cfg *config.Config, contextDir, jdText string) (*EvalResult, error) {
-	provider, err := llm.NewProvider(cfg, llm.EngineOpenAI, "evaluation")
-
+func Evaluate(ctx context.Context, provider llm.Provider, contextDir, jdText string) (*EvalResult, error) {
 	cf, err := loadContextFiles(contextDir)
 	if err != nil {
 		return nil, fmt.Errorf("loading context files: %w", err)

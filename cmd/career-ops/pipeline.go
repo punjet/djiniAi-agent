@@ -282,7 +282,7 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 }
 
 func regenerateCoverLetter(ctx context.Context, cfg *config.Config, engine llm.Engine, details *api.JobFull, oldMsg, instruction string) (string, error) {
-	provider, err := llm.NewProvider(cfg, engine)
+	provider, err := llm.NewProvider(cfg, engine, "resume")
 	if err != nil {
 		return "", err
 	}
@@ -874,7 +874,7 @@ func runMergeTracker(contextDir string) {
 }
 
 func providerName(cfg *config.Config, engine llm.Engine) string {
-	provider, err := llm.NewProvider(cfg, engine)
+	provider, err := llm.NewProvider(cfg, engine, "")
 	if err != nil {
 		return string(engine)
 	}

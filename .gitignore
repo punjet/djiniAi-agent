@@ -1,0 +1,33 @@
+# macOS specific files
+.DS_Store
+
+# Logs
+djinni-bot-go/career-ops/logs/
+djinni-bot-go/career-ops/reports/
+*.log
+logs/
+
+# Build artifacts (compiled binaries at root level)
+djinni-bot-go/career-ops/output/
+djinni-bot-go/career-ops/batch/tracker-additions/
+djinni-bot-go/app-binary
+app-binary
+/career-ops
+
+# Environment variables and secrets
+.env
+*.env
+
+# Browser capture / HAR archives (may contain session tokens)
+*.har
+sup/
+
+# Node.js dependencies
+djinni-bot-go/career-ops/node_modules/
+node_modules/
+
+# Agent session files
+.omo/
+update_daemon.go
+check_djinni_form.go
+debug_job.html

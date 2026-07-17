@@ -94,7 +94,7 @@ func runEvaluate(cmd *cobra.Command, args []string) error {
 	// 3. Build LLM provider
 	// -----------------------------------------------------------------------
 	engine := llm.Engine(flagEngine)
-	provider, err := llm.NewProvider(cfg, engine)
+	provider, err := llm.NewProvider(cfg, engine, "evaluation")
 	if err != nil {
 		return fmt.Errorf("failed to create LLM provider: %w", err)
 	}
