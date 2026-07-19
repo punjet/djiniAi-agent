@@ -1,6 +1,17 @@
-# Djinni Bot Go
+# Djinni AI Agent
 
-This directory contains the Go implementation of the Djinni bot, including the `career-ops` CLI tool for evaluating job descriptions using an LLM.
+AI-powered job search automation: scans Djinni, evaluates vacancies via LLM, generates cover letters and CVs, and applies automatically.
+
+> **Development process & branching strategy** → see [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## Branches
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | Production — Coolify deploys automatically on push |
+| `develop` | Staging — integration branch, merge features here first |
+| `feature/*` | New features, branched from `develop` |
+| `fix/*` | Bug fixes, branched from `develop` |
 
 ## Prerequisites
 
