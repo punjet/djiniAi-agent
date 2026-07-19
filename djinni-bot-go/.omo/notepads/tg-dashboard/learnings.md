@@ -1,4 +1,0 @@
-- Created TelegramBot with concurrent-safe mechanisms.
-- Uses 2s ticker to fetch updates with an offset.
-- Added Commands(map[string]func(*TGMessage)) for dynamic '/' command registration.
-- Added test covering Start, Stop, and concurrent map access.
