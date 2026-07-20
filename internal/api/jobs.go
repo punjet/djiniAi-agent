@@ -86,7 +86,7 @@ func GetJobDetails(dc *client.DjinniClient, jobSlug string) (*JobFull, error) {
 	// FRAGILE: Relying on the presence of "js-inbox-toggle-reply-form" to determine if a job is applied or blocked.
 	// TODO: Replace with a more robust structured check or API endpoint if available.
 	if !strings.Contains(htmlStr, "js-inbox-toggle-reply-form") && !strings.Contains(htmlStr, `<form action="?ref=for_me"`) {
-		return nil, fmt.Errorf("job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)")
+		return nil, fmt.Errorf("job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply) for URL: %s", targetURL)
 	}
 
 	// Extract ID from slug (first digits before first dash)

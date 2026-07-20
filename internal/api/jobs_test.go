@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"djinni-bot-go/internal/client"
@@ -297,7 +298,7 @@ func TestGetJobDetails(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error due to missing apply button, got nil")
 		}
-		if err.Error() != "job is strictly blocked by Djinni requirements or already applied (missing apply button, error=cant_apply)" {
+		if !strings.Contains(err.Error(), "error=cant_apply") {
 			t.Errorf("unexpected error message: %v", err)
 		}
 	})
