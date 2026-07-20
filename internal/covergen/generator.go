@@ -116,8 +116,9 @@ func GenerateCoverLetter(ctx context.Context, cfg *config.Config, engine llm.Eng
 
 ⚠️ CRITICAL LANGUAGE RULE: You MUST write ALL text STRICTLY in %s.
 This means:
+- English and Ukrainian are the ONLY allowed languages for output. Russian is STRICTLY FORBIDDEN.
 - Translate ALL content — greeting, opening, profile intro, achievements, problems section, closing, and Djinni message — into %s.
-- NEVER leave any sentence in Russian, Ukrainian, or any other language if the target is English, and vice versa.
+- Never output any text in Russian.
 - The only exception is proper nouns (company names, product names, tool names like "n8n", "RAG", "OpenAI").
 
 Instructions:
@@ -445,11 +446,12 @@ func GenerateCustomCV(ctx context.Context, cfg *config.Config, engine llm.Engine
 
 ⚠️ CRITICAL LANGUAGE RULE: You MUST write ALL text content STRICTLY in %s.
 This means:
+- English and Ukrainian are the ONLY allowed languages for output. Russian is STRICTLY FORBIDDEN.
 - Translate ALL experience descriptions, project descriptions, education entries from their original language into %s.
 - Write the professional summary in %s.
 - Write competency tags in %s.
 - Write skill items in %s.
-- NEVER leave any text in Russian, Ukrainian, or any other language if the target is English, and vice versa.
+- Never output any text in Russian.
 - The only exception is proper nouns (company names, product names, tool names).
 
 You MUST respond with a single JSON object (no markdown wrappers, no comments) matching this schema exactly:
