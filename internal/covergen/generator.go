@@ -16,6 +16,7 @@ import (
 	"djinni-bot-go/internal/llm"
 	"djinni-bot-go/internal/logger"
 
+	"github.com/abadojack/whatlanggo"
 	"gopkg.in/yaml.v3"
 )
 
@@ -45,13 +46,13 @@ type GeneratedLetter struct {
 }
 
 type CVContent struct {
-	SummaryText         string `json:"summary_text"`
-	CompetenciesHTML    string `json:"competencies_html"`
-	ExperienceHTML      string `json:"experience_html"`
-	ProjectsHTML        string `json:"projects_html"`
-	EducationHTML       string `json:"education_html"`
-	CertificationsHTML  string `json:"certifications_html"`
-	SkillsHTML          string `json:"skills_html"`
+	SummaryText        string `json:"summary_text"`
+	CompetenciesHTML   string `json:"competencies_html"`
+	ExperienceHTML     string `json:"experience_html"`
+	ProjectsHTML       string `json:"projects_html"`
+	EducationHTML      string `json:"education_html"`
+	CertificationsHTML string `json:"certifications_html"`
+	SkillsHTML         string `json:"skills_html"`
 }
 
 var placeholderPattern = regexp.MustCompile(`\{\{([A-Z][A-Z_]+)\}\}`)
@@ -80,7 +81,6 @@ func sanitizeName(name string) string {
 func GenerateCoverLetter(ctx context.Context, cfg *config.Config, engine llm.Engine, contextDir string, company string, role string, jdText string) ([]byte, string, error) {
 	logger.Log.Info("Starting cover letter generation for", "company", company, "role", role)
 
-
 	// 1. Load profile
 	profilePath := filepath.Join(contextDir, "config", "profile.yml")
 	profileData, err := os.ReadFile(profilePath)
@@ -106,19 +106,15 @@ func GenerateCoverLetter(ctx context.Context, cfg *config.Config, engine llm.Eng
 		return nil, "", err
 	}
 
-	lang, err := DetectJDLanguage(ctx, provider, jdText)
-	if err != nil {
-		logger.Log.Warn("Failed to detect JD language, defaulting to English", "error", err)
-		lang = "English"
-	}
+	lang := DetectJDLanguage(jdText)
 
-	systemPrompt := fmt.Sprintf(`You are an expert technical resume writer. Write a highly tailored cover letter and a short Djinni message hook for a candidate applying to a job.
+	var systemPrompt string
+	if lang == "English" {
+		systemPrompt = `You are an expert technical resume writer. Write a highly tailored cover letter and a short Djinni message hook for a candidate applying to a job.
 
-⚠️ CRITICAL LANGUAGE RULE: You MUST write ALL text STRICTLY in %s.
+⚠️ CRITICAL LANGUAGE RULE: You MUST write ALL text content STRICTLY in English.
 This means:
-- English and Ukrainian are the ONLY allowed languages for output. Russian is STRICTLY FORBIDDEN.
-- Translate ALL content — greeting, opening, profile intro, achievements, problems section, closing, and Djinni message — into %s.
-- Never output any text in Russian.
+- Translate ALL content — greeting, opening, profile intro, achievements, problems section, closing, and Djinni message — into English.
 - The only exception is proper nouns (company names, product names, tool names like "n8n", "RAG", "OpenAI").
 
 Instructions:
@@ -148,9 +144,48 @@ You MUST respond with a single JSON object (no markdown wrappers like ` + "`" + 
     "closing": "..."
   },
   "djinni_message": "..."
-}`, lang, lang)
+}`
+	} else {
+		systemPrompt = `Ви є досвідченим автором технічних резюме. Напишіть індивідуальний супровідний лист та короткий гачок для повідомлення на Djinni для кандидата, який подає заявку на вакансію.
 
-	userPrompt := fmt.Sprintf(`Candidate Context:
+⚠️ КРИТИЧНЕ ПРАВИЛО МОВИ: Ви ПОВИННІ писати ВЕСЬ текст ВИКЛЮЧНО українською мовою.
+Це означає:
+- Перекладіть ВЕСЬ вміст — привітання, вступ, опис профілю, досягнення, розділ про проблеми, закінчення та повідомлення на Djinni — українською мовою.
+- Єдиним винятком є власні назви (назви компаній, назви продуктів, назви інструментів, наприклад "n8n", "RAG", "OpenAI").
+
+Інструкції:
+Складіть супровідний лист та коротке повідомлення, дотримуючись наступних рекомендацій:
+1. Привітання: адаптовано до компанії або менеджера з найму.
+2. Вступ: чітка заява про подачу заявки, назву посади та негайний гачок, що показує розуміння їхньої сфери діяльності.
+3. Опис профілю: 2-3 речення, що пов'язують основну історію кандидата з цією роллю.
+4. Досягнення: 2-3 досягнення, адаптовані до ролі, з описом "що зробив кандидат" (lead) та "вплив" (impact, кількісні результати).
+5. Розділ про проблеми: поясніть, як суперсили кандидата вирішують їхні конкретні виклики.
+6. Закінчення: вибіркове, пряме, впевнене.
+7. Повідомлення на Djinni: короткий, лаконічний гачок (3-4 речення) для першого повідомлення. Не робіть його загальним. Виділіть відповідність ключових переваг кандидата вимогам вакансії.
+8. БЕЗ MARKDOWN: Не використовуйте ЖОДНОГО форматування markdown (наприклад, **, *, #) ніде у вашій відповіді. Результат має бути чистим простим текстом.
+
+Ви ПОВИННІ відповісти одним об'єктом JSON (без обгорток markdown, таких як ` + "`" + `json, та без коментарів), який точно відповідає цій схемі:
+{
+  "letter": {
+    "role_title": "...",
+    "company": "...",
+    "city": "...",
+    "greeting": "...",
+    "opening": "...",
+    "profile_intro": "...",
+    "achievements": [
+      { "lead": "...", "impact": "..." }
+    ],
+    "problems_section": "...",
+    "closing": "..."
+  },
+  "djinni_message": "..."
+}`
+	}
+
+	var userPrompt string
+	if lang == "English" {
+		userPrompt = fmt.Sprintf(`Candidate Context:
 Name: %s
 Email: %s
 Phone: %s
@@ -165,6 +200,23 @@ Company: %s
 Role: %s
 JD Content:
 %s`, prof.Candidate.FullName, prof.Candidate.Email, prof.Candidate.Phone, prof.Candidate.Location, prof.Candidate.Linkedin, prof.Candidate.Github, string(cvData), company, role, jdText)
+	} else {
+		userPrompt = fmt.Sprintf(`Контекст кандидата:
+Ім'я: %s
+Email: %s
+Телефон: %s
+Локація: %s
+Linkedin: %s
+Github: %s
+Вміст резюме:
+%s
+
+Деталі вакансії:
+Компанія: %s
+Роль: %s
+Вміст вакансії:
+%s`, prof.Candidate.FullName, prof.Candidate.Email, prof.Candidate.Phone, prof.Candidate.Location, prof.Candidate.Linkedin, prof.Candidate.Github, string(cvData), company, role, jdText)
+	}
 
 	response, err := provider.GenerateText(ctx, systemPrompt, userPrompt)
 	if err != nil {
@@ -435,23 +487,20 @@ func GenerateCustomCV(ctx context.Context, cfg *config.Config, engine llm.Engine
 	} else {
 		jobText = fmt.Sprintf("%s %s", company, role)
 	}
-	lang, err := DetectJDLanguage(ctx, provider, jobText)
-	if err != nil {
-		logger.Log.Warn("Failed to detect JD language for CV, defaulting to English", "error", err)
-		lang = "English"
-	}
+	lang := DetectJDLanguage(jobText)
 	logger.Log.Info("CV language detected", "language", lang)
 
-	systemPrompt := fmt.Sprintf(`You are an expert CV writer. Generate a tailored CV in JSON for the candidate based on their profile and the target job.
+	var systemPrompt string
+	var userPrompt string
+	if lang == "English" {
+		systemPrompt = `You are an expert CV writer. Generate a tailored CV in JSON for the candidate based on their profile and the target job.
 
-⚠️ CRITICAL LANGUAGE RULE: You MUST write ALL text content STRICTLY in %s.
+⚠️ CRITICAL LANGUAGE RULE: You MUST write ALL text content STRICTLY in English.
 This means:
-- English and Ukrainian are the ONLY allowed languages for output. Russian is STRICTLY FORBIDDEN.
-- Translate ALL experience descriptions, project descriptions, education entries from their original language into %s.
-- Write the professional summary in %s.
-- Write competency tags in %s.
-- Write skill items in %s.
-- Never output any text in Russian.
+- Translate ALL experience descriptions, project descriptions, education entries from their original language into English.
+- Write the professional summary in English.
+- Write competency tags in English.
+- Write skill items in English.
 - The only exception is proper nouns (company names, product names, tool names).
 
 You MUST respond with a single JSON object (no markdown wrappers, no comments) matching this schema exactly:
@@ -466,9 +515,9 @@ You MUST respond with a single JSON object (no markdown wrappers, no comments) m
 }
 
 IMPORTANT: Be detailed and comprehensive. Include ALL information from the candidate's CV. Do not summarize or shorten. The output should be a full, rich CV — not a skeleton.
-All HTML must be clean, valid HTML fragments. Use <strong> for emphasis. Never include markdown formatting.`, lang, lang, lang, lang, lang)
+All HTML must be clean, valid HTML fragments. Use <strong> for emphasis. Never include markdown formatting.`
 
-	userPrompt := fmt.Sprintf(`Candidate Profile:
+		userPrompt = fmt.Sprintf(`Candidate Profile:
 Name: %s
 Email: %s
 Location: %s
@@ -486,10 +535,58 @@ Job URL: %s
 Job Report:
 %s
 
-Remember: translate ALL content to %s. Generate a tailored CV JSON for this candidate targeting the above role. Return JSON only.`,
-		prof.Candidate.FullName, prof.Candidate.Email, prof.Candidate.Location,
-		prof.Candidate.Linkedin, prof.Candidate.Github,
-		string(cvData), company, role, jobURL, reportText, lang)
+Remember: translate ALL content to English. Generate a tailored CV JSON for this candidate targeting the above role. Return JSON only.`,
+			prof.Candidate.FullName, prof.Candidate.Email, prof.Candidate.Location,
+			prof.Candidate.Linkedin, prof.Candidate.Github,
+			string(cvData), company, role, jobURL, reportText)
+	} else {
+		systemPrompt = `Ви є досвідченим автором резюме. Згенеруйте адаптоване резюме в форматі JSON для кандидата на основі його профілю та цільової вакансії.
+
+⚠️ КРИТИЧНЕ ПРАВИЛО МОВИ: Ви ПОВИННІ писати ВЕСЬ текстовий вміст ВИКЛЮЧНО українською мовою.
+Це означає:
+- Перекладіть ВСІ описи досвіду роботи, описи проєктів, записи про освіту з їхньої оригінальної мови на українську.
+- Напишіть професійне резюме (summary) українською мовою.
+- Напишіть теги компетенцій українською мовою.
+- Напишіть елементи навичок українською мовою.
+- Єдиним винятком є власні назви (назви компаній, назви продуктів, назви інструментів).
+
+Ви ПОВИННІ відповісти одним об'єктом JSON (без обгорток markdown, без коментарів), який точно відповідає цій схемі:
+{
+  "summary_text": "Комплексне професійне резюме, адаптоване до ролі (4-6 речень). Виділіть унікальну ціннісну пропозицію кандидата, основний досвід та відповідність цій конкретній ролі.",
+  "competencies_html": "Рядок HTML ВСІХ тегів компетенцій з резюме, кожен як <span class=\"competency-tag\">Навичка</span>. Включіть усі відповідні навички, нічого не опускайте.",
+  "experience_html": "Повний детальний HTML для ВСІХ записів досвіду роботи. Кожна робота як div .job з .job-header, що містить .job-company та .job-period, .job-role, та ul з li елементами. Включіть ВСІ пункти списку (bullet points) з резюме для кожної ролі — НЕ узагальнюйте і НЕ скорочуйте.",
+  "projects_html": "Повний детальний HTML для ВСІХ проєктів. Кожен проєкт як div .project з .project-title та .project-desc. Перекладіть та включіть ВСІ деталі проєкту, технічний стек та результати з резюме.",
+  "education_html": "Повний HTML для ВСІХ записів про освіту - кожен елемент як .edu-item з .edu-header, що містить .edu-title, .edu-org, .edu-year, та необов'язковий .edu-desc",
+  "certifications_html": "Повний HTML для ВСІХ сертифікатів та нагород - кожен як .cert-item з .cert-title, .cert-org, .cert-year",
+  "skills_html": "Рядок HTML ВСІХ категорій навичок, кожен як <span class=\"skill-item\"><span class=\"skill-category\">Категорія:</span> список навичок</span>"
+}
+
+ВАЖЛИВО: Будьте детальними та вичерпними. Включіть ВСЮ інформацію з резюме кандидата. Не узагальнюйте і не скорочуйте. Результат має бути повним, насиченим резюме — а не скелетом.
+Увесь HTML має бути чистими, правильними фрагментами HTML. Використовуйте <strong> для виділення. Ніколи не використовуйте форматування markdown.`
+
+		userPrompt = fmt.Sprintf(`Профіль кандидата:
+Ім'я: %s
+Email: %s
+Локація: %s
+LinkedIn: %s
+GitHub: %s
+
+Резюме/CV:
+%s
+
+Цільова вакансія:
+Компанія: %s
+Role: %s
+Job URL: %s
+
+Job Report:
+%s
+
+Згенеруй адаптоване CV у форматі JSON для цього кандидата. Повертай тільки JSON.`,
+			prof.Candidate.FullName, prof.Candidate.Email, prof.Candidate.Location,
+			prof.Candidate.Linkedin, prof.Candidate.Github,
+			string(cvData), company, role, jobURL, reportText)
+	}
 
 	response, err := provider.GenerateText(ctx, systemPrompt, userPrompt)
 	if err != nil {
@@ -592,32 +689,10 @@ Remember: translate ALL content to %s. Generate a tailored CV JSON for this cand
 	return pdfBytes, nil
 }
 
-func DetectJDLanguage(ctx context.Context, provider llm.Provider, jdText string) (string, error) {
-	systemPrompt := `You are a language detection bot. Analyze the job description and return the primary language in JSON format: {"language": "Ukrainian"} or {"language": "English"}. You MUST ONLY choose one of these two languages. If the text is in Russian or Ukrainian, you MUST return "Ukrainian". Do not return any other language. Only output JSON.`
-
-	response, err := provider.GenerateText(ctx, systemPrompt, jdText)
-	if err != nil {
-		return "", fmt.Errorf("LLM language detection failed: %w", err)
+func DetectJDLanguage(jdText string) string {
+	info := whatlanggo.Detect(jdText)
+	if info.Lang == whatlanggo.Eng {
+		return "English"
 	}
-
-	cleanJSON := response
-	if idx := strings.Index(cleanJSON, "{"); idx != -1 {
-		cleanJSON = cleanJSON[idx:]
-	}
-	if idx := strings.LastIndex(cleanJSON, "}"); idx != -1 {
-		cleanJSON = cleanJSON[:idx+1]
-	}
-
-	var result struct {
-		Language string `json:"language"`
-	}
-	if err := json.Unmarshal([]byte(cleanJSON), &result); err != nil {
-		return "", fmt.Errorf("failed to parse LLM response JSON: %w (raw response: %q)", err, response)
-	}
-
-	normalized := strings.TrimSpace(result.Language)
-	if strings.ToLower(normalized) == "english" {
-		return "English", nil
-	}
-	return "Ukrainian", nil
+	return "Ukrainian"
 }
