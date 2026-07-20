@@ -10,7 +10,7 @@ import (
 )
 
 // AskUserForApplyReview blocks until the user confirms or rejects the job application in Telegram.
-func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company, role, jobURL string, score float64, cvFileName, coverLetter, jobSlug string, prevMsgID int64) (string, bool, int64, error) {
+func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company, role, jobURL, summary string, score float64, cvFileName, coverLetter, jobSlug string, prevMsgID int64) (string, bool, int64, error) {
 	text := fmt.Sprintf(
 		"📋 *Job Review Required*\n\n"+
 			"*Company:* %s\n"+
@@ -40,7 +40,35 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 			err = notify.EditMessageReplyMarkup(msgID, keyboard)
 		}
 	} else {
-		msgID, err = notify.SendInlineKeyboard(text, keyboard)
+		richMsg := notify.InputRichMessage{
+			Blocks: []interface{}{
+				notify.InputRichBlockParagraph{
+					Type: "paragraph",
+					Text: fmt.Sprintf("📋 *Job Review Required*\n\n*Company:* %s\n*Role:* %s\n*Score:* %.1f/5\n*URL:* %s\n*CV:* %s", company, role, score, jobURL, cvFileName),
+				},
+				notify.InputRichBlockDetails{
+					Type:    "details",
+					Summary: "Evaluation Summary",
+					Blocks: []interface{}{
+						notify.InputRichBlockBlockQuotation{
+							Type: "blockquote",
+							Blocks: []interface{}{
+								notify.InputRichBlockParagraph{
+									Type: "paragraph",
+									Text: summary,
+								},
+							},
+						},
+					},
+					IsOpen: false,
+				},
+				notify.InputRichBlockParagraph{
+					Type: "paragraph",
+					Text: fmt.Sprintf("*Cover Letter:*\n%s\n\nShould I apply to this role?", coverLetter),
+				},
+			},
+		}
+		msgID, err = notify.SendRichInlineKeyboard(richMsg, keyboard)
 	}
 
 	if err != nil {

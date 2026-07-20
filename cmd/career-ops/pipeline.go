@@ -475,7 +475,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 					var msgID int64
 
 					for {
-					instruction, accept, retMsgID, err := pipeline.AskUserForApplyReview(ctx, bot, details.Company, details.Title, j.URL, res.Score, cvFileName, introMsg, j.Slug, msgID)
+					instruction, accept, retMsgID, err := pipeline.AskUserForApplyReview(ctx, bot, details.Company, details.Title, j.URL, res.Summary, res.Score, cvFileName, introMsg, j.Slug, msgID)
 					msgID = retMsgID
 					if err != nil {
 						*errorCount++
