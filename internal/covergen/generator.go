@@ -591,7 +591,7 @@ Remember: translate ALL content to %s. Generate a tailored CV JSON for this cand
 }
 
 func DetectJDLanguage(ctx context.Context, provider llm.Provider, jdText string) (string, error) {
-	systemPrompt := `You are a language detection bot. Analyze the job description and return the primary language in JSON format: {"language": "Ukrainian"} or {"language": "English"}. If it contains Russian or Ukrainian, return Ukrainian. Only output JSON.`
+	systemPrompt := `You are a language detection bot. Analyze the job description and return the primary language in JSON format: {"language": "Ukrainian"} or {"language": "English"}. You MUST ONLY choose one of these two languages. If the text is in Russian or Ukrainian, you MUST return "Ukrainian". Do not return any other language. Only output JSON.`
 
 	response, err := provider.GenerateText(ctx, systemPrompt, jdText)
 	if err != nil {
@@ -613,5 +613,9 @@ func DetectJDLanguage(ctx context.Context, provider llm.Provider, jdText string)
 		return "", fmt.Errorf("failed to parse LLM response JSON: %w (raw response: %q)", err, response)
 	}
 
-	return result.Language, nil
+	normalized := strings.TrimSpace(result.Language)
+	if strings.ToLower(normalized) == "english" {
+		return "English", nil
+	}
+	return "Ukrainian", nil
 }
