@@ -302,11 +302,16 @@ func parseScoreSummary(text string) *EvalResult {
 			endIdx = locB[0]
 		}
 		content := text[startIdx:endIdx]
-		if nl := strings.IndexByte(content, '\n'); nl != -1 {
-			content = content[nl+1:]
-		}
 		content = strings.TrimSpace(content)
-		content = strings.TrimLeft(content, ":.- \t\n\r")
+		if nl := strings.IndexByte(content, '\n'); nl != -1 {
+			firstLine := content[:nl]
+			if len(strings.TrimSpace(firstLine)) < 60 && len(strings.TrimSpace(content[nl+1:])) > 0 {
+				content = content[nl+1:]
+			}
+		}
+		content = stripBoldMarkers(content)
+		content = strings.TrimSpace(content)
+		content = strings.TrimLeft(content, ":.- \t\n\r)")
 		result.Summary = content
 	}
 

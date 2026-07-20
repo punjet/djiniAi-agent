@@ -210,6 +210,78 @@ LEGITIMACY: **High Confidence**
 	}
 }
 
+func TestParseScoreSummary_SummaryFormattingEdgeCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name: "single line without newline",
+			input: `### A) This is a single line summary without newline
+## B. Role Clarity
+---SCORE_SUMMARY---
+COMPANY: Acme Corp
+ROLE: Senior Go Engineer
+SCORE: 4.2
+ARCHETYPE: Tech Lead
+LEGITIMACY: High Confidence
+---END_SUMMARY---`,
+			expected: "This is a single line summary without newline",
+		},
+		{
+			name: "single line with newline at end",
+			input: `### A) This is a single line summary with newline at end
+## B. Role Clarity
+---SCORE_SUMMARY---
+COMPANY: Acme Corp
+ROLE: Senior Go Engineer
+SCORE: 4.2
+ARCHETYPE: Tech Lead
+LEGITIMACY: High Confidence
+---END_SUMMARY---`,
+			expected: "This is a single line summary with newline at end",
+		},
+		{
+			name: "long first line kept",
+			input: `### A) The candidate is a strong match for this role, with extensive experience in Go development.
+They also have strong experience with AWS and Kubernetes.
+## B. Role Clarity
+---SCORE_SUMMARY---
+COMPANY: Acme Corp
+ROLE: Senior Go Engineer
+SCORE: 4.2
+ARCHETYPE: Tech Lead
+LEGITIMACY: High Confidence
+---END_SUMMARY---`,
+			expected: "The candidate is a strong match for this role, with extensive experience in Go development.\nThey also have strong experience with AWS and Kubernetes.",
+		},
+		{
+			name: "short header line skipped",
+			input: `### A) Tech Stack Match
+The candidate is a strong match.
+## B. Role Clarity
+---SCORE_SUMMARY---
+COMPANY: Acme Corp
+ROLE: Senior Go Engineer
+SCORE: 4.2
+ARCHETYPE: Tech Lead
+LEGITIMACY: High Confidence
+---END_SUMMARY---`,
+			expected: "The candidate is a strong match.",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			res := parseScoreSummary(tc.input)
+			if res.Summary != tc.expected {
+				t.Errorf("expected %q, got %q", tc.expected, res.Summary)
+			}
+		})
+	}
+}
+
 // ---------------------------------------------------------------------------
 // slugifyCompany tests
 // ---------------------------------------------------------------------------
