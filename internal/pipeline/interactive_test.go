@@ -14,6 +14,9 @@ func TestApplyReviewEditLoop(t *testing.T) {
 	notify.SendInlineKeyboardFunc = func(text string, keyboard [][]notify.InlineButton) (int64, error) {
 		return 1, nil
 	}
+	notify.SendRichInlineKeyboardFunc = func(richMsg notify.InputRichMessage, keyboard [][]notify.InlineButton) (int64, error) {
+		return 1, nil
+	}
 	notify.EditMessageTextFunc = func(messageID int64, text string) error {
 		return nil
 	}
@@ -52,6 +55,7 @@ func TestApplyReviewEditLoop(t *testing.T) {
 		"Test Co",
 		"Developer",
 		"http://job.url",
+		"Some summary description",
 		4.5,
 		"cv.pdf",
 		"Dear hiring manager...",
@@ -77,6 +81,9 @@ func TestApplyReviewEditLoop(t *testing.T) {
 
 	// Reassign mock functions for the new bot instance
 	notify.SendInlineKeyboardFunc = func(text string, keyboard [][]notify.InlineButton) (int64, error) {
+		return 1, nil
+	}
+	notify.SendRichInlineKeyboardFunc = func(richMsg notify.InputRichMessage, keyboard [][]notify.InlineButton) (int64, error) {
 		return 1, nil
 	}
 	notify.EditMessageTextFunc = func(messageID int64, text string) error {
@@ -110,6 +117,7 @@ func TestApplyReviewEditLoop(t *testing.T) {
 		"Test Co",
 		"Developer",
 		"http://job.url",
+		"Some summary description",
 		4.5,
 		"cv.pdf",
 		"Dear hiring manager...",
