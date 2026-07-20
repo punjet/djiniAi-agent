@@ -147,7 +147,7 @@ You MUST respond with a single JSON object (no markdown wrappers like ` + "`" + 
     "closing": "..."
   },
   "djinni_message": "..."
-}`, lang, lang, lang)
+}`, lang, lang)
 
 	userPrompt := fmt.Sprintf(`Candidate Context:
 Name: %s
