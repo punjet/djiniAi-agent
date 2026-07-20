@@ -22,6 +22,7 @@ type EvalResult struct {
 	Score      float64
 	Archetype  string
 	Legitimacy string
+	Summary    string // Block A summary
 	FullText   string // the complete LLM response
 }
 
@@ -290,6 +291,23 @@ func parseScoreSummary(text string) *EvalResult {
 	scoreStr := extract("SCORE")
 	if v, err := strconv.ParseFloat(scoreStr, 64); err == nil {
 		result.Score = v
+	}
+
+	locA := blockPatterns[0].pattern.FindStringIndex(text)
+	if locA != nil {
+		startIdx := locA[1]
+		locB := blockPatterns[1].pattern.FindStringIndex(text)
+		endIdx := len(text)
+		if locB != nil && locB[0] > startIdx {
+			endIdx = locB[0]
+		}
+		content := text[startIdx:endIdx]
+		if nl := strings.IndexByte(content, '\n'); nl != -1 {
+			content = content[nl+1:]
+		}
+		content = strings.TrimSpace(content)
+		content = strings.TrimLeft(content, ":.- \t\n\r")
+		result.Summary = content
 	}
 
 	return result
