@@ -136,3 +136,129 @@ func TestApplyReviewEditLoop(t *testing.T) {
 		t.Errorf("expected empty instruction, got %q", instruction)
 	}
 }
+
+func TestAskUserForApplyReview_RichText(t *testing.T) {
+	bot := notify.NewTelegramBot()
+
+	var capturedRichMsg notify.InputRichMessage
+	var captureCalled bool
+
+	notify.SendRichInlineKeyboardFunc = func(richMsg notify.InputRichMessage, keyboard [][]notify.InlineButton) (int64, error) {
+		capturedRichMsg = richMsg
+		captureCalled = true
+		return 42, nil
+	}
+
+	bot.UpdateChan <- notify.TGUpdate{
+		UpdateID: 200,
+		CallbackQuery: &notify.TGCallback{
+			ID:   "cb_rich",
+			Data: "apply_accept:job-rich",
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	_, _, _, err := AskUserForApplyReview(
+		ctx,
+		bot,
+		"Rich Corp",
+		"AI Engineer",
+		"https://rich.url",
+		"Summary details",
+		4.8,
+		"resume.pdf",
+		"Cover Letter draft",
+		"job-rich",
+		0,
+	)
+	if err != nil {
+		t.Fatalf("AskUserForApplyReview returned error: %v", err)
+	}
+
+	if !captureCalled {
+		t.Fatal("expected SendRichInlineKeyboardFunc to be called, but it wasn't")
+	}
+
+	if len(capturedRichMsg.Blocks) < 3 {
+		t.Fatalf("expected at least 3 blocks in RichMessage, got %d", len(capturedRichMsg.Blocks))
+	}
+
+	p1, ok := capturedRichMsg.Blocks[0].(notify.InputRichBlockParagraph)
+	if !ok {
+		t.Fatalf("expected first block to be InputRichBlockParagraph, got %T", capturedRichMsg.Blocks[0])
+	}
+	p1Texts, ok := p1.Text.([]interface{})
+	if !ok {
+		t.Fatalf("expected paragraph text to be a slice of interface{}, got %T", p1.Text)
+	}
+
+	var hasBoldTitle, hasBoldCompany, hasBoldRole, hasBoldScore, hasBoldURL, hasBoldCV bool
+	for _, textObj := range p1Texts {
+		if bold, ok := textObj.(notify.RichTextBold); ok {
+			switch bold.Text {
+			case "Job Review Required":
+				hasBoldTitle = true
+			case "Company:":
+				hasBoldCompany = true
+			case "Role:":
+				hasBoldRole = true
+			case "Score:":
+				hasBoldScore = true
+			case "URL:":
+				hasBoldURL = true
+			case "CV:":
+				hasBoldCV = true
+			}
+		}
+	}
+
+	if !hasBoldTitle {
+		t.Error("missing bold block: 'Job Review Required'")
+	}
+	if !hasBoldCompany {
+		t.Error("missing bold block: 'Company:'")
+	}
+	if !hasBoldRole {
+		t.Error("missing bold block: 'Role:'")
+	}
+	if !hasBoldScore {
+		t.Error("missing bold block: 'Score:'")
+	}
+	if !hasBoldURL {
+		t.Error("missing bold block: 'URL:'")
+	}
+	if !hasBoldCV {
+		t.Error("missing bold block: 'CV:'")
+	}
+
+	details, ok := capturedRichMsg.Blocks[1].(notify.InputRichBlockDetails)
+	if !ok {
+		t.Fatalf("expected second block to be InputRichBlockDetails, got %T", capturedRichMsg.Blocks[1])
+	}
+	if details.Summary != "Evaluation Summary" {
+		t.Errorf("expected details summary 'Evaluation Summary', got %v", details.Summary)
+	}
+
+	p2, ok := capturedRichMsg.Blocks[2].(notify.InputRichBlockParagraph)
+	if !ok {
+		t.Fatalf("expected third block to be InputRichBlockParagraph, got %T", capturedRichMsg.Blocks[2])
+	}
+	p2Texts, ok := p2.Text.([]interface{})
+	if !ok {
+		t.Fatalf("expected third block text to be a slice of interface{}, got %T", p2.Text)
+	}
+
+	var hasBoldCoverLetter bool
+	for _, textObj := range p2Texts {
+		if bold, ok := textObj.(notify.RichTextBold); ok {
+			if bold.Text == "Cover Letter:" {
+				hasBoldCoverLetter = true
+			}
+		}
+	}
+	if !hasBoldCoverLetter {
+		t.Error("missing bold block: 'Cover Letter:'")
+	}
+}
