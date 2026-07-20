@@ -473,6 +473,11 @@ type InputRichBlockParagraph struct {
 	Text interface{} `json:"text"`
 }
 
+type RichTextBold struct {
+	Type string      `json:"type"` // "bold"
+	Text interface{} `json:"text"`
+}
+
 type InputRichBlockDetails struct {
 	Type    string        `json:"type"`
 	Summary interface{}   `json:"summary"`

@@ -44,7 +44,21 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 			Blocks: []interface{}{
 				notify.InputRichBlockParagraph{
 					Type: "paragraph",
-					Text: fmt.Sprintf("📋 *Job Review Required*\n\n*Company:* %s\n*Role:* %s\n*Score:* %.1f/5\n*URL:* %s\n*CV:* %s", company, role, score, jobURL, cvFileName),
+					Text: []interface{}{
+						"📋 ",
+						notify.RichTextBold{Type: "bold", Text: "Job Review Required"},
+						"\n\n",
+						notify.RichTextBold{Type: "bold", Text: "Company:"},
+						fmt.Sprintf(" %s\n", company),
+						notify.RichTextBold{Type: "bold", Text: "Role:"},
+						fmt.Sprintf(" %s\n", role),
+						notify.RichTextBold{Type: "bold", Text: "Score:"},
+						fmt.Sprintf(" %.1f/5\n", score),
+						notify.RichTextBold{Type: "bold", Text: "URL:"},
+						fmt.Sprintf(" %s\n", jobURL),
+						notify.RichTextBold{Type: "bold", Text: "CV:"},
+						fmt.Sprintf(" %s", cvFileName),
+					},
 				},
 				notify.InputRichBlockDetails{
 					Type:    "details",
@@ -64,7 +78,10 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 				},
 				notify.InputRichBlockParagraph{
 					Type: "paragraph",
-					Text: fmt.Sprintf("*Cover Letter:*\n%s\n\nShould I apply to this role?", coverLetter),
+					Text: []interface{}{
+						notify.RichTextBold{Type: "bold", Text: "Cover Letter:"},
+						fmt.Sprintf("\n%s\n\nShould I apply to this role?", coverLetter),
+					},
 				},
 			},
 		}
