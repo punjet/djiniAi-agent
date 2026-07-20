@@ -463,3 +463,83 @@ func SendDocument(filename string, fileData []byte, caption string) (int64, erro
 
 	return msgResult.MessageID, nil
 }
+
+type InputRichMessage struct {
+	Blocks []interface{} `json:"blocks,omitempty"`
+}
+
+type InputRichBlockParagraph struct {
+	Type string      `json:"type"`
+	Text interface{} `json:"text"`
+}
+
+type InputRichBlockDetails struct {
+	Type    string        `json:"type"`
+	Summary interface{}   `json:"summary"`
+	Blocks  []interface{} `json:"blocks"`
+	IsOpen  bool          `json:"is_open,omitempty"`
+}
+
+type InputRichBlockBlockQuotation struct {
+	Type   string        `json:"type"`
+	Blocks []interface{} `json:"blocks"`
+	Credit interface{}   `json:"credit,omitempty"`
+}
+
+type tgSendRichMessagePayload struct {
+	ChatID      string           `json:"chat_id"`
+	RichMessage InputRichMessage `json:"rich_message"`
+	ReplyMarkup interface{}      `json:"reply_markup,omitempty"`
+}
+
+var SendRichInlineKeyboardFunc = func(richMsg InputRichMessage, keyboard [][]InlineButton) (int64, error) {
+	token := os.Getenv("TG_BOT_TOKEN")
+	chatID := os.Getenv("TG_CHAT_ID")
+
+	if token == "" || chatID == "" {
+		return 0, fmt.Errorf("telegram TG_BOT_TOKEN or TG_CHAT_ID missing")
+	}
+
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendRichMessage", token)
+	payload := tgSendRichMessagePayload{
+		ChatID:      chatID,
+		RichMessage: richMsg,
+	}
+	if len(keyboard) > 0 {
+		payload.ReplyMarkup = InlineKeyboardMarkup{
+			InlineKeyboard: keyboard,
+		}
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return 0, err
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Post(url, "application/json", bytes.NewReader(body))
+	if err != nil {
+		return 0, fmt.Errorf("telegram request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var tgResp tgResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tgResp); err != nil {
+		return 0, err
+	}
+
+	if !tgResp.OK {
+		return 0, fmt.Errorf("telegram API returned OK=false: %s", string(tgResp.Result))
+	}
+
+	var msgResult tgSendMessageResult
+	if err := json.Unmarshal(tgResp.Result, &msgResult); err != nil {
+		return 0, err
+	}
+
+	return msgResult.MessageID, nil
+}
+
+func SendRichInlineKeyboard(richMsg InputRichMessage, keyboard [][]InlineButton) (int64, error) {
+	return SendRichInlineKeyboardFunc(richMsg, keyboard)
+}

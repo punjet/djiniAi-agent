@@ -37,3 +37,20 @@ func TestSendTelegramMessage(t *testing.T) {
 		t.Errorf("expected no error when token is unset, got: %v", err)
 	}
 }
+
+func TestSendRichInlineKeyboard_UnsetEnv(t *testing.T) {
+	oldToken := os.Getenv("TG_BOT_TOKEN")
+	oldChatID := os.Getenv("TG_CHAT_ID")
+	defer func() {
+		os.Setenv("TG_BOT_TOKEN", oldToken)
+		os.Setenv("TG_CHAT_ID", oldChatID)
+	}()
+
+	os.Unsetenv("TG_BOT_TOKEN")
+	os.Unsetenv("TG_CHAT_ID")
+
+	_, err := SendRichInlineKeyboard(InputRichMessage{}, nil)
+	if err == nil {
+		t.Error("expected error when env vars are unset, got nil")
+	}
+}
