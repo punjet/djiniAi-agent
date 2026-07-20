@@ -84,4 +84,14 @@ We use `make` to streamline common tasks.
   ```bash
   make run-test-apply
   ```
-  The trace log captures raw HTTP requests/responses, LLM prompts and responses, latency measurements, and pipeline step timing, making it invaluable for debugging integration issues. The log file is written to `logs/test-apply.log` relative to the project root.
+   The trace log captures raw HTTP requests/responses, LLM prompts and responses, latency measurements, and pipeline step timing, making it invaluable for debugging integration issues. The log file is written to `logs/test-apply.log` relative to the project root.
+
+## Applied-jobs tracker
+
+The bot maintains a persistent registry of jobs that have been applied to, stored in `data/applied_jobs.json`. This registry prevents duplicate evaluations and applications by:
+
+1. **Registry skip check**: Before fetching job details, the bot loads the registry and skips any job whose ID or slug is already recorded.
+2. **HTML-based detection**: After fetching job details, the bot checks for the HTML snippet indicating an already-applied status. If detected, the job is skipped and its ID is added to the registry.
+3. **Automatic persistence**: After a successful application submission (including retry completions), the job ID is automatically saved to the registry.
+
+The registry is a simple JSON file where keys are job IDs (numeric strings) and values are RFC3339 timestamps of the application moment. The file is written atomically to avoid corruption.
