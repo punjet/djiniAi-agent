@@ -20,6 +20,9 @@ func TestApplyReviewEditLoop(t *testing.T) {
 	notify.EditMessageTextFunc = func(messageID int64, text string) error {
 		return nil
 	}
+	notify.EditRichMessageTextFunc = func(messageID int64, richMsg notify.InputRichMessage) error {
+		return nil
+	}
 	notify.EditMessageReplyMarkupFunc = func(messageID int64, keyboard [][]notify.InlineButton) error {
 		return nil
 	}
@@ -89,6 +92,9 @@ func TestApplyReviewEditLoop(t *testing.T) {
 	notify.EditMessageTextFunc = func(messageID int64, text string) error {
 		return nil
 	}
+	notify.EditRichMessageTextFunc = func(messageID int64, richMsg notify.InputRichMessage) error {
+		return nil
+	}
 	notify.EditMessageReplyMarkupFunc = func(messageID int64, keyboard [][]notify.InlineButton) error {
 		return nil
 	}
@@ -147,6 +153,15 @@ func TestAskUserForApplyReview_RichText(t *testing.T) {
 		capturedRichMsg = richMsg
 		captureCalled = true
 		return 42, nil
+	}
+	notify.EditRichMessageTextFunc = func(messageID int64, richMsg notify.InputRichMessage) error {
+		return nil
+	}
+	notify.EditMessageReplyMarkupFunc = func(messageID int64, keyboard [][]notify.InlineButton) error {
+		return nil
+	}
+	notify.AnswerCallbackQueryFunc = func(callbackQueryID string, text string) error {
+		return nil
 	}
 
 	bot.UpdateChan <- notify.TGUpdate{

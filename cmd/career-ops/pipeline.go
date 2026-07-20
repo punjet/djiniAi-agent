@@ -503,18 +503,6 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 					break
 				}
 
-				text := fmt.Sprintf(
-					"📋 *Job Review Required*\n\n"+
-						"*Company:* %s\n"+
-						"*Role:* %s\n"+
-						"*Score:* %.1f/5\n"+
-						"*URL:* %s\n"+
-						"*CV:* %s\n\n"+
-						"*Cover Letter:*\n%s\n\n"+
-						"Should I apply to this role?",
-					details.Company, details.Title, res.Score, j.URL, cvFileName, introMsg,
-				)
-
 				logDeep("APPLY_SUBMIT", fmt.Sprintf("Submitting application to %s...", details.Company))
 				fmt.Printf("📤  Submitting application to %s...\n", details.Company)
 				
@@ -523,7 +511,16 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 				if err != nil {
 					*errorCount++
 					logDeep("ERROR", fmt.Sprintf("Application submission failed to %s: %v", details.Company, err))
-					_ = notify.EditMessageText(msgID, text+"\n\n🔴 *Status:* Failed to apply (queued for retry): "+err.Error())
+					statusBlock := &notify.InputRichBlockParagraph{
+						Type: "paragraph",
+						Text: []interface{}{
+							"\n\n🔴 ",
+							notify.RichTextBold{Type: "bold", Text: "Status:"},
+							" Failed to apply (queued for retry): " + err.Error(),
+						},
+					}
+					richMsg := pipeline.BuildApplyReviewRichMessage(details.Company, details.Title, j.URL, res.Summary, res.Score, cvFileName, introMsg, statusBlock)
+					_ = notify.EditRichMessageText(msgID, richMsg)
 					
 					app := pipeline.PendingApplication{
 						JobSlug:       j.Slug,
@@ -536,7 +533,16 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 					return false, fmt.Errorf("application submission failed (queued): %w", err)
 				}
 
-				_ = notify.EditMessageText(msgID, text+"\n\n🟢 *Status:* Application accepted and submitted.")
+				statusBlock := &notify.InputRichBlockParagraph{
+					Type: "paragraph",
+					Text: []interface{}{
+						"\n\n🟢 ",
+						notify.RichTextBold{Type: "bold", Text: "Status:"},
+						" Application accepted and submitted.",
+					},
+				}
+				richMsg := pipeline.BuildApplyReviewRichMessage(details.Company, details.Title, j.URL, res.Summary, res.Score, cvFileName, introMsg, statusBlock)
+				_ = notify.EditRichMessageText(msgID, richMsg)
 				logDeep("APPLY_SUCCESS", fmt.Sprintf("Successfully applied to %s", details.Company))
 				*pdfCount++
 				*appliedJobs = append(*appliedJobs, appliedJobInfo{
