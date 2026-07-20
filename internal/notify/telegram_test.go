@@ -1,6 +1,7 @@
 package notify
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -52,5 +53,45 @@ func TestSendRichInlineKeyboard_UnsetEnv(t *testing.T) {
 	_, err := SendRichInlineKeyboard(InputRichMessage{}, nil)
 	if err == nil {
 		t.Error("expected error when env vars are unset, got nil")
+	}
+}
+
+func TestInputRichMessage_Serialization(t *testing.T) {
+	richMsg := InputRichMessage{
+		Blocks: []interface{}{
+			InputRichBlockParagraph{
+				Type: "paragraph",
+				Text: []interface{}{
+					RichTextBold{Type: "bold", Text: "Hello"},
+					" World",
+				},
+			},
+			InputRichBlockDetails{
+				Type:    "details",
+				Summary: "Summary text",
+				IsOpen:  true,
+				Blocks: []interface{}{
+					InputRichBlockBlockQuotation{
+						Type: "blockquote",
+						Blocks: []interface{}{
+							InputRichBlockParagraph{
+								Type: "paragraph",
+								Text: "Quoted text",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	data, err := json.Marshal(richMsg)
+	if err != nil {
+		t.Fatalf("failed to marshal InputRichMessage: %v", err)
+	}
+
+	expectedJSON := `{"blocks":[{"type":"paragraph","text":[{"type":"bold","text":"Hello"}," World"]},{"type":"details","summary":"Summary text","blocks":[{"type":"blockquote","blocks":[{"type":"paragraph","text":"Quoted text"}]}],"is_open":true}]}`
+	if string(data) != expectedJSON {
+		t.Errorf("JSON mismatch.\nExpected: %s\nGot:      %s", expectedJSON, string(data))
 	}
 }
