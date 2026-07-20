@@ -19,6 +19,7 @@ type EvalResult struct {
 	Role       string
 	ReportPath string
 	FullText   string
+	Summary    string
 }
 
 // EvaluateJob performs an in-process evaluation of a job description,
@@ -48,5 +49,6 @@ func EvaluateJob(ctx context.Context, jdText string, cfg *config.Config, engine 
 		Role:       result.Role,
 		ReportPath: filepath.Join("reports", reportFilename),
 		FullText:   result.FullText,
+		Summary:    result.Summary,
 	}, nil
 }

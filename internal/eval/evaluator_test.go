@@ -172,6 +172,9 @@ func TestParseScoreSummary_FullMatch(t *testing.T) {
 	if result.Legitimacy != "High Confidence" {
 		t.Errorf("Legitimacy: got %q, want %q", result.Legitimacy, "High Confidence")
 	}
+	if result.Summary != "Content for block A." {
+		t.Errorf("Summary: got %q, want %q", result.Summary, "Content for block A.")
+	}
 }
 
 func TestParseScoreSummary_NoSummary(t *testing.T) {
