@@ -175,8 +175,8 @@ func TestOpenAIVars(t *testing.T) {
 
 		cfg := MustLoadPartial()
 
-		if cfg.OpenAIModel != "gpt-4o-mini" {
-			t.Errorf("expected OpenAIModel gpt-4o-mini, got %s", cfg.OpenAIModel)
+		if cfg.OpenAIModel != "gpt-5-mini" {
+			t.Errorf("expected OpenAIModel gpt-5-mini, got %s", cfg.OpenAIModel)
 		}
 		if cfg.OpenAITimeoutMS != 300000 {
 			t.Errorf("expected OpenAITimeoutMS 300000, got %d", cfg.OpenAITimeoutMS)
