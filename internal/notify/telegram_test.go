@@ -95,3 +95,45 @@ func TestInputRichMessage_Serialization(t *testing.T) {
 		t.Errorf("JSON mismatch.\nExpected: %s\nGot:      %s", expectedJSON, string(data))
 	}
 }
+
+func TestEditRichMessageText_UnsetEnv(t *testing.T) {
+	oldToken := os.Getenv("TG_BOT_TOKEN")
+	oldChatID := os.Getenv("TG_CHAT_ID")
+	defer func() {
+		os.Setenv("TG_BOT_TOKEN", oldToken)
+		os.Setenv("TG_CHAT_ID", oldChatID)
+	}()
+
+	os.Unsetenv("TG_BOT_TOKEN")
+	os.Unsetenv("TG_CHAT_ID")
+
+	err := EditRichMessageText(123, InputRichMessage{})
+	if err != nil {
+		t.Errorf("expected no error when env vars are unset, got %v", err)
+	}
+}
+
+func TestTgEditRichPayload_Serialization(t *testing.T) {
+	payload := tgEditRichPayload{
+		ChatID:    "12345",
+		MessageID: 67890,
+		RichMessage: InputRichMessage{
+			Blocks: []interface{}{
+				InputRichBlockParagraph{
+					Type: "paragraph",
+					Text: "Hello",
+				},
+			},
+		},
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("failed to marshal tgEditRichPayload: %v", err)
+	}
+
+	expectedJSON := `{"chat_id":"12345","message_id":67890,"rich_message":{"blocks":[{"type":"paragraph","text":"Hello"}]}}`
+	if string(data) != expectedJSON {
+		t.Errorf("JSON mismatch.\nExpected: %s\nGot:      %s", expectedJSON, string(data))
+	}
+}

@@ -9,20 +9,58 @@ import (
 	"djinni-bot-go/internal/notify"
 )
 
+func BuildApplyReviewRichMessage(company, role, jobURL, summary string, score float64, cvFileName, coverLetter string, statusBlock *notify.InputRichBlockParagraph) notify.InputRichMessage {
+	blocks := []interface{}{
+		notify.InputRichBlockParagraph{
+			Type: "paragraph",
+			Text: []interface{}{
+				"📋 ",
+				notify.RichTextBold{Type: "bold", Text: "Job Review Required"},
+				"\n\n",
+				notify.RichTextBold{Type: "bold", Text: "Company:"},
+				fmt.Sprintf(" %s\n", company),
+				notify.RichTextBold{Type: "bold", Text: "Role:"},
+				fmt.Sprintf(" %s\n", role),
+				notify.RichTextBold{Type: "bold", Text: "Score:"},
+				fmt.Sprintf(" %.1f/5\n", score),
+				notify.RichTextBold{Type: "bold", Text: "URL:"},
+				fmt.Sprintf(" %s\n", jobURL),
+				notify.RichTextBold{Type: "bold", Text: "CV:"},
+				fmt.Sprintf(" %s", cvFileName),
+			},
+		},
+		notify.InputRichBlockDetails{
+			Type:    "details",
+			Summary: "Evaluation Summary",
+			Blocks: []interface{}{
+				notify.InputRichBlockBlockQuotation{
+					Type: "blockquote",
+					Blocks: []interface{}{
+						notify.InputRichBlockParagraph{
+							Type: "paragraph",
+							Text: summary,
+						},
+					},
+				},
+			},
+			IsOpen: false,
+		},
+		notify.InputRichBlockParagraph{
+			Type: "paragraph",
+			Text: []interface{}{
+				notify.RichTextBold{Type: "bold", Text: "Cover Letter:"},
+				fmt.Sprintf("\n%s\n\nShould I apply to this role?", coverLetter),
+			},
+		},
+	}
+	if statusBlock != nil {
+		blocks = append(blocks, *statusBlock)
+	}
+	return notify.InputRichMessage{Blocks: blocks}
+}
+
 // AskUserForApplyReview blocks until the user confirms or rejects the job application in Telegram.
 func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company, role, jobURL, summary string, score float64, cvFileName, coverLetter, jobSlug string, prevMsgID int64) (string, bool, int64, error) {
-	text := fmt.Sprintf(
-		"📋 *Job Review Required*\n\n"+
-			"*Company:* %s\n"+
-			"*Role:* %s\n"+
-			"*Score:* %.1f/5\n"+
-			"*URL:* %s\n"+
-			"*CV:* %s\n\n"+
-			"*Cover Letter:*\n%s\n\n"+
-			"Should I apply to this role?",
-		company, role, score, jobURL, cvFileName, coverLetter,
-	)
-
 	keyboard := [][]notify.InlineButton{
 		{
 			{Text: "✅ Submit", CallbackData: "apply_accept:" + jobSlug},
@@ -35,56 +73,13 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 	var err error
 	if prevMsgID != 0 {
 		msgID = prevMsgID
-		err = notify.EditMessageText(msgID, text)
+		richMsg := BuildApplyReviewRichMessage(company, role, jobURL, summary, score, cvFileName, coverLetter, nil)
+		err = notify.EditRichMessageText(msgID, richMsg)
 		if err == nil {
 			err = notify.EditMessageReplyMarkup(msgID, keyboard)
 		}
 	} else {
-		richMsg := notify.InputRichMessage{
-			Blocks: []interface{}{
-				notify.InputRichBlockParagraph{
-					Type: "paragraph",
-					Text: []interface{}{
-						"📋 ",
-						notify.RichTextBold{Type: "bold", Text: "Job Review Required"},
-						"\n\n",
-						notify.RichTextBold{Type: "bold", Text: "Company:"},
-						fmt.Sprintf(" %s\n", company),
-						notify.RichTextBold{Type: "bold", Text: "Role:"},
-						fmt.Sprintf(" %s\n", role),
-						notify.RichTextBold{Type: "bold", Text: "Score:"},
-						fmt.Sprintf(" %.1f/5\n", score),
-						notify.RichTextBold{Type: "bold", Text: "URL:"},
-						fmt.Sprintf(" %s\n", jobURL),
-						notify.RichTextBold{Type: "bold", Text: "CV:"},
-						fmt.Sprintf(" %s", cvFileName),
-					},
-				},
-				notify.InputRichBlockDetails{
-					Type:    "details",
-					Summary: "Evaluation Summary",
-					Blocks: []interface{}{
-						notify.InputRichBlockBlockQuotation{
-							Type: "blockquote",
-							Blocks: []interface{}{
-								notify.InputRichBlockParagraph{
-									Type: "paragraph",
-									Text: summary,
-								},
-							},
-						},
-					},
-					IsOpen: false,
-				},
-				notify.InputRichBlockParagraph{
-					Type: "paragraph",
-					Text: []interface{}{
-						notify.RichTextBold{Type: "bold", Text: "Cover Letter:"},
-						fmt.Sprintf("\n%s\n\nShould I apply to this role?", coverLetter),
-					},
-				},
-			},
-		}
+		richMsg := BuildApplyReviewRichMessage(company, role, jobURL, summary, score, cvFileName, coverLetter, nil)
 		msgID, err = notify.SendRichInlineKeyboard(richMsg, keyboard)
 	}
 
@@ -101,19 +96,46 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 				data := u.CallbackQuery.Data
 				if strings.HasPrefix(data, "apply_accept:") && strings.HasSuffix(data, jobSlug) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Accepted!")
-					_ = notify.EditMessageText(msgID, text+"\n\n⏳ *Status:* Submitting application to Djinni...")
+					statusBlock := &notify.InputRichBlockParagraph{
+						Type: "paragraph",
+						Text: []interface{}{
+							"\n\n⏳ ",
+							notify.RichTextBold{Type: "bold", Text: "Status:"},
+							" Submitting application to Djinni...",
+						},
+					}
+					richMsg := BuildApplyReviewRichMessage(company, role, jobURL, summary, score, cvFileName, coverLetter, statusBlock)
+					_ = notify.EditRichMessageText(msgID, richMsg)
 					_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
 					return "", true, msgID, nil
 				}
 				if strings.HasPrefix(data, "apply_reject:") && strings.HasSuffix(data, jobSlug) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Rejected!")
-					_ = notify.EditMessageText(msgID, text+"\n\n🔴 *Status:* Application rejected (skipped).")
+					statusBlock := &notify.InputRichBlockParagraph{
+						Type: "paragraph",
+						Text: []interface{}{
+							"\n\n🔴 ",
+							notify.RichTextBold{Type: "bold", Text: "Status:"},
+							" Application rejected (skipped).",
+						},
+					}
+					richMsg := BuildApplyReviewRichMessage(company, role, jobURL, summary, score, cvFileName, coverLetter, statusBlock)
+					_ = notify.EditRichMessageText(msgID, richMsg)
 					_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
 					return "", false, msgID, nil
 				}
 				if strings.HasPrefix(data, "apply_edit:") && strings.HasSuffix(data, jobSlug) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Waiting for edit instructions...")
-					_ = notify.EditMessageText(msgID, text+"\n\n🤖 *Status:* Waiting for you to type what the AI should change in the cover letter...")
+					statusBlock := &notify.InputRichBlockParagraph{
+						Type: "paragraph",
+						Text: []interface{}{
+							"\n\n🤖 ",
+							notify.RichTextBold{Type: "bold", Text: "Status:"},
+							" Waiting for you to type what the AI should change in the cover letter...",
+						},
+					}
+					richMsg := BuildApplyReviewRichMessage(company, role, jobURL, summary, score, cvFileName, coverLetter, statusBlock)
+					_ = notify.EditRichMessageText(msgID, richMsg)
 					_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
 
 					instruction, err := waitForUserMessage(ctx, bot)
@@ -121,7 +143,16 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 						return "", false, msgID, err
 					}
 
-					_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n🔄 *Status:* Regenerating cover letter using guidance: %q", instruction))
+					statusBlock2 := &notify.InputRichBlockParagraph{
+						Type: "paragraph",
+						Text: []interface{}{
+							"\n\n🔄 ",
+							notify.RichTextBold{Type: "bold", Text: "Status:"},
+							fmt.Sprintf(" Regenerating cover letter using guidance: %q", instruction),
+						},
+					}
+					richMsg2 := BuildApplyReviewRichMessage(company, role, jobURL, summary, score, cvFileName, coverLetter, statusBlock2)
+					_ = notify.EditRichMessageText(msgID, richMsg2)
 					return "edit:" + instruction, false, msgID, nil
 				}
 			}

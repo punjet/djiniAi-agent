@@ -27,6 +27,13 @@ type tgEditPayload struct {
 	ReplyMarkup interface{} `json:"reply_markup,omitempty"`
 }
 
+type tgEditRichPayload struct {
+	ChatID      string           `json:"chat_id"`
+	MessageID   int64            `json:"message_id"`
+	RichMessage InputRichMessage `json:"rich_message"`
+	ReplyMarkup interface{}      `json:"reply_markup,omitempty"`
+}
+
 type tgEditMarkupPayload struct {
 	ChatID      string      `json:"chat_id"`
 	MessageID   int64       `json:"message_id"`
@@ -198,6 +205,39 @@ var EditMessageTextFunc = func(messageID int64, text string) error {
 // EditMessageText edits the text of a previously sent message.
 func EditMessageText(messageID int64, text string) error {
 	return EditMessageTextFunc(messageID, text)
+}
+
+var EditRichMessageTextFunc = func(messageID int64, richMsg InputRichMessage) error {
+	token := os.Getenv("TG_BOT_TOKEN")
+	chatID := os.Getenv("TG_CHAT_ID")
+
+	if token == "" || chatID == "" {
+		return nil
+	}
+
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/editMessageText", token)
+	payload := tgEditRichPayload{
+		ChatID:      chatID,
+		MessageID:   messageID,
+		RichMessage: richMsg,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Post(url, "application/json", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
+func EditRichMessageText(messageID int64, richMsg InputRichMessage) error {
+	return EditRichMessageTextFunc(messageID, richMsg)
 }
 
 var EditMessageReplyMarkupFunc = func(messageID int64, keyboard [][]InlineButton) error {
