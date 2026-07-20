@@ -50,6 +50,17 @@ func retryPendingApplications(ctx context.Context, dc *client.DjinniClient) {
 		} else {
 			fmt.Printf("✅ Success for %s!\n", app.JobSlug)
 			successCount++
+			// Extract job ID from JobSlug (first part before \-)
+			jobID := ""
+			parts := strings.Split(app.JobSlug, "-")
+			if len(parts) > 0 {
+				jobID = parts[0]
+			}
+			if jobID != "" {
+				if err := pipeline.SaveAppliedJob(jobID); err != nil {
+					logDeep("WARNING", fmt.Sprintf("Failed to save applied job ID %s: %v", jobID, err))
+				}
+			}
 		}
 	}
 
@@ -327,12 +338,31 @@ func logDeep(stage, message string) {
 }
 
 func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Config, bot *notify.TelegramBot, dc *client.DjinniClient, engine llm.Engine, dedup *pipeline.Dedup, j extractor.JobSummary, skippedDedupe, skippedThreshold, errorCount, pdfCount *int, appliedJobs *[]appliedJobInfo) (bool, error) {
-	fmt.Printf("\n%-66s\n", "⚡ Processing: "+j.Title)
-	logDeep("PROCESS_JOB_ITEM", fmt.Sprintf("Fetching details for %s", j.Slug))
+    if panicStop != nil && panicStop.Load() {
+        return false, fmt.Errorf("panicStop triggered")
+    }
 
-	if panicStop != nil && panicStop.Load() {
-		return false, fmt.Errorf("panicStop triggered")
-	}
+    // Load applied jobs registry
+    appliedMap, err := pipeline.LoadAppliedJobs()
+    if err != nil {
+        logDeep("ERROR", fmt.Sprintf("Failed to load applied jobs registry: %v", err))
+    } else {
+        if _, ok := appliedMap[j.ID]; ok {
+            msg := fmt.Sprintf("Skipping already applied job ID %s (registry)", j.ID)
+            logDeep("REGISTRY_SKIP", msg)
+            fmt.Printf("⏭   %s\n", msg)
+            return false, nil
+        }
+        if _, ok := appliedMap[j.Slug]; ok {
+            msg := fmt.Sprintf("Skipping already applied job %s (registry)", j.Slug)
+            logDeep("REGISTRY_SKIP", msg)
+            fmt.Printf("⏭   %s\n", msg)
+            return false, nil
+        }
+    }
+    fmt.Printf("\n%-66s\n", "⚡ Processing: "+j.Title)
+    logDeep("PROCESS_JOB_ITEM", fmt.Sprintf("Fetching details for %s", j.Slug))
+
 
 	// Fetch full job details
 	details, err := api.GetJobDetails(dc, j.Slug)
@@ -341,6 +371,16 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 		logDeep("ERROR", fmt.Sprintf("GetJobDetails failed for %s: %v", j.Slug, err))
 		return false, err
 	}
+		// HTML skip check
+		if details.AlreadyApplied {
+			msg := fmt.Sprintf("Already applied to %s (HTML snippet detected). Skipping.", details.Title)
+			logDeep("HTML_SKIP", msg)
+			fmt.Printf("⏭   Already applied (HTML snippet detected). Skipping.\n")
+			if err := pipeline.SaveAppliedJob(j.ID); err != nil {
+				logDeep("WARNING", fmt.Sprintf("Failed to save applied job ID %s: %v", j.ID, err))
+			}
+			return false, nil
+		}
 
 	// Double check deduplication now that we have the exact company name
 	if !dedup.IsNew(j.URL, details.Company, details.Title) {
@@ -551,6 +591,10 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 					Score:   res.Score,
 					DryRun:  false,
 				})
+			// Persist job ID to applied jobs registry
+			if err := pipeline.SaveAppliedJob(j.ID); err != nil {
+				logDeep("WARNING", fmt.Sprintf("Failed to save applied job ID %s: %v", j.ID, err))
+			}
 
 				// Create applied TSV tracker entry so merge-tracker upgrades status to "Applied"
 				createAppliedTrackerAddition(flagContextDir, res, details.Company, details.Title, providerName(cfg, engine))

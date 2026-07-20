@@ -19,13 +19,14 @@ type Dialogue struct {
 
 // JobFull represents the full details of a job posting combining summary and detailed info.
 type JobFull struct {
-	ID            string                `json:"id"`
-	Slug          string                `json:"slug"`
-	Title         string                `json:"title"`
-	Company       string                `json:"company"`
-	Description   string                `json:"description"`
-	Requirements  string                `json:"requirements"`
-	URL           string                `json:"url"`
-	QuizID        string                `json:"quiz_id"`
-	QuizQuestions []extractor.QuizQuestion `json:"quiz_questions,omitempty"`
+	ID             string                `json:"id"`
+	Slug           string                `json:"slug"`
+	Title          string                `json:"title"`
+	Company        string                `json:"company"`
+	Description    string                `json:"description"`
+	Requirements   string                `json:"requirements"`
+	URL            string                `json:"url"`
+	QuizID         string                `json:"quiz_id"`
+	QuizQuestions  []extractor.QuizQuestion `json:"quiz_questions,omitempty"`
+	AlreadyApplied bool                  `json:"already_applied"`
 }
