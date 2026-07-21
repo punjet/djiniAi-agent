@@ -171,7 +171,7 @@ func TestGenerateCustomCV_InvalidContextDir(t *testing.T) {
 		FreeLLMAPIBaseURL: "http://localhost:3001",
 		LLMAPIKey:         "test-key",
 	}
-	_, err := GenerateCustomCV(context.Background(), cfg, "", "/nonexistent/path", "", "Acme", "Dev", "/tmp/report")
+	_, err := GenerateCustomCV(context.Background(), cfg, "", "/nonexistent/path", "", "Acme", "Dev", "/tmp/report", "test JD")
 	if err == nil {
 		t.Error("expected error for nonexistent contextDir, got nil")
 	}

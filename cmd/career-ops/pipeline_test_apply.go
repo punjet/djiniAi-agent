@@ -168,7 +168,7 @@ func runPipelineTestApply(cmd *cobra.Command, args []string) error {
 	logTestApply("Full LLM Response -> %s", res.FullText)
 
 	logTestApply("Generating Custom CV...")
-	cvBytes, err := covergen.GenerateCustomCV(ctx, cfg, engine, flagContextDir, testJob.URL, details.Company, details.Title, filepath.Join(flagContextDir, res.ReportPath))
+	cvBytes, err := covergen.GenerateCustomCV(ctx, cfg, engine, flagContextDir, testJob.URL, details.Company, details.Title, filepath.Join(flagContextDir, res.ReportPath), details.Description)
 	if err != nil {
 		logTestApply("CV Generation error: %v", err)
 		return fmt.Errorf("cv gen failed: %w", err)
