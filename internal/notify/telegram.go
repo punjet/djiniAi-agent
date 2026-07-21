@@ -77,8 +77,10 @@ type TGCallback struct {
 }
 
 type tgResponse struct {
-	OK     bool          `json:"ok"`
-	Result json.RawMessage `json:"result"`
+	OK          bool            `json:"ok"`
+	Result      json.RawMessage `json:"result,omitempty"`
+	Description string          `json:"description,omitempty"`
+	ErrorCode   int             `json:"error_code,omitempty"`
 }
 
 type tgSendMessageResult struct {
@@ -113,8 +115,13 @@ func SendTelegramMessage(text string) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("telegram API returned status %d", resp.StatusCode)
+	var tgResp tgResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tgResp); err != nil {
+		return err
+	}
+
+	if !tgResp.OK {
+		return fmt.Errorf("telegram API returned OK=false: %s (code %d)", tgResp.Description, tgResp.ErrorCode)
 	}
 
 	return nil
@@ -156,7 +163,7 @@ var SendInlineKeyboardFunc = func(text string, keyboard [][]InlineButton) (int64
 	}
 
 	if !tgResp.OK {
-		return 0, fmt.Errorf("telegram API returned OK=false: %s", string(tgResp.Result))
+		return 0, fmt.Errorf("telegram API returned OK=false: %s (code %d)", tgResp.Description, tgResp.ErrorCode)
 	}
 
 	var msgResult tgSendMessageResult
@@ -340,7 +347,7 @@ var GetUpdatesFunc = func(offset int64) ([]TGUpdate, error) {
 	}
 
 	if !tgResp.OK {
-		return nil, fmt.Errorf("telegram getUpdates failed: %s", string(bodyBytes))
+		return nil, fmt.Errorf("telegram API returned OK=false: %s (code %d)", tgResp.Description, tgResp.ErrorCode)
 	}
 
 	var updates []TGUpdate
@@ -383,17 +390,13 @@ func SendTelegramMessageID(text string) (int64, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("telegram API returned status %d", resp.StatusCode)
-	}
-
 	var tgResp tgResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tgResp); err != nil {
 		return 0, err
 	}
 
 	if !tgResp.OK {
-		return 0, fmt.Errorf("telegram API returned OK=false: %s", string(tgResp.Result))
+		return 0, fmt.Errorf("telegram API returned OK=false: %s (code %d)", tgResp.Description, tgResp.ErrorCode)
 	}
 
 	var msgResult tgSendMessageResult
@@ -493,7 +496,7 @@ func SendDocument(filename string, fileData []byte, caption string) (int64, erro
 	}
 
 	if !tgResp.OK {
-		return 0, fmt.Errorf("telegram sendDocument API returned OK=false: %s", string(tgResp.Result))
+		return 0, fmt.Errorf("telegram API returned OK=false: %s (code %d)", tgResp.Description, tgResp.ErrorCode)
 	}
 
 	var msgResult tgSendMessageResult
@@ -574,7 +577,7 @@ var SendRichInlineKeyboardFunc = func(richMsg InputRichMessage, keyboard [][]Inl
 	}
 
 	if !tgResp.OK {
-		return 0, fmt.Errorf("telegram API returned OK=false: %s", string(tgResp.Result))
+		return 0, fmt.Errorf("telegram API returned OK=false: %s (code %d)", tgResp.Description, tgResp.ErrorCode)
 	}
 
 	var msgResult tgSendMessageResult
