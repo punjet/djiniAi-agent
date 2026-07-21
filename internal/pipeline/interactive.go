@@ -10,6 +10,11 @@ import (
 )
 
 func BuildApplyReviewRichMessage(company, role, jobURL, summary string, score float64, cvFileName, coverLetter string, statusBlock *notify.InputRichBlockParagraph) notify.InputRichMessage {
+	runes := []rune(coverLetter)
+	if len(runes) > 3000 {
+		coverLetter = string(runes[:3000]) + "... [truncated]"
+	}
+
 	blocks := []interface{}{
 		notify.InputRichBlockParagraph{
 			Type: "paragraph",

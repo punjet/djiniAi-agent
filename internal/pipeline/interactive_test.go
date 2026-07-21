@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -280,5 +281,31 @@ func TestAskUserForApplyReview_RichText(t *testing.T) {
 	}
 	if !hasBoldCoverLetter {
 		t.Error("missing bold block: 'Cover Letter:'")
+	}
+}
+
+func TestBuildApplyReviewRichMessage_Truncation(t *testing.T) {
+	longCover := strings.Repeat("A", 3000)
+	msg := BuildApplyReviewRichMessage("Test Co", "Dev", "http://job.url", "Summary", 4.0, "cv.pdf", longCover, nil)
+	p2, ok := msg.Blocks[3].(notify.InputRichBlockParagraph)
+	if !ok {
+		t.Fatalf("expected block 3 to be paragraph")
+	}
+	p2Texts := p2.Text.([]interface{})
+	coverLetterText := p2Texts[1].(string)
+	if !strings.Contains(coverLetterText, "AAAA") || strings.Contains(coverLetterText, "truncated") {
+		t.Errorf("cover letter shouldn't be truncated at 3000 characters")
+	}
+
+	longCover2 := strings.Repeat("A", 3001)
+	msg2 := BuildApplyReviewRichMessage("Test Co", "Dev", "http://job.url", "Summary", 4.0, "cv.pdf", longCover2, nil)
+	p22, ok := msg2.Blocks[3].(notify.InputRichBlockParagraph)
+	if !ok {
+		t.Fatalf("expected block 3 to be paragraph")
+	}
+	p2Texts2 := p22.Text.([]interface{})
+	coverLetterText2 := p2Texts2[1].(string)
+	if !strings.Contains(coverLetterText2, "... [truncated]") {
+		t.Errorf("cover letter should be truncated")
 	}
 }
