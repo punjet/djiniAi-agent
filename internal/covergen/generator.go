@@ -449,7 +449,7 @@ func ValidateCVHTML(htmlContent string) error {
 	return nil
 }
 
-func GenerateCustomCV(ctx context.Context, cfg *config.Config, engine llm.Engine, contextDir, jobURL, company, role, reportPath string) ([]byte, error) {
+func GenerateCustomCV(ctx context.Context, cfg *config.Config, engine llm.Engine, contextDir, jobURL, company, role, reportPath, jdText string) ([]byte, error) {
 	profilePath := filepath.Join(contextDir, "config", "profile.yml")
 	profileData, err := os.ReadFile(profilePath)
 	if err != nil {
@@ -482,7 +482,9 @@ func GenerateCustomCV(ctx context.Context, cfg *config.Config, engine llm.Engine
 
 	// Detect JD language — same mechanism used in GenerateCoverLetter
 	var jobText string
-	if reportText != "" {
+	if jdText != "" {
+		jobText = jdText
+	} else if reportText != "" {
 		jobText = reportText
 	} else {
 		jobText = fmt.Sprintf("%s %s", company, role)

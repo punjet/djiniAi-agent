@@ -13,6 +13,8 @@ import (
 	"djinni-bot-go/internal/llm"
 	// "github.com/rylans/langdetect"
 	// _ "github.com/rylans/langdetect/profiles"
+
+	"github.com/abadojack/whatlanggo"
 )
 
 // EvalResult holds the parsed output of a job evaluation.
@@ -48,6 +50,9 @@ func Evaluate(ctx context.Context, provider llm.Provider, contextDir, jdText str
 	}
 
 	systemPrompt := buildSystemPrompt(cf)
+	lang := detectJDLanguage(jdText)
+	systemPrompt = strings.ReplaceAll(systemPrompt, "[[JD_LANG]]", lang)
+
 	userMessage := "JOB DESCRIPTION TO EVALUATE:\n\n" + jdText
 
 	text, err := provider.GenerateText(ctx, systemPrompt, userMessage)
@@ -92,6 +97,14 @@ func loadContextFiles(contextDir string) (contextFiles, error) {
 // ---------------------------------------------------------------------------
 // Prompt building
 // ---------------------------------------------------------------------------
+
+func detectJDLanguage(jdText string) string {
+	info := whatlanggo.Detect(jdText)
+	if info.Lang == whatlanggo.Eng {
+		return "English"
+	}
+	return "Ukrainian"
+}
 
 // detectLanguage detects the language of the given text.
 // func detectLanguage(summary string) string {
