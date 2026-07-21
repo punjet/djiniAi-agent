@@ -10,15 +10,16 @@ import (
 )
 
 type TelegramBot struct {
-	commands    map[string]func(*TGMessage)
-	lastSummary string
-	mu          sync.RWMutex
-	stopChan    chan struct{}
-	stopOnce    sync.Once
-	running     bool
-	offset      int64
-	statusMsgID int64
-	UpdateChan  chan TGUpdate
+	commands         map[string]func(*TGMessage)
+	callbackHandlers map[string]func(*TGCallback)
+	lastSummary      string
+	mu               sync.RWMutex
+	stopChan         chan struct{}
+	stopOnce         sync.Once
+	running          bool
+	offset           int64
+	statusMsgID      int64
+	UpdateChan       chan TGUpdate
 }
 
 // SendMessageFunc allows mocking the Telegram message sender in tests.
@@ -26,8 +27,9 @@ var SendMessageFunc = SendTelegramMessage
 
 func NewTelegramBot() *TelegramBot {
 	bot := &TelegramBot{
-		commands: make(map[string]func(*TGMessage)),
-		UpdateChan: make(chan TGUpdate, 100),
+		commands:         make(map[string]func(*TGMessage)),
+		callbackHandlers: make(map[string]func(*TGCallback)),
+		UpdateChan:       make(chan TGUpdate, 100),
 	}
 	bot.SetupDefaultCommands()
 	return bot
@@ -54,7 +56,7 @@ func (b *TelegramBot) SetupDefaultCommands() {
 	b.Commands(map[string]func(*TGMessage){
 		"/start": func(m *TGMessage) {
 			if !b.verifyChat(m) { return }
-			SendMessageFunc("Hello! I am your Djinni Bot. Commands: /start, /status, /stop, /panic, /report")
+			SendMessageFunc("Hello! I am your Djinni Bot. Commands: /start, /status, /stop, /panic, /report, /stats")
 		},
 		"/status": func(m *TGMessage) {
 			if !b.verifyChat(m) { return }
@@ -92,6 +94,13 @@ func (b *TelegramBot) AddCommand(cmd string, handler func(*TGMessage)) {
 	defer b.mu.Unlock()
 	b.commands[cmd] = handler
 }
+
+func (b *TelegramBot) AddCallbackHandler(prefix string, handler func(*TGCallback)) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.callbackHandlers[prefix] = handler
+}
+
 
 func (b *TelegramBot) SetLastSummary(summary string) {
 	b.mu.Lock()
@@ -147,6 +156,23 @@ func (b *TelegramBot) Start() {
 				}
 				for _, update := range updates {
 					b.offset = update.UpdateID + 1
+					
+					if update.CallbackQuery != nil {
+						b.mu.RLock()
+						var handler func(*TGCallback)
+						for prefix, fn := range b.callbackHandlers {
+							if strings.HasPrefix(update.CallbackQuery.Data, prefix) {
+								handler = fn
+								break
+							}
+						}
+						b.mu.RUnlock()
+						if handler != nil {
+							handler(update.CallbackQuery)
+						}
+						continue
+					}
+
 					if update.Message != nil && strings.HasPrefix(update.Message.Text, "/") {
 						cmdStr := strings.Split(update.Message.Text, " ")[0]
 						b.mu.RLock()
