@@ -155,7 +155,7 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 		reportsDir := filepath.Join(flagContextDir, "reports")
 		reports := getLatestReports(reportsDir, 5)
 		if len(reports) == 0 {
-			notify.SendTelegramMessage("No reports found.")
+			notify.SendMessageFunc("No reports found.")
 			return
 		}
 
@@ -170,7 +170,7 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 		
 		_, err := notify.SendInlineKeyboard("Here are the latest reports:", keyboard)
 		if err != nil {
-			notify.SendTelegramMessage(fmt.Sprintf("Failed to send stats: %v", err))
+			notify.SendMessageFunc(fmt.Sprintf("Failed to send stats: %v", err))
 		}
 	})
 
@@ -182,7 +182,7 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 		
 		content, err := os.ReadFile(reportPath)
 		if err != nil {
-			notify.SendTelegramMessage(fmt.Sprintf("Could not load report %s: %v", filename, err))
+			notify.SendMessageFunc(fmt.Sprintf("Could not load report %s: %v", filename, err))
 			return
 		}
 		
@@ -191,7 +191,7 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 		if len(reportText) > 4000 {
 			reportText = reportText[:4000] + "...\n(truncated)"
 		}
-		notify.SendTelegramMessage(reportText)
+		notify.SendMessageFunc(reportText)
 
 		scoreVal := 0.0
 		if scoreMatch := regexp.MustCompile(`\*\*Score:\*\*\s*([\d\.]+)/`).FindStringSubmatch(reportText); len(scoreMatch) > 1 {
@@ -212,7 +212,7 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 					if strings.Contains(pdfCompanySlug, companySlug) || strings.Contains(companySlug, pdfCompanySlug) {
 						pdfData, _ := os.ReadFile(filepath.Join(outDir, e.Name()))
 						if pdfData != nil {
-							notify.SendTelegramMessage(fmt.Sprintf("Sending generated CV PDF: %s", e.Name()))
+							notify.SendMessageFunc(fmt.Sprintf("Sending generated CV PDF: %s", e.Name()))
 							notify.SendDocument(e.Name(), pdfData, "Generated CV")
 						}
 						break
@@ -226,13 +226,13 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 			found := false
 			for slug := range appliedMap {
 				if strings.Contains(strings.ToLower(slug), strings.ToLower(filename[:len(filename)-3])) {
-					notify.SendTelegramMessage("Status: Applied ✅")
+					notify.SendMessageFunc("Status: Applied ✅")
 					found = true
 					break
 				}
 			}
 			if !found {
-				notify.SendTelegramMessage("Status: Not Applied (or declined/skipped)")
+				notify.SendMessageFunc("Status: Not Applied (or declined/skipped)")
 			}
 		}
 	})
