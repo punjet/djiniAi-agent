@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sort"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -76,7 +78,165 @@ func retryPendingApplications(ctx context.Context, dc *client.DjinniClient) {
 	notify.SendTelegramMessage(fmt.Sprintf("🔄 *Retry Complete*\nSuccessfully applied to %d out of %d pending jobs.", successCount, len(apps)))
 }
 
+type ReportInfo struct {
+	Path    string
+	Number  int
+	Company string
+	Role    string
+	Date    time.Time
+}
+
+func getLatestReports(dir string, limit int) []ReportInfo {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+
+	var reports []ReportInfo
+	for _, f := range files {
+		if f.IsDir() || !strings.HasSuffix(f.Name(), ".md") {
+			continue
+		}
+		
+		name := f.Name()
+		parts := strings.SplitN(name, "-", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		num, err := strconv.Atoi(parts[0])
+		if err != nil {
+			continue
+		}
+		
+		content, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			continue
+		}
+		
+		lines := strings.Split(string(content), "\n")
+		company, role := "Unknown", "Unknown"
+		for _, line := range lines {
+			if strings.HasPrefix(line, "# Evaluation:") {
+				header := strings.TrimSpace(strings.TrimPrefix(line, "# Evaluation:"))
+				hParts := strings.SplitN(header, "—", 2)
+				if len(hParts) == 2 {
+					company = strings.TrimSpace(hParts[0])
+					role = strings.TrimSpace(hParts[1])
+				} else {
+					company = header
+				}
+				break
+			}
+		}
+
+		info, _ := f.Info()
+		reports = append(reports, ReportInfo{
+			Path:    filepath.Join(dir, name),
+			Number:  num,
+			Company: company,
+			Role:    role,
+			Date:    info.ModTime(),
+		})
+	}
+
+	sort.Slice(reports, func(i, j int) bool {
+		return reports[i].Number > reports[j].Number
+	})
+
+	if len(reports) > limit {
+		reports = reports[:limit]
+	}
+
+	return reports
+}
+
 func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx context.Context) {
+	bot.AddCommand("/stats", func(m *notify.TGMessage) {
+		reportsDir := filepath.Join(flagContextDir, "reports")
+		reports := getLatestReports(reportsDir, 5)
+		if len(reports) == 0 {
+			notify.SendTelegramMessage("No reports found.")
+			return
+		}
+
+		var keyboard [][]notify.InlineButton
+		for _, r := range reports {
+			btn := notify.InlineButton{
+				Text:         fmt.Sprintf("%s — %s", r.Company, r.Role),
+				CallbackData: fmt.Sprintf("stats_report:%s", filepath.Base(r.Path)),
+			}
+			keyboard = append(keyboard, []notify.InlineButton{btn})
+		}
+		
+		_, err := notify.SendInlineKeyboard("Here are the latest reports:", keyboard)
+		if err != nil {
+			notify.SendTelegramMessage(fmt.Sprintf("Failed to send stats: %v", err))
+		}
+	})
+
+	bot.AddCallbackHandler("stats_report:", func(cb *notify.TGCallback) {
+		notify.AnswerCallbackQuery(cb.ID, "Loading report...")
+
+		filename := strings.TrimPrefix(cb.Data, "stats_report:")
+		reportPath := filepath.Join(flagContextDir, "reports", filename)
+		
+		content, err := os.ReadFile(reportPath)
+		if err != nil {
+			notify.SendTelegramMessage(fmt.Sprintf("Could not load report %s: %v", filename, err))
+			return
+		}
+		
+		reportText := string(content)
+
+		if len(reportText) > 4000 {
+			reportText = reportText[:4000] + "...\n(truncated)"
+		}
+		notify.SendTelegramMessage(reportText)
+
+		scoreVal := 0.0
+		if scoreMatch := regexp.MustCompile(`\*\*Score:\*\*\s*([\d\.]+)/`).FindStringSubmatch(reportText); len(scoreMatch) > 1 {
+			if s, err := strconv.ParseFloat(scoreMatch[1], 64); err == nil {
+				scoreVal = s
+			}
+		}
+
+		companySlug := strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9]+`).ReplaceAllString(filename, ""))
+
+		if scoreVal >= 3.5 {
+			outDir := filepath.Join(flagContextDir, "output")
+			entries, _ := os.ReadDir(outDir)
+			
+			for _, e := range entries {
+				if strings.HasSuffix(e.Name(), ".pdf") {
+					pdfCompanySlug := strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9]+`).ReplaceAllString(e.Name(), ""))
+					if strings.Contains(pdfCompanySlug, companySlug) || strings.Contains(companySlug, pdfCompanySlug) {
+						pdfData, _ := os.ReadFile(filepath.Join(outDir, e.Name()))
+						if pdfData != nil {
+							notify.SendTelegramMessage(fmt.Sprintf("Sending generated CV PDF: %s", e.Name()))
+							notify.SendDocument(e.Name(), pdfData, "Generated CV")
+						}
+						break
+					}
+				}
+			}
+		}
+
+		appliedMap, err := pipeline.LoadAppliedJobs()
+		if err == nil {
+			found := false
+			for slug := range appliedMap {
+				if strings.Contains(strings.ToLower(slug), strings.ToLower(filename[:len(filename)-3])) {
+					notify.SendTelegramMessage("Status: Applied ✅")
+					found = true
+					break
+				}
+			}
+			if !found {
+				notify.SendTelegramMessage("Status: Not Applied (or declined/skipped)")
+			}
+		}
+	})
+
 	bot.AddCommand("/set_session", func(m *notify.TGMessage) {
 		parts := strings.SplitN(m.Text, " ", 2)
 		if len(parts) < 2 {
@@ -436,7 +596,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 		// Generate tailored CV PDF
 		logDeep("CV_GENERATE", fmt.Sprintf("Generating tailored CV PDF for %s", details.Company))
 		fmt.Printf("📄 Generating tailored CV PDF for %s...\n", details.Company)
-		cvBytes, err := covergen.GenerateCustomCV(ctx, cfg, engine, flagContextDir, j.URL, details.Company, details.Title, reportAbsPath)
+		cvBytes, err := covergen.GenerateCustomCV(ctx, cfg, engine, flagContextDir, j.URL, details.Company, details.Title, reportAbsPath, details.Description)
 		if err != nil {
 			*errorCount++
 			logDeep("ERROR", fmt.Sprintf("Custom CV generation failed for %s: %v", details.Company, err))
