@@ -29,21 +29,20 @@ func BuildApplyReviewRichMessage(company, role, jobURL, summary string, score fl
 				fmt.Sprintf(" %s", cvFileName),
 			},
 		},
-		notify.InputRichBlockDetails{
-			Type:    "details",
-			Summary: "Evaluation Summary",
+		notify.InputRichBlockParagraph{
+			Type: "paragraph",
+			Text: []interface{}{
+				notify.RichTextBold{Type: "bold", Text: "Evaluation Summary:"},
+			},
+		},
+		notify.InputRichBlockBlockQuotation{
+			Type: "blockquote",
 			Blocks: []interface{}{
-				notify.InputRichBlockBlockQuotation{
-					Type: "blockquote",
-					Blocks: []interface{}{
-						notify.InputRichBlockParagraph{
-							Type: "paragraph",
-							Text: summary,
-						},
-					},
+				notify.InputRichBlockParagraph{
+					Type: "paragraph",
+					Text: summary,
 				},
 			},
-			IsOpen: false,
 		},
 		notify.InputRichBlockParagraph{
 			Type: "paragraph",

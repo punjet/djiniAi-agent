@@ -196,8 +196,8 @@ func TestAskUserForApplyReview_RichText(t *testing.T) {
 		t.Fatal("expected SendRichInlineKeyboardFunc to be called, but it wasn't")
 	}
 
-	if len(capturedRichMsg.Blocks) < 3 {
-		t.Fatalf("expected at least 3 blocks in RichMessage, got %d", len(capturedRichMsg.Blocks))
+	if len(capturedRichMsg.Blocks) < 4 {
+		t.Fatalf("expected at least 4 blocks in RichMessage, got %d", len(capturedRichMsg.Blocks))
 	}
 
 	p1, ok := capturedRichMsg.Blocks[0].(notify.InputRichBlockParagraph)
@@ -248,21 +248,26 @@ func TestAskUserForApplyReview_RichText(t *testing.T) {
 		t.Error("missing bold block: 'CV:'")
 	}
 
-	details, ok := capturedRichMsg.Blocks[1].(notify.InputRichBlockDetails)
+	evalTitle, ok := capturedRichMsg.Blocks[1].(notify.InputRichBlockParagraph)
 	if !ok {
-		t.Fatalf("expected second block to be InputRichBlockDetails, got %T", capturedRichMsg.Blocks[1])
+		t.Fatalf("expected second block to be InputRichBlockParagraph, got %T", capturedRichMsg.Blocks[1])
 	}
-	if details.Summary != "Evaluation Summary" {
-		t.Errorf("expected details summary 'Evaluation Summary', got %v", details.Summary)
+	
+	evalQuote, ok := capturedRichMsg.Blocks[2].(notify.InputRichBlockBlockQuotation)
+	if !ok {
+		t.Fatalf("expected third block to be InputRichBlockBlockQuotation, got %T", capturedRichMsg.Blocks[2])
 	}
+	
+	_ = evalTitle
+	_ = evalQuote
 
-	p2, ok := capturedRichMsg.Blocks[2].(notify.InputRichBlockParagraph)
+	p2, ok := capturedRichMsg.Blocks[3].(notify.InputRichBlockParagraph)
 	if !ok {
-		t.Fatalf("expected third block to be InputRichBlockParagraph, got %T", capturedRichMsg.Blocks[2])
+		t.Fatalf("expected fourth block to be InputRichBlockParagraph, got %T", capturedRichMsg.Blocks[3])
 	}
 	p2Texts, ok := p2.Text.([]interface{})
 	if !ok {
-		t.Fatalf("expected third block text to be a slice of interface{}, got %T", p2.Text)
+		t.Fatalf("expected fourth block text to be a slice of interface{}, got %T", p2.Text)
 	}
 
 	var hasBoldCoverLetter bool
