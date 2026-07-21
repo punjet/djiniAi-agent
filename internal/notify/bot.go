@@ -169,8 +169,8 @@ func (b *TelegramBot) Start() {
 						b.mu.RUnlock()
 						if handler != nil {
 							handler(update.CallbackQuery)
+							continue
 						}
-						continue
 					}
 
 					if update.Message != nil && strings.HasPrefix(update.Message.Text, "/") {
