@@ -191,7 +191,8 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 		if len(reportText) > 4000 {
 			reportText = reportText[:4000] + "...\n(truncated)"
 		}
-		notify.SendMessageFunc(reportText)
+		richMsg := notify.ParseMarkdownToRichMessage(reportText)
+		_, _ = notify.SendRichInlineKeyboard(richMsg, nil)
 
 		scoreVal := 0.0
 		if scoreMatch := regexp.MustCompile(`\*\*Score:\*\*\s*([\d\.]+)/`).FindStringSubmatch(reportText); len(scoreMatch) > 1 {
@@ -224,14 +225,30 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 		appliedMap, err := pipeline.LoadAppliedJobs()
 		if err == nil {
 			found := false
-			for slug := range appliedMap {
-				if strings.Contains(strings.ToLower(slug), strings.ToLower(filename[:len(filename)-3])) {
-					notify.SendMessageFunc("Status: Applied ✅")
+			
+			var jobID string
+			if match := regexp.MustCompile(`(?m)^\*\*Job ID:\*\*\s*(.+)$`).FindStringSubmatch(reportText); match != nil {
+				jobID = strings.TrimSpace(match[1])
+			}
+			
+			if jobID != "" {
+				if _, ok := appliedMap[jobID]; ok {
 					found = true
-					break
 				}
 			}
+			
 			if !found {
+				for slug := range appliedMap {
+					if strings.Contains(strings.ToLower(slug), strings.ToLower(filename[:len(filename)-3])) {
+						found = true
+						break
+					}
+				}
+			}
+			
+			if found {
+				notify.SendMessageFunc("Status: Applied ✅")
+			} else {
 				notify.SendMessageFunc("Status: Not Applied (or declined/skipped)")
 			}
 		}
@@ -576,6 +593,16 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 	// Save to scan-history.tsv only after successful evaluation, so we don't lose it on LLM crash
 	pipeline.AppendToScanHistory(flagContextDir, j.URL, "Djinni Scan", j.Title, details.Company)
 
+	reportAbsPath := filepath.Join(flagContextDir, res.ReportPath)
+	if f, err := os.OpenFile(reportAbsPath, os.O_APPEND|os.O_WRONLY, 0644); err == nil {
+		if _, err := f.WriteString(fmt.Sprintf("\n\n**Job ID:** %s\n**URL:** %s\n", j.ID, j.URL)); err != nil {
+			logDeep("WARNING", fmt.Sprintf("Failed to append Job ID/URL to report %s: %v", res.ReportPath, err))
+		}
+		f.Close()
+	} else {
+		logDeep("WARNING", fmt.Sprintf("Failed to open report for appending %s: %v", res.ReportPath, err))
+	}
+
 	logDeep("EVAL_RESULT", fmt.Sprintf("Score: %.1f/5 | Archetype: %s | Legitimacy: %s", res.Score, res.Archetype, res.Legitimacy))
 	fmt.Printf("📊  Score: %.1f/5 | Archetype: %s | Legitimacy: %s\n", res.Score, res.Archetype, res.Legitimacy)
 
@@ -583,15 +610,14 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 	runMergeTracker(flagContextDir)
 
 	// Apply if score meets threshold
-	if res.Score >= flagThreshold {
-		logDeep("APPLY_START", fmt.Sprintf("Score %.1f >= %.1f. Proceeding to auto-apply.", res.Score, flagThreshold))
-		fmt.Printf("🔥  High match (%.1f >= %.1f). Auto-applying!\n", res.Score, flagThreshold)
-		reportAbsPath := filepath.Join(flagContextDir, res.ReportPath)
+		if res.Score >= flagThreshold {
+			logDeep("APPLY_START", fmt.Sprintf("Score %.1f >= %.1f. Proceeding to auto-apply.", res.Score, flagThreshold))
+			fmt.Printf("🔥  High match (%.1f >= %.1f). Auto-applying!\n", res.Score, flagThreshold)
 
-		if engine == "freellmapi" {
-			fmt.Println("⏳ Waiting 20 seconds before generating CV to respect free LLM API rate limits...")
-			time.Sleep(20 * time.Second)
-		}
+			if engine == "freellmapi" {
+				fmt.Println("⏳ Waiting 20 seconds before generating CV to respect free LLM API rate limits...")
+				time.Sleep(20 * time.Second)
+			}
 		
 		// Generate tailored CV PDF
 		logDeep("CV_GENERATE", fmt.Sprintf("Generating tailored CV PDF for %s", details.Company))
