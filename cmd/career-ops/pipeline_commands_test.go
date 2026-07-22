@@ -173,6 +173,14 @@ func TestSetupBotCommands(t *testing.T) {
 	}
 	defer func() { notify.SendMessageFunc = oldSendMessage }()
 
+	var sentRichMessages []notify.InputRichMessage
+	oldSendRichMessage := notify.SendRichInlineKeyboardFunc
+	notify.SendRichInlineKeyboardFunc = func(richMsg notify.InputRichMessage, keyboard [][]notify.InlineButton) (int64, error) {
+		sentRichMessages = append(sentRichMessages, richMsg)
+		return 67890, nil
+	}
+	defer func() { notify.SendRichInlineKeyboardFunc = oldSendRichMessage }()
+
 	reportHandler(&notify.TGCallback{
 		ID:   "cb_id_789",
 		Data: "stats_report:5-netflix.md",
@@ -182,14 +190,11 @@ func TestSetupBotCommands(t *testing.T) {
 		t.Errorf("unexpected AnswerCallbackQuery call: id=%q, text=%q", answeredID, answeredText)
 	}
 
-	foundReport := false
-	for _, msg := range sentTextMessages {
-		if msg == reportContent {
-			foundReport = true
-			break
+	if len(sentRichMessages) == 0 {
+		t.Errorf("expected at least one Rich message to be sent")
+	} else {
+		if len(sentRichMessages[0].Blocks) == 0 {
+			t.Errorf("expected rich message blocks, got none")
 		}
-	}
-	if !foundReport {
-		t.Errorf("expected text messages to contain %q, but got %v", reportContent, sentTextMessages)
 	}
 }
