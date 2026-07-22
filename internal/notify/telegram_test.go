@@ -137,3 +137,23 @@ func TestTgEditRichPayload_Serialization(t *testing.T) {
 		t.Errorf("JSON mismatch.\nExpected: %s\nGot:      %s", expectedJSON, string(data))
 	}
 }
+
+func TestParseMarkdownToRichMessage(t *testing.T) {
+	md := `
+# Evaluation Report
+**Score:** 4.5
+**Archetype:** Senior
+**Job ID:** 12345
+**URL:** https://djinni.co/jobs/12345
+
+### Block A: Technical Skills
+- Go
+- Docker
+
+### B) Soft Skills
+* Teamwork
+`
+	msg := ParseMarkdownToRichMessage(md)
+	b, _ := json.MarshalIndent(msg, "", "  ")
+	t.Log(string(b))
+}
