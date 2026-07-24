@@ -331,7 +331,12 @@ var GetUpdatesFunc = func(offset int64) ([]TGUpdate, error) {
 	}
 
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/getUpdates?timeout=10&offset=%d", token, offset)
-	client := &http.Client{Timeout: 15 * time.Second}
+	client := &http.Client{
+		Timeout: 15 * time.Second,
+		Transport: &http.Transport{
+			DisableKeepAlives: true,
+		},
+	}
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err

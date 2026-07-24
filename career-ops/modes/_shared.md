@@ -25,7 +25,7 @@
 
 ## Scoring System
 
-The evaluation uses 6 blocks (A-F) with a global score of 1-5:
+The evaluation uses 7 blocks (A-G) with a global score of 1-5:
 
 | Dimension | What it measures |
 |-----------|-----------------|
@@ -45,6 +45,8 @@ The evaluation uses 6 blocks (A-F) with a global score of 1-5:
 ## Posting Legitimacy (Block G)
 
 Block G assesses whether a posting is likely a real, active opening. It does NOT affect the 1-5 global score -- it is a separate qualitative assessment.
+
+**You MUST use the exact Latin letters A, B, C, D, E, F, G for your headings (e.g., "### A)", "### Block A)", "### G)", "### Block G)") in your report, even if you write the rest of the text in Ukrainian, Spanish, or any other language.**
 
 **Three tiers:**
 - **High Confidence** -- Real, active opening (most signals positive)

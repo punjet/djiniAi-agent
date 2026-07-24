@@ -370,3 +370,73 @@ func TestEvaluate_WithMock(t *testing.T) {
 		t.Errorf("expected company Acme Corp, got %v", result.Company)
 	}
 }
+
+func TestValidateEvaluationShape_Cyrillic(t *testing.T) {
+	report := `## А. Tech Stack Match
+Content for block A.
+
+## В. Role Clarity
+Content for block B.
+
+## С. Culture & Work Style
+Content for block C.
+
+## D. Compensation Research
+Content for block D.
+
+## Е. Growth & Development
+Content for block E.
+
+## F. Red Flags
+Content for block F.
+
+## G. Legitimacy
+Content for block G.
+
+---SCORE_SUMMARY---
+COMPANY: Acme Corp
+ROLE: Senior Go Engineer
+SCORE: 3.8
+ARCHETYPE: Tech Lead
+LEGITIMACY: High Confidence
+---END_SUMMARY---`
+
+	if err := validateEvaluationShape(report); err != nil {
+		t.Errorf("expected report with Cyrillic lookalikes to pass, got: %v", err)
+	}
+}
+
+func TestValidateEvaluationShape_CyrillicBlockWords(t *testing.T) {
+	report := `## Блок А: Tech Stack Match
+Content for block A.
+
+## Блок В: Role Clarity
+Content for block B.
+
+## Блок С: Culture & Work Style
+Content for block C.
+
+## Блок D: Compensation Research
+Content for block D.
+
+## Блок Е: Growth & Development
+Content for block E.
+
+## Блок F: Red Flags
+Content for block F.
+
+## Блок G: Legitimacy
+Content for block G.
+
+---SCORE_SUMMARY---
+COMPANY: Acme Corp
+ROLE: Senior Go Engineer
+SCORE: 3.8
+ARCHETYPE: Tech Lead
+LEGITIMACY: High Confidence
+---END_SUMMARY---`
+
+	if err := validateEvaluationShape(report); err != nil {
+		t.Errorf("expected report with Блок + Cyrillic lookalikes to pass, got: %v", err)
+	}
+}
