@@ -200,13 +200,13 @@ var blockPatterns = []struct {
 	pattern *regexp.Regexp
 }{
 	// Matches English: "### A)", "### Block A", "**A)**", "A)" — and Russian: "**Блок A:**", "## Блок A"
-	{"A", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:A\b|Block\s+A\b|Блок\s+A\b)\s*(?:\*\*)?`)},
-	{"B", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:B\b|Block\s+B\b|Блок\s+B\b)\s*(?:\*\*)?`)},
-	{"C", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:C\b|Block\s+C\b|Блок\s+C\b)\s*(?:\*\*)?`)},
-	{"D", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:D\b|Block\s+D\b|Блок\s+D\b)\s*(?:\*\*)?`)},
-	{"E", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:E\b|Block\s+E\b|Блок\s+E\b)\s*(?:\*\*)?`)},
-	{"F", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:F\b|Block\s+F\b|Блок\s+F\b)\s*(?:\*\*)?`)},
-	{"G", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:G\b|Block\s+G\b|Блок\s+G\b)\s*(?:\*\*)?`)},
+	{"A", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:[A\x{0410}](?:\b|[^\p{L}\p{N}]|$)|Block\s+[A\x{0410}](?:\b|[^\p{L}\p{N}]|$)|Блок\s+[A\x{0410}](?:\b|[^\p{L}\p{N}]|$))\s*(?:\*\*)?`)},
+	{"B", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:[B\x{0412}](?:\b|[^\p{L}\p{N}]|$)|Block\s+[B\x{0412}](?:\b|[^\p{L}\p{N}]|$)|Блок\s+[B\x{0412}](?:\b|[^\p{L}\p{N}]|$))\s*(?:\*\*)?`)},
+	{"C", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:[C\x{0421}](?:\b|[^\p{L}\p{N}]|$)|Block\s+[C\x{0421}](?:\b|[^\p{L}\p{N}]|$)|Блок\s+[C\x{0421}](?:\b|[^\p{L}\p{N}]|$))\s*(?:\*\*)?`)},
+	{"D", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:D(?:\b|[^\p{L}\p{N}]|$)|Block\s+D(?:\b|[^\p{L}\p{N}]|$)|Блок\s+D(?:\b|[^\p{L}\p{N}]|$))\s*(?:\*\*)?`)},
+	{"E", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:[E\x{0415}](?:\b|[^\p{L}\p{N}]|$)|Block\s+[E\x{0415}](?:\b|[^\p{L}\p{N}]|$)|Блок\s+[E\x{0415}](?:\b|[^\p{L}\p{N}]|$))\s*(?:\*\*)?`)},
+	{"F", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:F(?:\b|[^\p{L}\p{N}]|$)|Block\s+F(?:\b|[^\p{L}\p{N}]|$)|Блок\s+F(?:\b|[^\p{L}\p{N}]|$))\s*(?:\*\*)?`)},
+	{"G", regexp.MustCompile(`(?im)(?:^|\n)(?:#{1,3}\s*)?(?:\*\*)?\s*(?:G(?:\b|[^\p{L}\p{N}]|$)|Block\s+G(?:\b|[^\p{L}\p{N}]|$)|Блок\s+G(?:\b|[^\p{L}\p{N}]|$))\s*(?:\*\*)?`)},
 }
 
 // stripBoldMarkers removes ** markers from text so shape validation and
