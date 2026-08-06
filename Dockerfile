@@ -77,7 +77,7 @@ VOLUME ["/app/career-ops"]
 #
 # Optional:
 #     FREELLMAPI_MODEL         — OpenAI model name (default: gpt-4o-mini)
-#     --threshold              — score threshold (default: 3.5, set via args)
+#     --threshold              — score threshold (default: 4.2, set via args)
 #     --dry-run                — scan-only, no real submissions (add to CMD)
 #
 # Example run:

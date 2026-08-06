@@ -203,7 +203,7 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 
 		companySlug := strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9]+`).ReplaceAllString(filename, ""))
 
-		if scoreVal >= 3.5 {
+		if scoreVal >= 4.2 {
 			outDir := filepath.Join(flagContextDir, "output")
 			entries, _ := os.ReadDir(outDir)
 			
@@ -325,7 +325,7 @@ type appliedJobInfo struct {
 }
 
 func init() {
-	pipelineRunCmd.Flags().Float64Var(&flagThreshold, "threshold", 3.5, "Score threshold to trigger auto-apply (0.0 to 5.0)")
+	pipelineRunCmd.Flags().Float64Var(&flagThreshold, "threshold", 4.2, "Score threshold to trigger auto-apply (0.0 to 5.0)")
 	pipelineRunCmd.Flags().BoolVar(&flagDryRun, "dry-run", false, "Scan and evaluate jobs, but do not send applications")
 	pipelineRunCmd.Flags().IntVar(&flagLimit, "limit", 5, "Maximum number of applications to submit in this run")
 	pipelineRunCmd.Flags().BoolVar(&flagDaemon, "daemon", false, "Run continuously in background, spreading up to 15 applications daily between 9 AM and 9 PM")
