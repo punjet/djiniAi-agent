@@ -897,6 +897,18 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 			scanTriggered = true
 			stats.ScansCount++
 
+			logDeep("INBOX_START", "Scanning Djinni inbox for unread messages...")
+			fmt.Println("📩  Scanning inbox for unread dialogue messages...")
+			inboxLogs, err := pipeline.ProcessInbox(ctx, bot, panicStop, sigChan, cfg, engine, flagContextDir, dc, flagDryRun)
+			if err != nil {
+				logDeep("ERROR", fmt.Sprintf("Inbox processing failed: %v", err))
+				fmt.Printf("⚠️ Inbox processing failed: %v\n", err)
+			} else {
+				for _, l := range inboxLogs {
+					fmt.Println("  ", l)
+				}
+			}
+
 			logDeep("SCAN_START", "Scanning Djinni for new positions...")
 			dedup, err := pipeline.LoadDedup(flagContextDir)
 			if err != nil {
