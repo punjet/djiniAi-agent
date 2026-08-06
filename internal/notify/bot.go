@@ -19,7 +19,7 @@ type TelegramBot struct {
 	running          bool
 	offset           int64
 	statusMsgID      int64
-	UpdateChan       chan TGUpdate
+	subscribers      []chan TGUpdate
 }
 
 // SendMessageFunc allows mocking the Telegram message sender in tests.
@@ -29,10 +29,41 @@ func NewTelegramBot() *TelegramBot {
 	bot := &TelegramBot{
 		commands:         make(map[string]func(*TGMessage)),
 		callbackHandlers: make(map[string]func(*TGCallback)),
-		UpdateChan:       make(chan TGUpdate, 100),
+		subscribers:      make([]chan TGUpdate, 0),
 	}
 	bot.SetupDefaultCommands()
 	return bot
+}
+
+func (b *TelegramBot) SubscribeUpdates() chan TGUpdate {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	ch := make(chan TGUpdate, 100)
+	b.subscribers = append(b.subscribers, ch)
+	return ch
+}
+
+func (b *TelegramBot) UnsubscribeUpdates(ch chan TGUpdate) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for i, s := range b.subscribers {
+		if s == ch {
+			b.subscribers = append(b.subscribers[:i], b.subscribers[i+1:]...)
+			close(ch)
+			break
+		}
+	}
+}
+
+func (b *TelegramBot) BroadcastUpdate(u TGUpdate) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	for _, ch := range b.subscribers {
+		select {
+		case ch <- u:
+		default:
+		}
+	}
 }
 
 func (b *TelegramBot) verifyChat(m *TGMessage) bool {
@@ -182,11 +213,7 @@ func (b *TelegramBot) Start() {
 							cmdFunc(update.Message)
 						}
 					} else {
-						select {
-						case b.UpdateChan <- update:
-						default:
-							// drop if channel is full
-						}
+						b.BroadcastUpdate(update)
 					}
 				}
 			}

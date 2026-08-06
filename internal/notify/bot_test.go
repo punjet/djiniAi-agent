@@ -127,13 +127,16 @@ func TestTelegramBotUnmatchedCallback(t *testing.T) {
 	bot.Start()
 	defer bot.Stop()
 
+	updateChan := bot.SubscribeUpdates()
+	defer bot.UnsubscribeUpdates(updateChan)
+
 	select {
-	case upd := <-bot.UpdateChan:
+	case upd := <-updateChan:
 		if upd.CallbackQuery == nil || upd.CallbackQuery.ID != "unmatched_query" {
 			t.Errorf("expected unmatched_query, got: %+v", upd)
 		}
 	case <-time.After(3 * time.Second):
-		t.Fatal("timeout waiting for unmatched callback query in UpdateChan")
+		t.Fatal("timeout waiting for unmatched callback query in channel")
 	}
 
 	if !matchedCallbackCalled {

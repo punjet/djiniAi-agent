@@ -835,6 +835,9 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 	defer bot.Stop()
 	setupBotCommands(bot, dc, ctx)
 
+	updateChan := bot.SubscribeUpdates()
+	defer bot.UnsubscribeUpdates(updateChan)
+
 	// ── Initial silent token check ────────────────────────────────────────────
 	// Validate token on startup WITHOUT notifying Telegram — it may be perfectly
 	// valid (just restored from .env). Only alert if it's actually expired.
@@ -993,7 +996,7 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 			sigChan <- s
 			logDeep("STOP", "Interrupted, exiting daemon.")
 			return nil
-		case update := <-bot.UpdateChan:
+		case update := <-updateChan:
 			if update.Message != nil && update.Message.Text != "" {
 				text := update.Message.Text
 				re := regexp.MustCompile(`https://djinni\.co/jobs/(\d+-[a-zA-Z0-9-]+)/?`)

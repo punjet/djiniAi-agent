@@ -47,8 +47,12 @@ func TestApplyReviewEditLoop(t *testing.T) {
 		},
 	})
 
-	bot.UpdateChan <- updatesToSend1[0] // CallbackQuery
-	bot.UpdateChan <- updatesToSend1[1] // Message
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		bot.BroadcastUpdate(updatesToSend1[0]) // CallbackQuery
+		time.Sleep(50 * time.Millisecond)
+		bot.BroadcastUpdate(updatesToSend1[1]) // Message
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -112,7 +116,10 @@ func TestApplyReviewEditLoop(t *testing.T) {
 		},
 	})
 
-	bot.UpdateChan <- updatesToSend2[0] // CallbackQuery
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		bot.BroadcastUpdate(updatesToSend2[0]) // CallbackQuery
+	}()
 
 	// Create a new context for the second call, as the previous one might have timed out or been cancelled.
 	ctx2, cancel2 := context.WithTimeout(context.Background(), 5*time.Second)
@@ -165,13 +172,16 @@ func TestAskUserForApplyReview_RichText(t *testing.T) {
 		return nil
 	}
 
-	bot.UpdateChan <- notify.TGUpdate{
-		UpdateID: 200,
-		CallbackQuery: &notify.TGCallback{
-			ID:   "cb_rich",
-			Data: "apply_accept:job-rich",
-		},
-	}
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		bot.BroadcastUpdate(notify.TGUpdate{
+			UpdateID: 200,
+			CallbackQuery: &notify.TGCallback{
+				ID:   "cb_rich",
+				Data: "apply_accept:job-rich",
+			},
+		})
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
