@@ -65,6 +65,9 @@ func BuildApplyReviewRichMessage(company, role, jobURL, summary string, score fl
 
 // AskUserForApplyReview blocks until the user confirms or rejects the job application in Telegram.
 func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company, role, jobURL, summary string, score float64, cvFileName, coverLetter, jobSlug string, prevMsgID int64) (string, bool, int64, error) {
+	updateChan := bot.SubscribeUpdates()
+	defer bot.UnsubscribeUpdates(updateChan)
+
 	keyboard := [][]notify.InlineButton{
 		{
 			{Text: "✅ Submit", CallbackData: "apply_accept:" + jobSlug},
@@ -95,9 +98,10 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 		select {
 		case <-ctx.Done():
 			return "", false, msgID, ctx.Err()
-		case u := <-bot.UpdateChan:
+		case u := <-updateChan:
 			if u.CallbackQuery != nil {
 				data := u.CallbackQuery.Data
+				fmt.Printf("[DEBUG] AskUserForApplyReview received callback: %s (expected slug: %s)\n", data, jobSlug)
 				if strings.HasPrefix(data, "apply_accept:") && strings.HasSuffix(data, jobSlug) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Accepted!")
 					statusBlock := &notify.InputRichBlockParagraph{
@@ -142,7 +146,7 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 					_ = notify.EditRichMessageText(msgID, richMsg)
 					_ = notify.EditMessageReplyMarkup(msgID, nil) // remove buttons
 
-					instruction, err := waitForUserMessage(ctx, bot)
+					instruction, err := waitForUserMessage(ctx, updateChan)
 					if err != nil {
 						return "", false, msgID, err
 					}
@@ -166,6 +170,9 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 
 // AskUserForInboxReview handles interactive approval, custom draft rewriting, and AI instruction loops for auto-replies.
 func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender, originalMsg, proposedReply string, dialogueID string, threadMsgs []api.ThreadMessage) (string, error) {
+	updateChan := bot.SubscribeUpdates()
+	defer bot.UnsubscribeUpdates(updateChan)
+
 	var threadSnippet string
 	if len(threadMsgs) > 0 {
 		start := len(threadMsgs) - 3
@@ -209,7 +216,7 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 		select {
 		case <-ctx.Done():
 			return "", ctx.Err()
-		case u := <-bot.UpdateChan:
+		case u := <-updateChan:
 			if u.CallbackQuery != nil {
 				data := u.CallbackQuery.Data
 				if strings.HasPrefix(data, "inbox_confirm:") && strings.HasSuffix(data, dialogueID) {
@@ -236,7 +243,7 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 					_ = notify.EditMessageReplyMarkup(msgID, nil)
 
 					// Loop waiting for a text message from the user
-					manualText, err := waitForUserMessage(ctx, bot)
+					manualText, err := waitForUserMessage(ctx, updateChan)
 					if err != nil {
 						return "", err
 					}
@@ -249,7 +256,7 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 					_ = notify.EditMessageText(msgID, text+"\n\n🤖 *Status:* Waiting for you to type what the AI should change...")
 					_ = notify.EditMessageReplyMarkup(msgID, nil)
 
-					explanation, err := waitForUserMessage(ctx, bot)
+					explanation, err := waitForUserMessage(ctx, updateChan)
 					if err != nil {
 						return "", err
 					}
@@ -262,12 +269,12 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 	}
 }
 
-func waitForUserMessage(ctx context.Context, bot *notify.TelegramBot) (string, error) {
+func waitForUserMessage(ctx context.Context, updateChan chan notify.TGUpdate) (string, error) {
 	for {
 		select {
 		case <-ctx.Done():
 			return "", ctx.Err()
-		case u := <-bot.UpdateChan:
+		case u := <-updateChan:
 			if u.Message != nil && u.Message.Text != "" {
 				return u.Message.Text, nil
 			}
