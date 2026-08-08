@@ -94,12 +94,18 @@ func ReplyToMessage(dc *client.DjinniClient, dialogID string, text string) (stri
 
 	resp, err := dc.Client.R().
 		SetFormData(map[string]string{
-			"message":               text,
-			"template_name":         "",
-			"csrfmiddlewaretoken":   dc.Config.CSRFToken,
+			"message":             text,
+			"template_name":       "",
+			"csrfmiddlewaretoken": dc.Config.CSRFToken,
 		}).
 		SetHeader("Referer", url).
+		SetHeader("HX-Request", "true").
+		SetHeader("HX-Target", "main").
+		SetHeader("HX-Current-URL", fmt.Sprintf("https://djinni.co/my/inbox/%s/#last", dialogID)).
+		SetHeader("Origin", "https://djinni.co").
+		SetHeader("X-Requested-With", "XMLHttpRequest").
 		SetHeader("X-CSRFToken", dc.Config.CSRFToken).
+		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		Post(url)
 
 	if err != nil {
@@ -142,26 +148,54 @@ func parseThreadMessages(r io.Reader) ([]ThreadMessage, error) {
 	}
 
 	var messages []ThreadMessage
-	doc.Find(".b-message").Each(func(i int, s *goquery.Selection) {
-		role := "candidate"
-		if s.HasClass("b-message--recruiter") {
-			role = "recruiter"
-		}
+	threadMsgSelection := doc.Find(".thread-message")
+	if threadMsgSelection.Length() > 0 {
+		candidateName := strings.TrimSpace(doc.Find(".user-name").First().Text())
+		candidateNameLower := strings.ToLower(candidateName)
 
-		text := strings.TrimSpace(s.Find(".message-text-inner").Text())
-		
-		timeNode := s.Find("time.message-date")
-		timestamp, exists := timeNode.Attr("datetime")
-		if !exists {
-			timestamp = strings.TrimSpace(timeNode.Text())
-		}
+		threadMsgSelection.Each(func(i int, s *goquery.Selection) {
+			senderName := strings.TrimSpace(s.Find(".font-weight-500.ms-2").Text())
+			role := "recruiter"
+			if candidateNameLower != "" && strings.ToLower(senderName) == candidateNameLower {
+				role = "candidate"
+			}
 
-		messages = append(messages, ThreadMessage{
-			Role:      role,
-			Text:      text,
-			Timestamp: timestamp,
+			text := strings.TrimSpace(s.Find(".thread-message-body").Text())
+
+			timeNode := s.Find("small.text-secondary")
+			timestamp, exists := timeNode.Attr("title")
+			if !exists || timestamp == "" {
+				timestamp = strings.TrimSpace(timeNode.Text())
+			}
+
+			messages = append(messages, ThreadMessage{
+				Role:      role,
+				Text:      text,
+				Timestamp: timestamp,
+			})
 		})
-	})
+	} else {
+		doc.Find(".b-message").Each(func(i int, s *goquery.Selection) {
+			role := "candidate"
+			if s.HasClass("b-message--recruiter") {
+				role = "recruiter"
+			}
+
+			text := strings.TrimSpace(s.Find(".message-text-inner").Text())
+			
+			timeNode := s.Find("time.message-date")
+			timestamp, exists := timeNode.Attr("datetime")
+			if !exists {
+				timestamp = strings.TrimSpace(timeNode.Text())
+			}
+
+			messages = append(messages, ThreadMessage{
+				Role:      role,
+				Text:      text,
+				Timestamp: timestamp,
+			})
+		})
+	}
 
 	if messages == nil {
 		messages = []ThreadMessage{}
