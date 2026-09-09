@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-djinni}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_NAME=${DB_NAME:-djinni}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DJINNI_SESSIONID=${DJINNI_SESSIONID}
+      - DJINNI_CSRFTOKEN=${DJINNI_CSRFTOKEN}
+      - TG_BOT_TOKEN=${TG_BOT_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+    ports:
+      - "8080:8080" # Example port
+    volumes:
+      - djinni-logs:/app/career-ops/logs
+      - djinni-env:/app/career-ops
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  djinni-logs:
+  djinni-env:

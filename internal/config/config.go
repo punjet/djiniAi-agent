@@ -30,6 +30,12 @@ type Config struct {
 
 	OpenAIModel     string // default: "gpt-4o-mini" (falls back to FREELLMAPI_MODEL → LLM_MODEL)
 	OpenAITimeoutMS int    // default: 300000
+
+	DBHost     string // default: "localhost"
+	DBPort     string // default: "5432"
+	DBUser     string // default: "postgres"
+	DBPassword string // default: "postgres"
+	DBName     string // default: "djinni"
 }
 
 // loadEnvDefaults reads all env vars, applies defaults, and returns a populated Config.
@@ -104,6 +110,31 @@ func loadEnvDefaults() *Config {
 		}
 	}
 
+	dbHost := os.Getenv("DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+	
+	dbPort := os.Getenv("DB_PORT")
+	if dbPort == "" {
+		dbPort = "5432"
+	}
+	
+	dbUser := os.Getenv("DB_USER")
+	if dbUser == "" {
+		dbUser = "postgres"
+	}
+	
+	dbPassword := os.Getenv("DB_PASSWORD")
+	if dbPassword == "" {
+		dbPassword = "postgres"
+	}
+	
+	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		dbName = "djinni"
+	}
+
 	return &Config{
 		SessionID:           os.Getenv("DJINNI_SESSIONID"),
 		CSRFToken:           os.Getenv("DJINNI_CSRFTOKEN"),
@@ -118,6 +149,11 @@ func loadEnvDefaults() *Config {
 		FreeLLMAPITimeoutMS: freellmAPITimeoutMS,
 		OpenAIModel:         openAIModel,
 		OpenAITimeoutMS:     openAITimeoutMS,
+		DBHost:              dbHost,
+		DBPort:              dbPort,
+		DBUser:              dbUser,
+		DBPassword:          dbPassword,
+		DBName:              dbName,
 	}
 }
 
