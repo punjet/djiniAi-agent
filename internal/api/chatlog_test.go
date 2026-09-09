@@ -28,6 +28,10 @@ func TestUploadChatLogHandler(t *testing.T) {
 		WithArgs(1, "Recruiter: Hey\nCandidate: tomorrow.").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(10))
 
+	mock.ExpectQuery(`SELECT insight FROM agent_memories WHERE category = \$1`).
+		WithArgs("chatlog").
+		WillReturnRows(sqlmock.NewRows([]string{"insight"}).AddRow("Be nice"))
+
 	mock.ExpectExec(`UPDATE applications SET status = \$1 WHERE id = \$2`).
 		WithArgs("technical_interview", 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
@@ -76,6 +80,10 @@ func TestUploadChatLogHandler_NoChange(t *testing.T) {
 	mock.ExpectQuery(`INSERT INTO chat_logs \(application_id, message, sender\)`).
 		WithArgs(1, "Recruiter: hi").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(11))
+
+	mock.ExpectQuery(`SELECT insight FROM agent_memories WHERE category = \$1`).
+		WithArgs("chatlog").
+		WillReturnRows(sqlmock.NewRows([]string{"insight"}).AddRow("Be nice"))
 
 	// Should not expect an UPDATE here
 

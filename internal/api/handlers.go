@@ -86,10 +86,25 @@ func (h *Handlers) ApplicationDetailHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	var score int
+	var mistakes, improvements string
+	err = h.DB.QueryRow("SELECT score, mistakes, improvements FROM interviews WHERE application_id = $1 ORDER BY created_at DESC LIMIT 1", id).
+		Scan(&score, &mistakes, &improvements)
+	if err != nil && err != sql.ErrNoRows {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
 	data := struct {
-		Application Application
+		Application  Application
+		Score        int
+		Mistakes     string
+		Improvements string
 	}{
-		Application: app,
+		Application:  app,
+		Score:        score,
+		Mistakes:     mistakes,
+		Improvements: improvements,
 	}
 
 	// We need to render the layout, but pass application_detail content. 
@@ -157,6 +172,7 @@ func (h *Handlers) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /dashboard", h.DashboardHandler)
 	mux.HandleFunc("GET /application/{id}", h.ApplicationDetailHandler)
 	mux.HandleFunc("POST /application/{id}/status", h.UpdateStatusHandler)
+	mux.HandleFunc("POST /application/{id}/feedback", h.FeedbackHandler)
 	mux.HandleFunc("POST /application/{id}/interview/upload", h.UploadInterviewHandler)
 	mux.HandleFunc("POST /application/{id}/chat-log", h.UploadChatLogHandler)
 }

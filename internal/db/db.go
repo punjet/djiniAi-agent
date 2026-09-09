@@ -61,6 +61,17 @@ func runMigrations(db *sql.DB) error {
 		);`,
 		`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS transcript TEXT;`,
 		`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS summary TEXT;`,
+		`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS mistakes TEXT;`,
+		`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS improvements TEXT;`,
+		`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS score INT DEFAULT 0;`,
+		`CREATE TABLE IF NOT EXISTS agent_memories (
+			id SERIAL PRIMARY KEY,
+			category VARCHAR(50),
+			insight TEXT,
+			context_key VARCHAR(100),
+			score INT DEFAULT 0,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);`,
 	}
 	
 	for _, q := range queries {
@@ -90,7 +101,20 @@ type Interview struct {
 	Status        string
 	Transcript    string
 	Summary       string
+	Mistakes      string
+	Improvements  string
+	Score         int
 	CreatedAt     string
+}
+
+// AgentMemory represents learned insights from the LLM agent
+type AgentMemory struct {
+	ID         int
+	Category   string
+	Insight    string
+	ContextKey string
+	Score      int
+	CreatedAt  string
 }
 
 // ChatLog represents a chat log
@@ -131,4 +155,34 @@ func CreateInterview(db *sql.DB, interview *Interview) error {
 func CreateChatLog(db *sql.DB, log *ChatLog) error {
 	query := `INSERT INTO chat_logs (application_id, message, sender) VALUES ($1, $2, $3) RETURNING id`
 	return db.QueryRow(query, log.ApplicationID, log.Message, log.Sender).Scan(&log.ID)
+}
+
+func UpdateInterviewCoaching(db *sql.DB, id int, mistakes, improvements string, score int) error {
+	query := `UPDATE interviews SET mistakes = $1, improvements = $2, score = $3 WHERE id = $4`
+	_, err := db.Exec(query, mistakes, improvements, score, id)
+	return err
+}
+
+func SaveAgentMemory(db *sql.DB, mem *AgentMemory) error {
+	query := `INSERT INTO agent_memories (category, insight, context_key, score) VALUES ($1, $2, $3, $4) RETURNING id`
+	return db.QueryRow(query, mem.Category, mem.Insight, mem.ContextKey, mem.Score).Scan(&mem.ID)
+}
+
+func GetAgentMemories(db *sql.DB, category, contextKey string) ([]AgentMemory, error) {
+	query := `SELECT id, category, insight, context_key, score, created_at FROM agent_memories WHERE category = $1 AND context_key = $2 ORDER BY score DESC`
+	rows, err := db.Query(query, category, contextKey)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var memories []AgentMemory
+	for rows.Next() {
+		var mem AgentMemory
+		if err := rows.Scan(&mem.ID, &mem.Category, &mem.Insight, &mem.ContextKey, &mem.Score, &mem.CreatedAt); err != nil {
+			return nil, err
+		}
+		memories = append(memories, mem)
+	}
+	return memories, rows.Err()
 }
