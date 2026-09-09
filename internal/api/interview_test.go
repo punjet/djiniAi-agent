@@ -24,14 +24,18 @@ func TestUploadInterviewHandler_TextTranscript(t *testing.T) {
 		WithArgs(123).
 		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
 
-	mock.ExpectQuery(`INSERT INTO interviews \(application_id, status, transcript, summary\)`).
-		WithArgs(123, "Test transcript", "Mocked summary").
+	mock.ExpectQuery(`SELECT insight FROM agent_memories WHERE category = \$1`).
+		WithArgs("interview").
+		WillReturnRows(sqlmock.NewRows([]string{"insight"}))
+
+	mock.ExpectQuery(`INSERT INTO interviews \(application_id, status, transcript, summary, mistakes, improvements, score\)`).
+		WithArgs(123, "Test transcript", "Mocked summary", "mistake1", "improve1", 85).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
 	mockLLM := &llm.MockProvider{
 		GenerateTextFunc: func(ctx context.Context, system, user string) (string, error) {
 			assert.Equal(t, "Test transcript", user)
-			return "Mocked summary", nil
+			return `{"summary": "Mocked summary", "mistakes": "mistake1", "improvements": "improve1", "score": 85, "insights": []}`, nil
 		},
 		ProviderName: "TestMockLLM",
 	}
@@ -100,14 +104,18 @@ func TestUploadInterviewHandler_AudioUpload(t *testing.T) {
 		WithArgs(123).
 		WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
 
-	mock.ExpectQuery(`INSERT INTO interviews \(application_id, status, transcript, summary\)`).
-		WithArgs(123, "Transcribed audio", "Mocked audio summary").
+	mock.ExpectQuery(`SELECT insight FROM agent_memories WHERE category = \$1`).
+		WithArgs("interview").
+		WillReturnRows(sqlmock.NewRows([]string{"insight"}))
+
+	mock.ExpectQuery(`INSERT INTO interviews \(application_id, status, transcript, summary, mistakes, improvements, score\)`).
+		WithArgs(123, "Transcribed audio", "Mocked audio summary", "mistake2", "improve2", 90).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(2))
 
 	mockLLM := &llm.MockProvider{
 		GenerateTextFunc: func(ctx context.Context, system, user string) (string, error) {
 			assert.Equal(t, "Transcribed audio", user)
-			return "Mocked audio summary", nil
+			return `{"summary": "Mocked audio summary", "mistakes": "mistake2", "improvements": "improve2", "score": 90, "insights": []}`, nil
 		},
 		ProviderName: "TestMockLLM",
 	}

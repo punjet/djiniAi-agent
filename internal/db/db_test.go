@@ -20,6 +20,10 @@ func TestRunMigrations(t *testing.T) {
 	mock.ExpectExec(regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS statuses`)).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(regexp.QuoteMeta(`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS transcript`)).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(regexp.QuoteMeta(`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS summary`)).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta(`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS mistakes`)).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta(`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS improvements`)).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta(`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS score`)).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS agent_memories`)).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	err = runMigrations(db)
 	assert.NoError(t, err)
@@ -120,6 +124,61 @@ func TestCreateChatLog(t *testing.T) {
 	err = CreateChatLog(db, chatLog)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, chatLog.ID)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateInterviewCoaching(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE interviews SET mistakes = $1, improvements = $2, score = $3 WHERE id = $4`)).
+		WithArgs("too long", "be concise", 80, 1).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	err = UpdateInterviewCoaching(db, 1, "too long", "be concise", 80)
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSaveAgentMemory(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	mem := &AgentMemory{
+		Category:   "golang",
+		Insight:    "Use contexts",
+		ContextKey: "timeout",
+		Score:      10,
+	}
+
+	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO agent_memories (category, insight, context_key, score) VALUES ($1, $2, $3, $4) RETURNING id`)).
+		WithArgs(mem.Category, mem.Insight, mem.ContextKey, mem.Score).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+	err = SaveAgentMemory(db, mem)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, mem.ID)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetAgentMemories(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	rows := sqlmock.NewRows([]string{"id", "category", "insight", "context_key", "score", "created_at"}).
+		AddRow(1, "golang", "Use contexts", "timeout", 10, "2023-01-01 00:00:00")
+
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, category, insight, context_key, score, created_at FROM agent_memories WHERE category = $1 AND context_key = $2 ORDER BY score DESC`)).
+		WithArgs("golang", "timeout").
+		WillReturnRows(rows)
+
+	mems, err := GetAgentMemories(db, "golang", "timeout")
+	assert.NoError(t, err)
+	assert.Len(t, mems, 1)
+	assert.Equal(t, "Use contexts", mems[0].Insight)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

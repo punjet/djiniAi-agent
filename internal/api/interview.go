@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+
+	"djinni-bot-go/internal/db"
+	"djinni-bot-go/internal/llm"
 )
 
 // UploadInterviewResponse defines the JSON response structure.
@@ -77,29 +81,75 @@ func (h *Handlers) UploadInterviewHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Process transcript with LLM to get summary
-	var summary string
+	var summary, mistakes, improvements string
+	var score int
+	
+	type LLMResponse struct {
+		Summary      string   `json:"summary"`
+		Mistakes     string   `json:"mistakes"`
+		Improvements string   `json:"improvements"`
+		Score        int      `json:"score"`
+		Insights     []string `json:"insights"`
+	}
+
 	if h.LLM != nil {
-		systemPrompt := "You are an expert technical interviewer and HR assistant. Analyze the following interview transcript. Extract the key points: questions asked, candidate performance, strengths/weaknesses, and recommended next steps. Provide a clear, structured summary."
-		summaryResp, llmErr := h.LLM.GenerateText(r.Context(), systemPrompt, transcript)
+		memoryContext := llm.GetMemoryContext(h.DB, "interview")
+		systemPrompt := fmt.Sprintf(`You are an expert technical interviewer and HR assistant. Analyze the following interview transcript.
+%s
+Extract the following information and output strictly as a JSON object:
+{
+  "summary": "Key points, questions asked, performance, next steps.",
+  "mistakes": "Candidate mistakes, unconfident phrasing, technical gaps.",
+  "improvements": "Actionable advice.",
+  "score": 85,
+  "insights": ["New rule or lesson learned to remember for future analyses"]
+}`, memoryContext)
+
+		respText, llmErr := h.LLM.GenerateText(r.Context(), systemPrompt, transcript)
 		if llmErr != nil {
-			// Log error, but proceed with empty summary or a default note
 			summary = "Failed to generate summary: " + llmErr.Error()
 		} else {
-			summary = summaryResp
+			jsonStr := strings.TrimSpace(respText)
+			if strings.HasPrefix(jsonStr, "```json") {
+				jsonStr = strings.TrimPrefix(jsonStr, "```json")
+				jsonStr = strings.TrimSuffix(jsonStr, "```")
+				jsonStr = strings.TrimSpace(jsonStr)
+			} else if strings.HasPrefix(jsonStr, "```") {
+				jsonStr = strings.TrimPrefix(jsonStr, "```")
+				jsonStr = strings.TrimSuffix(jsonStr, "```")
+				jsonStr = strings.TrimSpace(jsonStr)
+			}
+			
+			var parsed LLMResponse
+			if err := json.Unmarshal([]byte(jsonStr), &parsed); err == nil {
+				summary = parsed.Summary
+				mistakes = parsed.Mistakes
+				improvements = parsed.Improvements
+				score = parsed.Score
+				
+				for _, insight := range parsed.Insights {
+					mem := &db.AgentMemory{
+						Category: "interview",
+						Insight:  insight,
+						Score:    10,
+					}
+					db.SaveAgentMemory(h.DB, mem)
+				}
+			} else {
+				summary = respText
+			}
 		}
 	} else {
 		summary = "LLM provider not configured."
 	}
 
-	// Save to database
 	var interviewID int
 	query := `
-		INSERT INTO interviews (application_id, status, transcript, summary)
-		VALUES ($1, 'completed', $2, $3)
+		INSERT INTO interviews (application_id, status, transcript, summary, mistakes, improvements, score)
+		VALUES ($1, 'completed', $2, $3, $4, $5, $6)
 		RETURNING id
 	`
-	err = h.DB.QueryRow(query, appID, transcript, summary).Scan(&interviewID)
+	err = h.DB.QueryRow(query, appID, transcript, summary, mistakes, improvements, score).Scan(&interviewID)
 	if err != nil {
 		http.Error(w, "Failed to save interview", http.StatusInternalServerError)
 		return

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"djinni-bot-go/internal/llm"
 )
 
 type UploadChatLogResponse struct {
@@ -74,15 +76,16 @@ func (h *Handlers) UploadChatLogHandler(w http.ResponseWriter, r *http.Request) 
 	// Evaluate new status using LLM
 	newStatus := ""
 	if h.LLM != nil {
+		memoryContext := llm.GetMemoryContext(h.DB, "chatlog")
 		systemPrompt := fmt.Sprintf(`You are an HR recruitment assistant analyzing a chat log for an application.
 Job ID: %s
 Company: %s
-Current Status: %s
+Current Status: %s%s
 
 Determine the NEW application status based on this chat log.
 Allowed statuses: applied, recruiter_contact, technical_interview, rejected, offer.
 
-Respond ONLY with the exact status name if it changes, or "NO_CHANGE" if it remains the same. Do not include any other text.`, jobID, companyName, currentStatus)
+Respond ONLY with the exact status name if it changes, or "NO_CHANGE" if it remains the same. Do not include any other text.`, jobID, companyName, currentStatus, memoryContext)
 
 		resp, err := h.LLM.GenerateText(r.Context(), systemPrompt, chatLog)
 		if err == nil {
