@@ -16,11 +16,14 @@ import (
 	"djinni-bot-go/internal/client"
 	"djinni-bot-go/internal/config"
 	"djinni-bot-go/internal/covergen"
+	"djinni-bot-go/internal/db"
 	"djinni-bot-go/internal/extractor"
 	"djinni-bot-go/internal/llm"
 	"djinni-bot-go/internal/logger"
 	"djinni-bot-go/internal/notify"
 	"djinni-bot-go/internal/pipeline"
+	"log"
+	"net/http"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
@@ -149,6 +152,29 @@ func init() {
 	rootCmd.AddCommand(pipelineCmd)
 }
 
+func startHTTPServer(cfg *config.Config) {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	database, err := db.InitDB(cfg)
+	if err != nil {
+		log.Printf("⚠️ Database initialization warning/error: %v", err)
+	}
+
+	handlers := api.NewHandlers(database, nil, nil)
+	mux := http.NewServeMux()
+	handlers.RegisterRoutes(mux)
+
+	go func() {
+		log.Printf("🌐 Web UI server listening on port %s", port)
+		if err := http.ListenAndServe(":"+port, mux); err != nil {
+			log.Printf("🚨 HTTP server error: %v", err)
+		}
+	}()
+}
+
 func runPipelineRun(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
@@ -172,6 +198,8 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 
 	// Init logger early so all subsystems (api, covergen, etc.) have a non-nil logger
 	logger.InitLogger(flagContextDir)
+
+	startHTTPServer(cfg)
 
 	if flagDaemon {
 		return runDaemonMode(ctx, cfg, sigChan)
