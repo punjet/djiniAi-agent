@@ -24,6 +24,7 @@ import (
 	"djinni-bot-go/internal/pipeline"
 	"log"
 	"net/http"
+	"database/sql"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
@@ -152,6 +153,8 @@ func init() {
 	rootCmd.AddCommand(pipelineCmd)
 }
 
+var globalDB *sql.DB
+
 func startHTTPServer(cfg *config.Config) {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -161,6 +164,8 @@ func startHTTPServer(cfg *config.Config) {
 	database, err := db.InitDB(cfg)
 	if err != nil {
 		log.Printf("⚠️ Database initialization warning/error: %v", err)
+	} else {
+		globalDB = database
 	}
 
 	handlers := api.NewHandlers(database, nil, nil)
@@ -575,7 +580,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 				})
 
 				// Create applied TSV tracker entry so merge-tracker upgrades status to "Applied"
-				createAppliedTrackerAddition(flagContextDir, res, details.Company, details.Title, providerName(cfg, engine))
+				createAppliedTrackerAddition(flagContextDir, res, details.Company, details.Title, providerName(cfg, engine), j.Slug)
 				runMergeTracker(flagContextDir)
 				return true, nil
 			}
@@ -909,7 +914,22 @@ func providerName(cfg *config.Config, engine llm.Engine) string {
 	return provider.Name()
 }
 
-func createAppliedTrackerAddition(contextDir string, res *pipeline.EvalResult, company, role, toolLabel string) {
+func createAppliedTrackerAddition(contextDir string, res *pipeline.EvalResult, company, role, toolLabel string, jobSlug ...string) {
+	if globalDB != nil {
+		slug := ""
+		if len(jobSlug) > 0 {
+			slug = jobSlug[0]
+		}
+		app := &db.Application{
+			JobID:       slug,
+			CompanyName: company,
+			Status:      "applied",
+		}
+		if err := db.CreateApplication(globalDB, app); err != nil {
+			log.Printf("⚠️ Database CreateApplication failed: %v", err)
+		}
+	}
+
 	// Re-write a TSV entry to upgrade status to Applied in tracker additions
 	trackerDir := filepath.Join(contextDir, "batch", "tracker-additions")
 	_ = os.MkdirAll(trackerDir, 0o755)
