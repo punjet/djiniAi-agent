@@ -95,6 +95,26 @@ func TestReplyToMessage(t *testing.T) {
 			}
 			msg := r.Form.Get("message")
 			csrf := r.Form.Get("csrfmiddlewaretoken")
+
+			if r.Header.Get("HX-Request") != "true" {
+				t.Errorf("missing HX-Request header")
+			}
+			if r.Header.Get("HX-Target") != "main" {
+				t.Errorf("missing HX-Target header")
+			}
+			if r.Header.Get("HX-Current-URL") != "https://djinni.co/my/inbox/12345/#last" {
+				t.Errorf("expected HX-Current-URL to be https://djinni.co/my/inbox/12345/#last, got %q", r.Header.Get("HX-Current-URL"))
+			}
+			if r.Header.Get("Origin") != "https://djinni.co" {
+				t.Errorf("expected Origin to be https://djinni.co, got %q", r.Header.Get("Origin"))
+			}
+			if r.Header.Get("X-Requested-With") != "XMLHttpRequest" {
+				t.Errorf("expected X-Requested-With to be XMLHttpRequest, got %q", r.Header.Get("X-Requested-With"))
+			}
+			if r.Header.Get("X-CSRFToken") != "mock-csrf" {
+				t.Errorf("expected X-CSRFToken to be mock-csrf, got %q", r.Header.Get("X-CSRFToken"))
+			}
+
 			if msg == "hello back" && csrf == "mock-csrf" {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte("Success response"))
@@ -145,5 +165,54 @@ func TestGetThreadMessages(t *testing.T) {
 	lastMsg := msgs[len(msgs)-1]
 	if !strings.Contains(strings.ToLower(lastMsg.Text), strings.ToLower("Interview scheduled")) {
 		t.Fatalf("expected last message text to contain 'Interview scheduled', got: %q", lastMsg.Text)
+	}
+}
+
+func TestParseThreadMessagesNewLayout(t *testing.T) {
+	mockHtml := `
+		<html>
+		<body>
+			<div class="user-name">John Doe</div>
+			<div class="thread-message">
+				<span class="font-weight-500 ms-2">John Doe</span>
+				<div class="thread-message-body">Hello, I am the candidate.</div>
+				<small class="text-secondary" title="2026-08-08 12:00">12:00 PM</small>
+			</div>
+			<div class="thread-message">
+				<span class="font-weight-500 ms-2">Jane Recruiter</span>
+				<div class="thread-message-body">Hello, nice to meet you.</div>
+				<small class="text-secondary">12:05 PM</small>
+			</div>
+		</body>
+		</html>
+	`
+
+	msgs, err := parseThreadMessages(strings.NewReader(mockHtml))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(msgs) != 2 {
+		t.Fatalf("expected 2 messages, got %d", len(msgs))
+	}
+
+	if msgs[0].Role != "candidate" {
+		t.Errorf("expected msg 0 role to be candidate, got %s", msgs[0].Role)
+	}
+	if msgs[0].Text != "Hello, I am the candidate." {
+		t.Errorf("expected msg 0 text match, got %q", msgs[0].Text)
+	}
+	if msgs[0].Timestamp != "2026-08-08 12:00" {
+		t.Errorf("expected msg 0 timestamp to be '2026-08-08 12:00', got %s", msgs[0].Timestamp)
+	}
+
+	if msgs[1].Role != "recruiter" {
+		t.Errorf("expected msg 1 role to be recruiter, got %s", msgs[1].Role)
+	}
+	if msgs[1].Text != "Hello, nice to meet you." {
+		t.Errorf("expected msg 1 text match, got %q", msgs[1].Text)
+	}
+	if msgs[1].Timestamp != "12:05 PM" {
+		t.Errorf("expected msg 1 timestamp to be '12:05 PM', got %s", msgs[1].Timestamp)
 	}
 }
