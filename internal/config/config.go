@@ -22,6 +22,7 @@ type Config struct {
 	OllamaBaseURL   string
 	OllamaTimeoutMS int
 	LLMAPIKey       string
+	ExaAPIKey       string // For Exa.ai web search API
 	// FreeLLMAPI — local OpenAI-compatible aggregator (freellmapi project).
 	// Runs on localhost:3001 and provides automatic fallback across 13 free LLM providers.
 	FreeLLMAPIBaseURL   string // default: http://localhost:3001
@@ -110,6 +111,8 @@ func loadEnvDefaults() *Config {
 		}
 	}
 
+	exaAPIKey := os.Getenv("EXA_API_KEY")
+
 	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {
 		dbHost = "localhost"
@@ -144,6 +147,7 @@ func loadEnvDefaults() *Config {
 		OllamaBaseURL:       ollamaBaseURL,
 		OllamaTimeoutMS:     ollamaTimeoutMS,
 		LLMAPIKey:           os.Getenv("LLM_API_KEY"),
+		ExaAPIKey:           exaAPIKey,
 		FreeLLMAPIBaseURL:   freellmAPIBaseURL,
 		FreeLLMAPIModel:     freellmAPIModel,
 		FreeLLMAPITimeoutMS: freellmAPITimeoutMS,
