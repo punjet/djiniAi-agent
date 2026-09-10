@@ -3,6 +3,7 @@ package eval
 import (
 	"context"
 	"fmt"
+
 	// "log" // TODO: Re-enable langdetect and log once go get issue is resolved.
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"strings"
 
 	"djinni-bot-go/internal/llm"
+	"djinni-bot-go/internal/logger"
 	// "github.com/rylans/langdetect"
 	// _ "github.com/rylans/langdetect/profiles"
 
@@ -78,7 +80,7 @@ func Evaluate(ctx context.Context, provider llm.Provider, contextDir, jdText str
 func readFile(path, label string) string {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "⚠️   %s not found at: %s\n", label, path)
+		logger.Log.Error(fmt.Sprintf("   %s not found at: %s", label, path))
 		return fmt.Sprintf("[%s not found — skipping]", label)
 	}
 	return strings.TrimSpace(string(data))

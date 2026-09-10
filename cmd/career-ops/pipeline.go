@@ -8,12 +8,13 @@ import (
 	"os/signal"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"sort"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
+	"database/sql"
 	"djinni-bot-go/internal/api"
 	"djinni-bot-go/internal/client"
 	"djinni-bot-go/internal/config"
@@ -24,16 +25,15 @@ import (
 	"djinni-bot-go/internal/logger"
 	"djinni-bot-go/internal/notify"
 	"djinni-bot-go/internal/pipeline"
-	"log"
+	"djinni-bot-go/internal/trace"
 	"net/http"
-	"database/sql"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 )
 
 func retryPendingApplications(ctx context.Context, dc *client.DjinniClient) {
-	fmt.Println("🔄 Retrying pending applications...")
+	logger.Log.Info(" Retrying pending applications...")
 	apps, err := pipeline.LoadPendingApplications(flagContextDir)
 	if err != nil || len(apps) == 0 {
 		return
@@ -47,14 +47,14 @@ func retryPendingApplications(ctx context.Context, dc *client.DjinniClient) {
 		if app.CVPath != "" {
 			cvBytes, _ = os.ReadFile(app.CVPath)
 		}
-		
-		fmt.Printf("📤 Retrying application for %s...\n", app.JobSlug)
+
+		logger.Log.Info(fmt.Sprintf(" Retrying application for %s...", app.JobSlug))
 		_, err := api.ApplyToJob(dc, app.JobSlug, app.Message, app.CVFileName, cvBytes, app.ExtraFormData)
 		if err != nil {
-			fmt.Printf("⚠️ Still failing for %s: %v\n", app.JobSlug, err)
+			logger.Log.Error(fmt.Sprintf("Still failing for %s", app.JobSlug), "error", err)
 			remaining = append(remaining, app)
 		} else {
-			fmt.Printf("✅ Success for %s!\n", app.JobSlug)
+			logger.Log.Info(fmt.Sprintf(" Success for %s!", app.JobSlug))
 			successCount++
 			// Extract job ID from JobSlug (first part before \-)
 			jobID := ""
@@ -79,7 +79,7 @@ func retryPendingApplications(ctx context.Context, dc *client.DjinniClient) {
 		pipeline.SavePendingApplication(flagContextDir, app, cvBytes)
 	}
 
-	notify.SendTelegramMessage(fmt.Sprintf("🔄 *Retry Complete*\nSuccessfully applied to %d out of %d pending jobs.", successCount, len(apps)))
+	notify.SendTelegramMessage(fmt.Sprintf(" *Retry Complete*\nSuccessfully applied to %d out of %d pending jobs.", successCount, len(apps)))
 }
 
 type ReportInfo struct {
@@ -101,7 +101,7 @@ func getLatestReports(dir string, limit int) []ReportInfo {
 		if f.IsDir() || !strings.HasSuffix(f.Name(), ".md") {
 			continue
 		}
-		
+
 		name := f.Name()
 		parts := strings.SplitN(name, "-", 2)
 		if len(parts) < 2 {
@@ -111,12 +111,12 @@ func getLatestReports(dir string, limit int) []ReportInfo {
 		if err != nil {
 			continue
 		}
-		
+
 		content, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
 			continue
 		}
-		
+
 		lines := strings.Split(string(content), "\n")
 		company, role := "Unknown", "Unknown"
 		for _, line := range lines {
@@ -171,7 +171,7 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 			}
 			keyboard = append(keyboard, []notify.InlineButton{btn})
 		}
-		
+
 		_, err := notify.SendInlineKeyboard("Here are the latest reports:", keyboard)
 		if err != nil {
 			notify.SendMessageFunc(fmt.Sprintf("Failed to send stats: %v", err))
@@ -183,13 +183,13 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 
 		filename := strings.TrimPrefix(cb.Data, "stats_report:")
 		reportPath := filepath.Join(flagContextDir, "reports", filename)
-		
+
 		content, err := os.ReadFile(reportPath)
 		if err != nil {
 			notify.SendMessageFunc(fmt.Sprintf("Could not load report %s: %v", filename, err))
 			return
 		}
-		
+
 		reportText := string(content)
 
 		if len(reportText) > 4000 {
@@ -210,7 +210,7 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 		if scoreVal >= 4.2 {
 			outDir := filepath.Join(flagContextDir, "output")
 			entries, _ := os.ReadDir(outDir)
-			
+
 			for _, e := range entries {
 				if strings.HasSuffix(e.Name(), ".pdf") {
 					pdfCompanySlug := strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9]+`).ReplaceAllString(e.Name(), ""))
@@ -229,18 +229,18 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 		appliedMap, err := pipeline.LoadAppliedJobs()
 		if err == nil {
 			found := false
-			
+
 			var jobID string
 			if match := regexp.MustCompile(`(?m)^\*\*Job ID:\*\*\s*(.+)$`).FindStringSubmatch(reportText); match != nil {
 				jobID = strings.TrimSpace(match[1])
 			}
-			
+
 			if jobID != "" {
 				if _, ok := appliedMap[jobID]; ok {
 					found = true
 				}
 			}
-			
+
 			if !found {
 				for slug := range appliedMap {
 					if strings.Contains(strings.ToLower(slug), strings.ToLower(filename[:len(filename)-3])) {
@@ -249,9 +249,9 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 					}
 				}
 			}
-			
+
 			if found {
-				notify.SendMessageFunc("Status: Applied ✅")
+				notify.SendMessageFunc("Status: Applied ")
 			} else {
 				notify.SendMessageFunc("Status: Not Applied (or declined/skipped)")
 			}
@@ -265,37 +265,36 @@ func setupBotCommands(bot *notify.TelegramBot, dc *client.DjinniClient, ctx cont
 			return
 		}
 		newToken := strings.TrimSpace(parts[1])
-		
+
 		err := config.UpdateEnvFile(flagContextDir, "DJINNI_SESSIONID", newToken)
 		if err != nil {
 			notify.SendTelegramMessage(fmt.Sprintf("Failed to update token: %v", err))
 			return
 		}
-		
+
 		godotenv.Overload(filepath.Join(flagContextDir, ".env"))
 		cfg, err := config.LoadConfig()
 		if err != nil {
 			notify.SendTelegramMessage(fmt.Sprintf("Failed to reload config: %v", err))
 			return
 		}
-		
+
 		dc.Config = cfg
 		dc.Client.SetCommonCookies(nil)
-		
+
 		newDc := client.NewDjinniClient(cfg)
 		dc.Client = newDc.Client
 
-		notify.SendTelegramMessage("✅ Session ID updated successfully. Validating...")
-		
+		notify.SendTelegramMessage(" Session ID updated successfully. Validating...")
+
 		if api.CheckToken(dc) {
-			notify.SendTelegramMessage("✅ Session ID is valid! Retrying pending applications...")
+			notify.SendTelegramMessage(" Session ID is valid! Retrying pending applications...")
 			go retryPendingApplications(ctx, dc)
 		} else {
-			notify.SendTelegramMessage("🚨 The new token appears to be invalid or expired. Please check and try again.")
+			notify.SendTelegramMessage(" The new token appears to be invalid or expired. Please check and try again.")
 		}
 	})
 }
-
 
 var pipelineCmd = &cobra.Command{
 	Use:   "pipeline",
@@ -350,12 +349,12 @@ func startHTTPServer(cfg *config.Config) {
 	}
 
 	database, err := db.InitDB(cfg)
-	if err != nil {
-		log.Printf("⚠️ Database initialization warning/error: %v", err)
+	if err != nil || database == nil {
+		logger.Log.Error("Database initialization warning/error or DB is nil", "error", err)
 	} else {
 		globalDB = database
 		if err := db.MigrateFilesToDB(database, flagContextDir); err != nil {
-			log.Printf("⚠️ Data auto-migration warning/error: %v", err)
+			logger.Log.Error("Data auto-migration warning/error", "error", err)
 		}
 	}
 
@@ -364,15 +363,16 @@ func startHTTPServer(cfg *config.Config) {
 	handlers.RegisterRoutes(mux)
 
 	go func() {
-		log.Printf("🌐 Web UI server listening on port %s", port)
+		logger.Log.Info(fmt.Sprintf(" Web UI server listening on port %s", port))
 		if err := http.ListenAndServe(":"+port, mux); err != nil {
-			log.Printf("🚨 HTTP server error: %v", err)
+			logger.Log.Error("HTTP server error", "error", err)
 		}
 	}()
 }
 
 func runPipelineRun(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+	ctx = trace.WithTraceID(ctx, "")
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
@@ -380,7 +380,7 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 
 	go func() {
 		s := <-sigChan
-		fmt.Println("\n🛑  Interrupted by user. Exiting gracefully... (Press Ctrl+C again to force exit)")
+		logger.Log.Info("\n  Interrupted by user. Exiting gracefully... (Press Ctrl+C again to force exit)")
 		signal.Stop(sigChan)
 		sigChan <- s
 	}()
@@ -410,29 +410,29 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 	setupBotCommands(bot, dc, ctx)
 
 	if !api.CheckToken(dc) {
-		notify.SendTelegramMessage("🚨 Djinni sessionid cookie expired or invalid! Send `/set_session <your_sessionid>` to update it.")
+		notify.SendTelegramMessage(" Djinni sessionid cookie expired or invalid! Send `/set_session <your_sessionid>` to update it.")
 	}
 
 	// 2. Load Deduplicator
-	fmt.Printf("📂  Loading deduplication history from %s...\n", flagContextDir)
+	logger.Log.Info(fmt.Sprintf("  Loading deduplication history from %s...", flagContextDir))
 	dedup, err := pipeline.LoadDedup(flagContextDir)
 	if err != nil {
 		return fmt.Errorf("failed to load deduplication history: %w", err)
 	}
 
 	// 3. Scan Djinni for relevant jobs
-	fmt.Println("🔍  Scanning Djinni for new positions...")
+	logger.Log.Info("  Scanning Djinni for new positions...")
 	jobs, err := pipeline.ScanDjinni(flagContextDir, dc, dedup)
 	if err != nil {
 		return fmt.Errorf("scan failed: %w", err)
 	}
 
 	if len(jobs) == 0 {
-		fmt.Println("✅  No new relevant jobs found.")
+		logger.Log.Info("  No new relevant jobs found.")
 		return nil
 	}
 
-	fmt.Printf("🎯  Found %d new relevant job(s) to process.\n", len(jobs))
+	logger.Log.Info(fmt.Sprintf("  Found %d new relevant job(s) to process.", len(jobs)))
 	appliedCount := 0
 	skippedThreshold := 0
 	skippedDedupe := 0
@@ -444,7 +444,7 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 
 	for _, j := range jobs {
 		if panicStop.Load() {
-			fmt.Println("🛑  PanicStop triggered. Halting runPipelineRun loop.")
+			logger.Log.Info("  PanicStop triggered. Halting runPipelineRun loop.")
 			break
 		}
 
@@ -460,13 +460,13 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 		}
 
 		if appliedCount >= flagLimit {
-			fmt.Printf("🛑  Daily application limit (%d) reached. Stopping.\n", flagLimit)
+			logger.Log.Info(fmt.Sprintf("  Daily application limit (%d) reached. Stopping.", flagLimit))
 			break
 		}
 
 		applied, err := processJobItem(ctx, panicStop, cfg, bot, dc, engine, dedup, j, &skippedDedupe, &skippedThreshold, &errorCount, &pdfCount, &appliedJobs)
 		if err != nil {
-			fmt.Printf("⚠️   Error processing job %s: %v\n", j.Title, err)
+			logger.Log.Error(fmt.Sprintf("Error processing job %s", j.Title), "error", err)
 			continue
 		}
 		if applied {
@@ -476,20 +476,20 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 
 	// Send an aggregated summary report to Telegram to reduce spam
 	var summary strings.Builder
-	summary.WriteString("📊 *Career-Ops Run Summary*\n")
-	summary.WriteString(fmt.Sprintf("🕒 Date: %s\n", time.Now().Format("2006-01-02 15:04")))
-	summary.WriteString(fmt.Sprintf("🔎 Relevant scanned: %d\n", len(jobs)))
-	summary.WriteString(fmt.Sprintf("✅ Applied: %d\n", appliedCount))
-	summary.WriteString(fmt.Sprintf("⏭ Skipped (low score): %d\n", skippedThreshold))
-	summary.WriteString(fmt.Sprintf("⏭ Skipped (already applied): %d\n", skippedDedupe))
-	summary.WriteString(fmt.Sprintf("📄 PDFs Generated: %d\n", pdfCount))
+	summary.WriteString(" *Career-Ops Run Summary*\n")
+	summary.WriteString(fmt.Sprintf(" Date: %s\n", time.Now().Format("2006-01-02 15:04")))
+	summary.WriteString(fmt.Sprintf(" Relevant scanned: %d\n", len(jobs)))
+	summary.WriteString(fmt.Sprintf(" Applied: %d\n", appliedCount))
+	summary.WriteString(fmt.Sprintf(" Skipped (low score): %d\n", skippedThreshold))
+	summary.WriteString(fmt.Sprintf(" Skipped (already applied): %d\n", skippedDedupe))
+	summary.WriteString(fmt.Sprintf(" PDFs Generated: %d\n", pdfCount))
 	summary.WriteString(fmt.Sprintf("❌ Errors: %d\n\n", errorCount))
 
 	if len(appliedJobs) > 0 {
 		if flagDryRun {
-			summary.WriteString("🚀 *Potential Applications (Dry-Run):*\n")
+			summary.WriteString(" *Potential Applications (Dry-Run):*\n")
 		} else {
-			summary.WriteString("🚀 *Applied Positions:*\n")
+			summary.WriteString(" *Applied Positions:*\n")
 		}
 		for _, app := range appliedJobs {
 			summary.WriteString(fmt.Sprintf("- %s — %s (Score: %.1f)\n", app.Company, app.Title, app.Score))
@@ -551,31 +551,30 @@ func logDeep(stage, message string) {
 }
 
 func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Config, bot *notify.TelegramBot, dc *client.DjinniClient, engine llm.Engine, dedup *pipeline.Dedup, j extractor.JobSummary, skippedDedupe, skippedThreshold, errorCount, pdfCount *int, appliedJobs *[]appliedJobInfo) (bool, error) {
-    if panicStop != nil && panicStop.Load() {
-        return false, fmt.Errorf("panicStop triggered")
-    }
+	if panicStop != nil && panicStop.Load() {
+		return false, fmt.Errorf("panicStop triggered")
+	}
 
-    // Load applied jobs registry
-    appliedMap, err := pipeline.LoadAppliedJobs()
-    if err != nil {
-        logDeep("ERROR", fmt.Sprintf("Failed to load applied jobs registry: %v", err))
-    } else {
-        if _, ok := appliedMap[j.ID]; ok {
-            msg := fmt.Sprintf("Skipping already applied job ID %s (registry)", j.ID)
-            logDeep("REGISTRY_SKIP", msg)
-            fmt.Printf("⏭   %s\n", msg)
-            return false, nil
-        }
-        if _, ok := appliedMap[j.Slug]; ok {
-            msg := fmt.Sprintf("Skipping already applied job %s (registry)", j.Slug)
-            logDeep("REGISTRY_SKIP", msg)
-            fmt.Printf("⏭   %s\n", msg)
-            return false, nil
-        }
-    }
-    fmt.Printf("\n%-66s\n", "⚡ Processing: "+j.Title)
-    logDeep("PROCESS_JOB_ITEM", fmt.Sprintf("Fetching details for %s", j.Slug))
-
+	// Load applied jobs registry
+	appliedMap, err := pipeline.LoadAppliedJobs()
+	if err != nil {
+		logDeep("ERROR", fmt.Sprintf("Failed to load applied jobs registry: %v", err))
+	} else {
+		if _, ok := appliedMap[j.ID]; ok {
+			msg := fmt.Sprintf("Skipping already applied job ID %s (registry)", j.ID)
+			logDeep("REGISTRY_SKIP", msg)
+			logger.Log.Info(fmt.Sprintf("   %s", msg))
+			return false, nil
+		}
+		if _, ok := appliedMap[j.Slug]; ok {
+			msg := fmt.Sprintf("Skipping already applied job %s (registry)", j.Slug)
+			logDeep("REGISTRY_SKIP", msg)
+			logger.Log.Info(fmt.Sprintf("   %s", msg))
+			return false, nil
+		}
+	}
+	logger.Log.Info(fmt.Sprintf("%-66s", " Processing: "+j.Title))
+	logDeep("PROCESS_JOB_ITEM", fmt.Sprintf("Fetching details for %s", j.Slug))
 
 	// Fetch full job details
 	details, err := api.GetJobDetails(dc, j.Slug)
@@ -584,33 +583,33 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 		logDeep("ERROR", fmt.Sprintf("GetJobDetails failed for %s: %v", j.Slug, err))
 		return false, err
 	}
-		// HTML skip check
-		if details.AlreadyApplied {
-			msg := fmt.Sprintf("Already applied to %s (HTML snippet detected). Skipping.", details.Title)
-			logDeep("HTML_SKIP", msg)
-			fmt.Printf("⏭   Already applied (HTML snippet detected). Skipping.\n")
-			if err := pipeline.SaveAppliedJob(j.ID); err != nil {
-				logDeep("WARNING", fmt.Sprintf("Failed to save applied job ID %s: %v", j.ID, err))
-			}
-			return false, nil
+	// HTML skip check
+	if details.AlreadyApplied {
+		msg := fmt.Sprintf("Already applied to %s (HTML snippet detected). Skipping.", details.Title)
+		logDeep("HTML_SKIP", msg)
+		logger.Log.Info("Already applied (HTML snippet detected). Skipping.")
+		if err := pipeline.SaveAppliedJob(j.ID); err != nil {
+			logDeep("WARNING", fmt.Sprintf("Failed to save applied job ID %s: %v", j.ID, err))
 		}
+		return false, nil
+	}
 
 	// Double check deduplication now that we have the exact company name
 	if !dedup.IsNew(j.URL, details.Company, details.Title) {
 		msg := fmt.Sprintf("Already applied/scanned a similar role at %s. Skipping.", details.Company)
 		logDeep("DEDUP", msg)
-		fmt.Printf("⏭   %s\n", msg)
+		logger.Log.Info(fmt.Sprintf("   %s", msg))
 		*skippedDedupe++
 		return false, nil
 	}
 
 	// Evaluate the job
 	logDeep("EVALUATE", fmt.Sprintf("Evaluating role at %s...", details.Company))
-	fmt.Printf("🤖  Evaluating role at %s...\n", details.Company)
-	
+	logger.Log.Info(fmt.Sprintf("  Evaluating role at %s...", details.Company))
+
 	// Add delay BEFORE evaluation to respect free LLM rate limits
 	if engine == "freellmapi" {
-		fmt.Println("⏳ Waiting 30 seconds to respect free LLM API rate limits...")
+		logger.Log.Info(" Waiting 30 seconds to respect free LLM API rate limits...")
 		time.Sleep(30 * time.Second)
 	}
 
@@ -618,9 +617,9 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 	if err != nil {
 		*errorCount++
 		logDeep("ERROR", fmt.Sprintf("EvaluateJob failed for %s: %v", details.Company, err))
-		
+
 		if engine == "freellmapi" {
-			fmt.Println("⚠️ Free API Error encountered. Waiting 60 seconds for quota reset...")
+			logger.Log.Info(" Free API Error encountered. Waiting 60 seconds for quota reset...")
 			time.Sleep(60 * time.Second)
 		}
 		return false, err
@@ -640,24 +639,24 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 	}
 
 	logDeep("EVAL_RESULT", fmt.Sprintf("Score: %.1f/5 | Archetype: %s | Legitimacy: %s", res.Score, res.Archetype, res.Legitimacy))
-	fmt.Printf("📊  Score: %.1f/5 | Archetype: %s | Legitimacy: %s\n", res.Score, res.Archetype, res.Legitimacy)
+	logger.Log.Info(fmt.Sprintf("  Score: %.1f/5 | Archetype: %s | Legitimacy: %s", res.Score, res.Archetype, res.Legitimacy))
 
 	// Trigger merge-tracker to merge evaluated status immediately
 	runMergeTracker(flagContextDir)
 
 	// Apply if score meets threshold
-		if res.Score >= flagThreshold {
-			logDeep("APPLY_START", fmt.Sprintf("Score %.1f >= %.1f. Proceeding to auto-apply.", res.Score, flagThreshold))
-			fmt.Printf("🔥  High match (%.1f >= %.1f). Auto-applying!\n", res.Score, flagThreshold)
+	if res.Score >= flagThreshold {
+		logDeep("APPLY_START", fmt.Sprintf("Score %.1f >= %.1f. Proceeding to auto-apply.", res.Score, flagThreshold))
+		logger.Log.Info(fmt.Sprintf("  High match (%.1f >= %.1f). Auto-applying!", res.Score, flagThreshold))
 
-			if engine == "freellmapi" {
-				fmt.Println("⏳ Waiting 20 seconds before generating CV to respect free LLM API rate limits...")
-				time.Sleep(20 * time.Second)
-			}
-		
+		if engine == "freellmapi" {
+			logger.Log.Info(" Waiting 20 seconds before generating CV to respect free LLM API rate limits...")
+			time.Sleep(20 * time.Second)
+		}
+
 		// Generate tailored CV PDF
 		logDeep("CV_GENERATE", fmt.Sprintf("Generating tailored CV PDF for %s", details.Company))
-		fmt.Printf("📄 Generating tailored CV PDF for %s...\n", details.Company)
+		logger.Log.Info(fmt.Sprintf(" Generating tailored CV PDF for %s...", details.Company))
 		cvBytes, err := covergen.GenerateCustomCV(ctx, cfg, engine, flagContextDir, j.URL, details.Company, details.Title, reportAbsPath, details.Description)
 		if err != nil {
 			*errorCount++
@@ -666,7 +665,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 		}
 
 		if engine == "freellmapi" {
-			fmt.Println("⏳ Waiting 20 seconds before generating Cover Letter...")
+			logger.Log.Info(" Waiting 20 seconds before generating Cover Letter...")
 			time.Sleep(20 * time.Second)
 		}
 
@@ -682,16 +681,16 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 		// Handle recruiter quiz (if present)
 		var extraFormData map[string]string
 		if details.QuizID != "" && len(details.QuizQuestions) > 0 {
-			fmt.Printf("📝  Quiz detected: %d question(s) for quiz %s\n", len(details.QuizQuestions), details.QuizID)
+			logger.Log.Info(fmt.Sprintf("  Quiz detected: %d question(s) for quiz %s", len(details.QuizQuestions), details.QuizID))
 			logDeep("QUIZ_DETECTED", fmt.Sprintf("%d question(s) for quiz %s", len(details.QuizQuestions), details.QuizID))
 
 			if engine == "freellmapi" {
-				fmt.Println("⏳ Waiting 20 seconds before answering quiz to respect free LLM API rate limits...")
+				logger.Log.Info(" Waiting 20 seconds before answering quiz to respect free LLM API rate limits...")
 				time.Sleep(20 * time.Second)
 			}
 
 			logDeep("QUIZ_ANSWERING", "Calling LLM to answer quiz questions")
-			fmt.Printf("🤖  Answering %d quiz question(s)...\n", len(details.QuizQuestions))
+			logger.Log.Info(fmt.Sprintf("  Answering %d quiz question(s)...", len(details.QuizQuestions)))
 			answered, err := covergen.AnswerQuizQuestions(ctx, cfg, engine, flagContextDir, details.QuizQuestions, details.Description, details.Company, details.Title)
 			if err != nil {
 				*errorCount++
@@ -705,19 +704,19 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 				extraFormData[q.Name] = q.Answer
 				logDeep("QUIZ_ANSWER", fmt.Sprintf("[%s] %s", q.Name, q.Answer))
 			}
-			fmt.Printf("✅  Quiz answers ready (%d fields).\n", len(answered))
+			logger.Log.Info(fmt.Sprintf("  Quiz answers ready (%d fields).", len(answered)))
 		}
 
 		if flagDryRun {
 			if extraFormData != nil {
-				fmt.Printf("📝  Quiz answers would be submitted:\n")
+				logger.Log.Info("Quiz answers would be submitted:")
 				for k, v := range extraFormData {
-					fmt.Printf("      %s = %s\n", k, v)
+					logger.Log.Info(fmt.Sprintf("      %s = %s", k, v))
 				}
 			}
 			msg := fmt.Sprintf("[DRY-RUN] Would apply to %s with generated custom CV PDF and message: %q", details.Company, introMsg)
 			logDeep("APPLY_DRYRUN", msg)
-			fmt.Printf("%s\n", msg)
+			logger.Log.Info(fmt.Sprintf("%s", msg))
 			*pdfCount++
 			*appliedJobs = append(*appliedJobs, appliedJobInfo{
 				Company: details.Company,
@@ -726,107 +725,107 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 				DryRun:  true,
 			})
 			return true, nil
-				} else {
-					cvFileName := fmt.Sprintf("CV-Kyrylo-Kirov-%s.pdf", details.Company)
-					
-					_, errDoc := notify.SendDocument(cvFileName, cvBytes, fmt.Sprintf("CV tailored for %s", details.Company))
-					if errDoc != nil {
-						logDeep("WARNING", fmt.Sprintf("Failed to send CV document to Telegram: %v", errDoc))
-					}
+		} else {
+			cvFileName := fmt.Sprintf("CV-Kyrylo-Kirov-%s.pdf", details.Company)
 
-					var msgID int64
+			_, errDoc := notify.SendDocument(cvFileName, cvBytes, fmt.Sprintf("CV tailored for %s", details.Company))
+			if errDoc != nil {
+				logDeep("WARNING", fmt.Sprintf("Failed to send CV document to Telegram: %v", errDoc))
+			}
 
-					for {
-					instruction, accept, retMsgID, err := pipeline.AskUserForApplyReview(ctx, bot, details.Company, details.Title, j.URL, res.Summary, res.Score, cvFileName, introMsg, j.Slug, msgID)
-					msgID = retMsgID
-					if err != nil {
-						*errorCount++
-						logDeep("ERROR", fmt.Sprintf("AskUserForApplyReview failed: %v", err))
-						return false, err
-					}
+			var msgID int64
 
-					if strings.HasPrefix(instruction, "edit:") {
-						editMsg := strings.TrimPrefix(instruction, "edit:")
-						fmt.Printf("🔄  Regenerating cover letter with instruction: %q\n", editMsg)
-						newMsg, err := regenerateCoverLetter(ctx, cfg, engine, details, introMsg, editMsg)
-						if err != nil {
-							*errorCount++
-							logDeep("ERROR", fmt.Sprintf("regenerateCoverLetter failed: %v", err))
-							return false, err
-						}
-						introMsg = newMsg
-						continue
-					}
-
-					if !accept {
-						fmt.Printf("🚫  Application to %s rejected by user.\n", details.Company)
-						return false, nil
-					}
-					break
-				}
-
-				logDeep("APPLY_SUBMIT", fmt.Sprintf("Submitting application to %s...", details.Company))
-				fmt.Printf("📤  Submitting application to %s...\n", details.Company)
-				
-				// Submit application with the tailored CV PDF (and quiz answers if any)
-				_, err = api.ApplyToJob(dc, j.Slug, introMsg, cvFileName, cvBytes, extraFormData)
+			for {
+				instruction, accept, retMsgID, err := pipeline.AskUserForApplyReview(ctx, bot, details.Company, details.Title, j.URL, res.Summary, res.Score, cvFileName, introMsg, j.Slug, msgID)
+				msgID = retMsgID
 				if err != nil {
 					*errorCount++
-					logDeep("ERROR", fmt.Sprintf("Application submission failed to %s: %v", details.Company, err))
-					statusBlock := &notify.InputRichBlockParagraph{
-						Type: "paragraph",
-						Text: []interface{}{
-							"\n\n🔴 ",
-							notify.RichTextBold{Type: "bold", Text: "Status:"},
-							" Failed to apply (queued for retry): " + err.Error(),
-						},
-					}
-					richMsg := pipeline.BuildApplyReviewRichMessage(details.Company, details.Title, j.URL, res.Summary, res.Score, cvFileName, introMsg, statusBlock)
-					_ = notify.EditRichMessageText(msgID, richMsg)
-					
-					app := pipeline.PendingApplication{
-						JobSlug:       j.Slug,
-						Message:       introMsg,
-						CVFileName:    cvFileName,
-						ExtraFormData: extraFormData,
-					}
-					pipeline.SavePendingApplication(flagContextDir, app, cvBytes)
-					
-					return false, fmt.Errorf("application submission failed (queued): %w", err)
+					logDeep("ERROR", fmt.Sprintf("AskUserForApplyReview failed: %v", err))
+					return false, err
 				}
 
+				if strings.HasPrefix(instruction, "edit:") {
+					editMsg := strings.TrimPrefix(instruction, "edit:")
+					logger.Log.Info(fmt.Sprintf("  Regenerating cover letter with instruction: %q", editMsg))
+					newMsg, err := regenerateCoverLetter(ctx, cfg, engine, details, introMsg, editMsg)
+					if err != nil {
+						*errorCount++
+						logDeep("ERROR", fmt.Sprintf("regenerateCoverLetter failed: %v", err))
+						return false, err
+					}
+					introMsg = newMsg
+					continue
+				}
+
+				if !accept {
+					logger.Log.Info(fmt.Sprintf("  Application to %s rejected by user.", details.Company))
+					return false, nil
+				}
+				break
+			}
+
+			logDeep("APPLY_SUBMIT", fmt.Sprintf("Submitting application to %s...", details.Company))
+			logger.Log.Info(fmt.Sprintf("  Submitting application to %s...", details.Company))
+
+			// Submit application with the tailored CV PDF (and quiz answers if any)
+			_, err = api.ApplyToJob(dc, j.Slug, introMsg, cvFileName, cvBytes, extraFormData)
+			if err != nil {
+				*errorCount++
+				logDeep("ERROR", fmt.Sprintf("Application submission failed to %s: %v", details.Company, err))
 				statusBlock := &notify.InputRichBlockParagraph{
 					Type: "paragraph",
 					Text: []interface{}{
-						"\n\n🟢 ",
+						"\n\n ",
 						notify.RichTextBold{Type: "bold", Text: "Status:"},
-						" Application accepted and submitted.",
+						" Failed to apply (queued for retry): " + err.Error(),
 					},
 				}
 				richMsg := pipeline.BuildApplyReviewRichMessage(details.Company, details.Title, j.URL, res.Summary, res.Score, cvFileName, introMsg, statusBlock)
 				_ = notify.EditRichMessageText(msgID, richMsg)
-				logDeep("APPLY_SUCCESS", fmt.Sprintf("Successfully applied to %s", details.Company))
-				*pdfCount++
-				*appliedJobs = append(*appliedJobs, appliedJobInfo{
-					Company: details.Company,
-					Title:   details.Title,
-					Score:   res.Score,
-					DryRun:  false,
-				})
+
+				app := pipeline.PendingApplication{
+					JobSlug:       j.Slug,
+					Message:       introMsg,
+					CVFileName:    cvFileName,
+					ExtraFormData: extraFormData,
+				}
+				pipeline.SavePendingApplication(flagContextDir, app, cvBytes)
+
+				return false, fmt.Errorf("application submission failed (queued): %w", err)
+			}
+
+			statusBlock := &notify.InputRichBlockParagraph{
+				Type: "paragraph",
+				Text: []interface{}{
+					"\n\n ",
+					notify.RichTextBold{Type: "bold", Text: "Status:"},
+					" Application accepted and submitted.",
+				},
+			}
+			richMsg := pipeline.BuildApplyReviewRichMessage(details.Company, details.Title, j.URL, res.Summary, res.Score, cvFileName, introMsg, statusBlock)
+			_ = notify.EditRichMessageText(msgID, richMsg)
+			logDeep("APPLY_SUCCESS", fmt.Sprintf("Successfully applied to %s", details.Company))
+			*pdfCount++
+			*appliedJobs = append(*appliedJobs, appliedJobInfo{
+				Company: details.Company,
+				Title:   details.Title,
+				Score:   res.Score,
+				DryRun:  false,
+			})
 			// Persist job ID to applied jobs registry
 			if err := pipeline.SaveAppliedJob(j.ID); err != nil {
 				logDeep("WARNING", fmt.Sprintf("Failed to save applied job ID %s: %v", j.ID, err))
 			}
 
-				// Create applied TSV tracker entry so merge-tracker upgrades status to "Applied"
-				createAppliedTrackerAddition(flagContextDir, res, details.Company, details.Title, providerName(cfg, engine), j.Slug)
-				runMergeTracker(flagContextDir)
-				return true, nil
-			}
+			// Create applied TSV tracker entry so merge-tracker upgrades status to "Applied"
+			createAppliedTrackerAddition(flagContextDir, res, details.Company, details.Title, providerName(cfg, engine), j.Slug)
+			runMergeTracker(flagContextDir)
+			return true, nil
+		}
 	} else {
 		msg := fmt.Sprintf("Score (%.1f) below threshold (%.1f). Skipping apply.", res.Score, flagThreshold)
 		logDeep("SKIP_LOW_SCORE", msg)
-		fmt.Printf("⏭   %s\n", msg)
+		logger.Log.Info(fmt.Sprintf("   %s", msg))
 		*skippedThreshold++
 		return false, nil
 	}
@@ -844,7 +843,7 @@ type daemonStats struct {
 }
 
 func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Signal) error {
-	fmt.Println("🚀 Starting Career-Ops Pipeline in Daemon Mode (Debug/Continuous)...")
+	logger.Log.Info(" Starting Career-Ops Pipeline in Daemon Mode (Debug/Continuous)...")
 	logDeep("START", "Daemon mode started with deep logging enabled.")
 
 	// ── Restore persisted session token ──────────────────────────────────────
@@ -852,13 +851,13 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 	// We reload it here so the bot remembers the token across container restarts.
 	savedEnvPath := filepath.Join(flagContextDir, ".env")
 	if err := godotenv.Overload(savedEnvPath); err == nil {
-		fmt.Printf("🔑 Loaded persisted session from %s\n", savedEnvPath)
+		logger.Log.Info(fmt.Sprintf(" Loaded persisted session from %s", savedEnvPath))
 		// Rebuild config with the restored token
 		if reloaded, err := config.LoadConfig(); err == nil {
 			cfg = reloaded
 		}
 	} else {
-		fmt.Printf("ℹ️  No persisted .env found at %s (will use environment vars)\n", savedEnvPath)
+		logger.Log.Info(fmt.Sprintf("  No persisted .env found at %s (will use environment vars)", savedEnvPath))
 	}
 
 	dc := client.NewDjinniClient(cfg)
@@ -877,29 +876,29 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 	// ── Initial silent token check ────────────────────────────────────────────
 	// Validate token on startup WITHOUT notifying Telegram — it may be perfectly
 	// valid (just restored from .env). Only alert if it's actually expired.
-	fmt.Println("🔍 Validating session token on startup...")
+	logger.Log.Info(" Validating session token on startup...")
 	if api.CheckToken(dc) {
-		fmt.Println("✅ Session token is valid. Starting pipeline.")
+		logger.Log.Info(" Session token is valid. Starting pipeline.")
 	} else {
-		fmt.Println("🚨 Session token is invalid or expired. Waiting for /set_session.")
-		notify.SendTelegramMessage("🚨 *Djinni session expired after restart!*\nPlease send your new session cookie:\n`/set_session <your_sessionid>`")
+		logger.Log.Info(" Session token is invalid or expired. Waiting for /set_session.")
+		notify.SendTelegramMessage(" *Djinni session expired after restart!*\nPlease send your new session cookie:\n`/set_session <your_sessionid>`")
 	}
 
 	stats := daemonStats{StartTime: time.Now()}
 
 	updateSummary := func() {
 		var summary strings.Builder
-		summary.WriteString("📊 *Daemon Mode Cumulative Summary*\n")
-		summary.WriteString(fmt.Sprintf("🕒 Started: %s\n", stats.StartTime.Format("2006-01-02 15:04")))
-		summary.WriteString(fmt.Sprintf("🔄 Scans: %d\n", stats.ScansCount))
-		summary.WriteString(fmt.Sprintf("✅ Applied: %d\n", stats.AppliedCount))
-		summary.WriteString(fmt.Sprintf("⏭ Skipped (low score): %d\n", stats.SkippedThreshold))
-		summary.WriteString(fmt.Sprintf("⏭ Skipped (already applied): %d\n", stats.SkippedDedupe))
-		summary.WriteString(fmt.Sprintf("📄 PDFs Generated: %d\n", stats.PdfCount))
+		summary.WriteString(" *Daemon Mode Cumulative Summary*\n")
+		summary.WriteString(fmt.Sprintf(" Started: %s\n", stats.StartTime.Format("2006-01-02 15:04")))
+		summary.WriteString(fmt.Sprintf(" Scans: %d\n", stats.ScansCount))
+		summary.WriteString(fmt.Sprintf(" Applied: %d\n", stats.AppliedCount))
+		summary.WriteString(fmt.Sprintf(" Skipped (low score): %d\n", stats.SkippedThreshold))
+		summary.WriteString(fmt.Sprintf(" Skipped (already applied): %d\n", stats.SkippedDedupe))
+		summary.WriteString(fmt.Sprintf(" PDFs Generated: %d\n", stats.PdfCount))
 		summary.WriteString(fmt.Sprintf("❌ Errors: %d\n\n", stats.ErrorCount))
 
 		if len(stats.AppliedJobs) > 0 {
-			summary.WriteString("🚀 *Applied Positions:*\n")
+			summary.WriteString(" *Applied Positions:*\n")
 			for _, app := range stats.AppliedJobs {
 				summary.WriteString(fmt.Sprintf("- %s — %s (Score: %.1f)\n", app.Company, app.Title, app.Score))
 			}
@@ -913,17 +912,19 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 	tokenInvalidNotified := false // track so we only send Telegram alert once per cycle
 
 	for {
+		loopCtx := trace.WithTraceID(ctx, "")
+
 		if panicStop.Load() {
-			fmt.Println("🛑  PanicStop triggered. Exiting daemon mode.")
+			logger.Log.Info("  PanicStop triggered. Exiting daemon mode.")
 			return nil
 		}
 
 		if !api.CheckToken(dc) {
 			if !tokenInvalidNotified {
-				notify.SendTelegramMessage("🚨 Djinni sessionid cookie expired or invalid! Waiting for update via `/set_session <your_sessionid>`.")
+				notify.SendTelegramMessage(" Djinni sessionid cookie expired or invalid! Waiting for update via `/set_session <your_sessionid>`.")
 				tokenInvalidNotified = true
 			}
-			fmt.Println("🚨 Token invalid. Waiting 2 minutes...")
+			logger.Log.Info(" Token invalid. Waiting 2 minutes...")
 			time.Sleep(2 * time.Minute)
 			continue
 		}
@@ -937,14 +938,14 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 			stats.ScansCount++
 
 			logDeep("INBOX_START", "Scanning Djinni inbox for unread messages...")
-			fmt.Println("📩  Scanning inbox for unread dialogue messages...")
-			inboxLogs, err := pipeline.ProcessInbox(ctx, bot, panicStop, sigChan, cfg, engine, flagContextDir, dc, flagDryRun)
+			logger.Log.Info("  Scanning inbox for unread dialogue messages...")
+			inboxLogs, err := pipeline.ProcessInbox(loopCtx, bot, panicStop, sigChan, cfg, engine, flagContextDir, dc, flagDryRun)
 			if err != nil {
 				logDeep("ERROR", fmt.Sprintf("Inbox processing failed: %v", err))
-				fmt.Printf("⚠️ Inbox processing failed: %v\n", err)
+				logger.Log.Error("Inbox processing failed", "error", err)
 			} else {
 				for _, l := range inboxLogs {
-					fmt.Println("  ", l)
+					logger.Log.Info(fmt.Sprint("  ", l))
 				}
 			}
 
@@ -953,22 +954,22 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 			if err != nil {
 				msg := fmt.Sprintf("Failed to load deduplication history: %v", err)
 				logDeep("ERROR", msg)
-				fmt.Printf("⚠️ %s. Retrying in 1 minute...\n", msg)
+				logger.Log.Info(fmt.Sprintf(" %s. Retrying in 1 minute...", msg))
 			} else {
-				fmt.Println("🔍  Scanning Djinni for new positions...")
+				logger.Log.Info("  Scanning Djinni for new positions...")
 				jobs, err := pipeline.ScanDjinni(flagContextDir, dc, dedup)
 				if err != nil {
 					msg := fmt.Sprintf("Scan failed: %v", err)
 					logDeep("ERROR", msg)
-					fmt.Printf("⚠️ %s. Retrying in 1 minute...\n", msg)
+					logger.Log.Info(fmt.Sprintf(" %s. Retrying in 1 minute...", msg))
 				} else if len(jobs) > 0 {
 					msg := fmt.Sprintf("Found %d relevant job(s) to process.", len(jobs))
 					logDeep("SCAN_RESULT", msg)
-					fmt.Printf("🎯 %s\n", msg)
+					logger.Log.Info(fmt.Sprintf(" %s", msg))
 
 					for _, j := range jobs {
 						if panicStop.Load() {
-							fmt.Println("🛑  PanicStop triggered. Halting job processing loop.")
+							logger.Log.Info("  PanicStop triggered. Halting job processing loop.")
 							break
 						}
 						interrupted := false
@@ -989,11 +990,11 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 						pdfCount := 0
 						var appliedJobs []appliedJobInfo
 
-						applied, err := processJobItem(ctx, panicStop, cfg, bot, dc, engine, dedup, j, &skippedDedupe, &skippedThreshold, &errorCount, &pdfCount, &appliedJobs)
+						applied, err := processJobItem(loopCtx, panicStop, cfg, bot, dc, engine, dedup, j, &skippedDedupe, &skippedThreshold, &errorCount, &pdfCount, &appliedJobs)
 						if err != nil {
 							errMsg := fmt.Sprintf("Error processing job %s: %v", j.Title, err)
 							logDeep("PROCESS_ERROR", errMsg)
-							fmt.Printf("⚠️ %s\n", errMsg)
+							logger.Log.Info(fmt.Sprintf(" %s", errMsg))
 						}
 
 						stats.SkippedDedupe += skippedDedupe
@@ -1007,7 +1008,7 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 					}
 				} else {
 					logDeep("SCAN_RESULT", "No new relevant positions found.")
-					fmt.Println("✅ No new relevant positions found.")
+					logger.Log.Info(" No new relevant positions found.")
 				}
 			}
 			updateSummary()
@@ -1021,7 +1022,7 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 
 		if scanTriggered {
 			logDeep("SLEEP", fmt.Sprintf("Sleeping for %v before next scan.", sleepDur))
-			fmt.Printf("💤 Sleeping for %v...\n", sleepDur)
+			logger.Log.Info(fmt.Sprintf(" Sleeping for %v...", sleepDur))
 		}
 
 		select {
@@ -1041,8 +1042,8 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 					slug := match[1]
 					url := match[0]
 
-					notify.SendTelegramMessage(fmt.Sprintf("🔍 Processing manual job URL: %s", url))
-					fmt.Printf("🔍 Processing manual job URL: %s\n", url)
+					notify.SendTelegramMessage(fmt.Sprintf(" Processing manual job URL: %s", url))
+					logger.Log.Info(fmt.Sprintf(" Processing manual job URL: %s", url))
 
 					j := extractor.JobSummary{
 						Slug:  slug,
@@ -1087,7 +1088,7 @@ func runPipelineInbox(cmd *cobra.Command, args []string) error {
 
 	go func() {
 		s := <-sigChan
-		fmt.Println("\n🛑  Interrupted by user. Exiting gracefully... (Press Ctrl+C again to force exit)")
+		logger.Log.Info("\n  Interrupted by user. Exiting gracefully... (Press Ctrl+C again to force exit)")
 		signal.Stop(sigChan)
 		sigChan <- s
 	}()
@@ -1108,13 +1109,13 @@ func runPipelineInbox(cmd *cobra.Command, args []string) error {
 	setupBotCommands(bot, dc, ctx)
 
 	if !api.CheckToken(dc) {
-		notify.SendTelegramMessage("🚨 Djinni sessionid cookie expired or invalid! Send `/set_session <your_sessionid>` to update it.")
+		notify.SendTelegramMessage(" Djinni sessionid cookie expired or invalid! Send `/set_session <your_sessionid>` to update it.")
 		return fmt.Errorf("invalid token, cannot process inbox")
 	}
 
 	panicStop := &atomic.Bool{}
 
-	fmt.Println("📩  Scanning inbox for unread dialogue messages...")
+	logger.Log.Info("  Scanning inbox for unread dialogue messages...")
 	logs, err := pipeline.ProcessInbox(ctx, bot, panicStop, sigChan, cfg, engine, flagContextDir, dc, flagDryRun)
 	if err != nil {
 		return err
@@ -1124,23 +1125,23 @@ func runPipelineInbox(cmd *cobra.Command, args []string) error {
 	skippedCount := 0
 	errorCount := 0
 	var summary strings.Builder
-	summary.WriteString("📩 *Recruiter Inbox Processed*\n")
-	summary.WriteString(fmt.Sprintf("🕒 Date: %s\n\n", time.Now().Format("2006-01-02 15:04")))
+	summary.WriteString(" *Recruiter Inbox Processed*\n")
+	summary.WriteString(fmt.Sprintf(" Date: %s\n\n", time.Now().Format("2006-01-02 15:04")))
 
 	for _, logLine := range logs {
-		fmt.Println(logLine)
+		logger.Log.Info(fmt.Sprint(logLine))
 		if strings.Contains(logLine, "Reply:") {
 			repliedCount++
-			summary.WriteString(fmt.Sprintf("💬 %s\n", logLine))
+			summary.WriteString(fmt.Sprintf(" %s\n", logLine))
 		} else if strings.Contains(logLine, "Skipped") {
 			skippedCount++
 		} else {
 			errorCount++
-			summary.WriteString(fmt.Sprintf("⚠️ %s\n", logLine))
+			summary.WriteString(fmt.Sprintf(" %s\n", logLine))
 		}
 	}
 
-	summary.WriteString(fmt.Sprintf("\n📊 *Summary:* Replied: %d | Skipped: %d | Errors: %d", repliedCount, skippedCount, errorCount))
+	summary.WriteString(fmt.Sprintf("\n *Summary:* Replied: %d | Skipped: %d | Errors: %d", repliedCount, skippedCount, errorCount))
 
 	// Only send a TG message if we actually replied or had errors, avoiding empty check spam
 	if repliedCount > 0 || errorCount > 0 {
@@ -1180,7 +1181,7 @@ func createAppliedTrackerAddition(contextDir string, res *pipeline.EvalResult, c
 			Status:      "applied",
 		}
 		if err := db.CreateApplication(globalDB, app); err != nil {
-			log.Printf("⚠️ Database CreateApplication failed: %v", err)
+			logger.Log.Error("Database CreateApplication failed", "error", err)
 		}
 	}
 

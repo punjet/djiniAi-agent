@@ -39,7 +39,7 @@ title_filter:
 		{"AI Engineer", true},
 		{"LLM Developer", true},
 		{"Crypto AI Specialist", false}, // blocks negative
-		{"Go Developer", false},        // no positive keywords
+		{"Go Developer", false},         // no positive keywords
 	}
 
 	for _, c := range cases {
@@ -75,7 +75,7 @@ func TestScanDjinni(t *testing.T) {
 			}
 			return
 		}
-		
+
 		if r.URL.Path == "/jobs/" {
 			// Search endpoint
 			title := r.URL.Query().Get("title")
@@ -97,7 +97,7 @@ func TestScanDjinni(t *testing.T) {
 			}
 			return
 		}
-		
+
 		w.WriteHeader(http.StatusNotFound)
 	}))
 	defer server.Close()
@@ -144,7 +144,7 @@ title_filter:
 	// 222-boring-dev (filtered out, does not match "AI" or "LLM")
 	// 333-llm-engineer (from dashboard page 2, matches "LLM")
 	// 444-ai-researcher (from search "AI", but filtered out by Dedup)
-	
+
 	if len(jobs) != 2 {
 		t.Fatalf("Expected 2 jobs, got %d", len(jobs))
 	}

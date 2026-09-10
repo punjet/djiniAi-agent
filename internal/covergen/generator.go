@@ -112,7 +112,7 @@ func GenerateCoverLetter(ctx context.Context, cfg *config.Config, engine llm.Eng
 	if lang == "English" {
 		systemPrompt = `You are an expert technical resume writer. Write a highly tailored cover letter and a short Djinni message hook for a candidate applying to a job.
 
-⚠️ CRITICAL LANGUAGE RULE: You MUST write ALL text content STRICTLY in English.
+ CRITICAL LANGUAGE RULE: You MUST write ALL text content STRICTLY in English.
 This means:
 - Translate ALL content — greeting, opening, profile intro, achievements, problems section, closing, and Djinni message — into English.
 - The only exception is proper nouns (company names, product names, tool names like "n8n", "RAG", "OpenAI").
@@ -148,7 +148,7 @@ You MUST respond with a single JSON object (no markdown wrappers like ` + "`" + 
 	} else {
 		systemPrompt = `Ви є досвідченим автором технічних резюме. Напишіть індивідуальний супровідний лист та короткий гачок для повідомлення на Djinni для кандидата, який подає заявку на вакансію.
 
-⚠️ КРИТИЧНЕ ПРАВИЛО МОВИ: Ви ПОВИННІ писати ВЕСЬ текст ВИКЛЮЧНО українською мовою.
+ КРИТИЧНЕ ПРАВИЛО МОВИ: Ви ПОВИННІ писати ВЕСЬ текст ВИКЛЮЧНО українською мовою.
 Це означає:
 - Перекладіть ВЕСЬ вміст — привітання, вступ, опис профілю, досягнення, розділ про проблеми, закінчення та повідомлення на Djinni — українською мовою.
 - Єдиним винятком є власні назви (назви компаній, назви продуктів, назви інструментів, наприклад "n8n", "RAG", "OpenAI").
@@ -497,7 +497,7 @@ func GenerateCustomCV(ctx context.Context, cfg *config.Config, engine llm.Engine
 	if lang == "English" {
 		systemPrompt = `You are an expert CV writer. Generate a tailored CV in JSON for the candidate based on their profile and the target job.
 
-⚠️ CRITICAL LANGUAGE RULE: You MUST write ALL text content STRICTLY in English.
+ CRITICAL LANGUAGE RULE: You MUST write ALL text content STRICTLY in English.
 This means:
 - Translate ALL experience descriptions, project descriptions, education entries from their original language into English.
 - Write the professional summary in English.
@@ -544,7 +544,7 @@ Remember: translate ALL content to English. Generate a tailored CV JSON for this
 	} else {
 		systemPrompt = `Ви є досвідченим автором резюме. Згенеруйте адаптоване резюме в форматі JSON для кандидата на основі його профілю та цільової вакансії.
 
-⚠️ КРИТИЧНЕ ПРАВИЛО МОВИ: Ви ПОВИННІ писати ВЕСЬ текстовий вміст ВИКЛЮЧНО українською мовою.
+ КРИТИЧНЕ ПРАВИЛО МОВИ: Ви ПОВИННІ писати ВЕСЬ текстовий вміст ВИКЛЮЧНО українською мовою.
 Це означає:
 - Перекладіть ВСІ описи досвіду роботи, описи проєктів, записи про освіту з їхньої оригінальної мови на українську.
 - Напишіть професійне резюме (summary) українською мовою.

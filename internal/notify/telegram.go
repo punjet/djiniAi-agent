@@ -57,9 +57,9 @@ type InlineKeyboardMarkup struct {
 }
 
 type TGUpdate struct {
-	UpdateID      int64          `json:"update_id"`
-	Message       *TGMessage     `json:"message"`
-	CallbackQuery *TGCallback    `json:"callback_query"`
+	UpdateID      int64       `json:"update_id"`
+	Message       *TGMessage  `json:"message"`
+	CallbackQuery *TGCallback `json:"callback_query"`
 }
 
 type TGMessage struct {
@@ -425,8 +425,8 @@ func PinChatMessage(messageID int64) error {
 
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/pinChatMessage", token)
 	payload := map[string]interface{}{
-		"chat_id":    chatID,
-		"message_id": messageID,
+		"chat_id":              chatID,
+		"message_id":           messageID,
 		"disable_notification": true,
 	}
 
@@ -601,39 +601,39 @@ func SendRichInlineKeyboard(richMsg InputRichMessage, keyboard [][]InlineButton)
 
 func ParseMarkdownToRichMessage(md string) InputRichMessage {
 	var msg InputRichMessage
-	
+
 	lines := strings.Split(md, "\n")
-	
+
 	var currentDetails *InputRichBlockDetails
-	
+
 	blockHeaderRegex := regexp.MustCompile(`^###\s+((?i)Block\s+[A-G]|Блок\s+[A-GА-Я]|[A-G]\)).*`)
 	headingRegex := regexp.MustCompile(`^#+\s+(.*)`)
 	boldKeyRegex := regexp.MustCompile(`^\*\*([^\*]+)\*\*(.*)`)
 	listRegex := regexp.MustCompile(`^[\-\*•]\s+(.*)`)
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		
+
 		if blockHeaderRegex.MatchString(line) {
 			if currentDetails != nil {
 				msg.Blocks = append(msg.Blocks, *currentDetails)
 			}
 			summaryText := strings.TrimSpace(strings.TrimLeft(line, "# "))
 			currentDetails = &InputRichBlockDetails{
-				Type: "details",
+				Type:    "details",
 				Summary: summaryText,
-				Blocks: []interface{}{},
-				IsOpen: false,
+				Blocks:  []interface{}{},
+				IsOpen:  false,
 			}
 			continue
 		}
-		
+
 		var para InputRichBlockParagraph
 		para.Type = "paragraph"
-		
+
 		if match := headingRegex.FindStringSubmatch(line); match != nil {
 			para.Text = []interface{}{
 				RichTextBold{
@@ -656,17 +656,17 @@ func ParseMarkdownToRichMessage(md string) InputRichMessage {
 		} else {
 			para.Text = []interface{}{line}
 		}
-		
+
 		if currentDetails != nil {
 			currentDetails.Blocks = append(currentDetails.Blocks, para)
 		} else {
 			msg.Blocks = append(msg.Blocks, para)
 		}
 	}
-	
+
 	if currentDetails != nil {
 		msg.Blocks = append(msg.Blocks, *currentDetails)
 	}
-	
+
 	return msg
 }

@@ -22,6 +22,10 @@ type UploadInterviewResponse struct {
 // UploadInterviewHandler handles POST /application/{id}/interview/upload.
 // It accepts either a multipart file ("audio") or raw text ("transcript").
 func (h *Handlers) UploadInterviewHandler(w http.ResponseWriter, r *http.Request) {
+	if h.DB == nil {
+		http.Error(w, "Database connection not available", http.StatusServiceUnavailable)
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -83,7 +87,7 @@ func (h *Handlers) UploadInterviewHandler(w http.ResponseWriter, r *http.Request
 
 	var summary, mistakes, improvements string
 	var score int
-	
+
 	type LLMResponse struct {
 		Summary      string   `json:"summary"`
 		Mistakes     string   `json:"mistakes"`
@@ -119,14 +123,14 @@ Extract the following information and output strictly as a JSON object:
 				jsonStr = strings.TrimSuffix(jsonStr, "```")
 				jsonStr = strings.TrimSpace(jsonStr)
 			}
-			
+
 			var parsed LLMResponse
 			if err := json.Unmarshal([]byte(jsonStr), &parsed); err == nil {
 				summary = parsed.Summary
 				mistakes = parsed.Mistakes
 				improvements = parsed.Improvements
 				score = parsed.Score
-				
+
 				for _, insight := range parsed.Insights {
 					mem := &db.AgentMemory{
 						Category: "interview",

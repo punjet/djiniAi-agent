@@ -9,6 +9,10 @@ import (
 )
 
 func (h *Handlers) FeedbackHandler(w http.ResponseWriter, r *http.Request) {
+	if h.DB == nil {
+		http.Error(w, "Database connection not available", http.StatusServiceUnavailable)
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return

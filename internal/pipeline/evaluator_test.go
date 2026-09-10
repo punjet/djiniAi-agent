@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	
+
 	"djinni-bot-go/internal/llm"
 )
 
@@ -22,7 +22,7 @@ func TestEvaluateJob_Placeholder(t *testing.T) {
 		},
 		ProviderName: "MockLLM",
 	}
-	
+
 	if mock.Name() != "MockLLM" {
 		t.Errorf("expected MockLLM, got %s", mock.Name())
 	}

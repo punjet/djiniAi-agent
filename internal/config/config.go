@@ -29,7 +29,7 @@ type Config struct {
 	FreeLLMAPIModel     string // default: "" (freellmapi auto-routes to the best available model)
 	FreeLLMAPITimeoutMS int    // default: 300000 (reasoning models can take 30-90s)
 
-	OpenAIModel     string // default: "gpt-4o-mini" (falls back to FREELLMAPI_MODEL → LLM_MODEL)
+	OpenAIModel     string // default: "gpt-4o-mini" (falls back to FREELLMAPI_MODEL  LLM_MODEL)
 	OpenAITimeoutMS int    // default: 300000
 
 	DBHost     string // default: "localhost"
@@ -117,22 +117,22 @@ func loadEnvDefaults() *Config {
 	if dbHost == "" {
 		dbHost = "localhost"
 	}
-	
+
 	dbPort := os.Getenv("DB_PORT")
 	if dbPort == "" {
 		dbPort = "5432"
 	}
-	
+
 	dbUser := os.Getenv("DB_USER")
 	if dbUser == "" {
 		dbUser = "postgres"
 	}
-	
+
 	dbPassword := os.Getenv("DB_PASSWORD")
 	if dbPassword == "" {
 		dbPassword = "postgres"
 	}
-	
+
 	dbName := os.Getenv("DB_NAME")
 	if dbName == "" {
 		dbName = "djinni"
@@ -182,7 +182,7 @@ func LoadConfig() (*Config, error) {
 const djinniCookieHelp = `
 To get these values:
   1. Log in to https://djinni.co in your browser
-  2. Open DevTools (F12) → Application (Chrome) or Storage (Firefox) → Cookies
+  2. Open DevTools (F12)  Application (Chrome) or Storage (Firefox)  Cookies
   3. Copy the "sessionid" and "csrftoken" cookie values
   4. Set them as environment variables:
      export DJINNI_SESSIONID="<value>"

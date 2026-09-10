@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -33,14 +32,14 @@ func LogDeep(stage, message string, fields ...any) {
 func InitLogger(contextDir string) {
 	logDir := filepath.Join(contextDir, "logs")
 	if err := os.MkdirAll(logDir, 0o755); err != nil {
-		fmt.Printf("Error creating log directory: %v\n", err)
+		Log.Error("Error creating log directory", "error", err)
 		os.Exit(1)
 	}
 
 	// Initialize main logger — writes to both file and stdout
 	logFile, err := os.OpenFile(filepath.Join(logDir, "djinni-bot.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
-		fmt.Printf("Error opening main log file: %v\n", err)
+		Log.Error("Error opening main log file", "error", err)
 		os.Exit(1)
 	}
 
@@ -56,7 +55,7 @@ func InitLogger(contextDir string) {
 	deepTraceFilePath := filepath.Join(logDir, "deep_trace.log")
 	deepTraceFile, err := os.OpenFile(deepTraceFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
-		fmt.Printf("Error opening deep trace log file: %v\n", err)
+		Log.Error("Error opening deep trace log file", "error", err)
 		os.Exit(1)
 	}
 	deepTraceWriter := io.MultiWriter(os.Stderr, deepTraceFile)

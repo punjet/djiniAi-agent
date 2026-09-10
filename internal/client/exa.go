@@ -2,13 +2,14 @@ package client
 
 import (
 	"djinni-bot-go/internal/config"
+
 	"github.com/imroc/req/v3"
 )
 
 // ExaClient wraps req.Client for Exa.ai API interactions
 type ExaClient struct {
-	Client  *req.Client
-	Config  *config.Config
+	Client *req.Client
+	Config *config.Config
 }
 
 // NewExaClient initializes the Exa client with API key and base URL
@@ -40,8 +41,6 @@ func (e *ExaClient) Search(query string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-
 
 	return resp.Markdown, nil
 }

@@ -59,9 +59,9 @@ func TestExtractCSRF(t *testing.T) {
 
 func TestExtractJobs(t *testing.T) {
 	tests := []struct {
-		name    string
-		html    string
-		want    []Job
+		name string
+		html string
+		want []Job
 	}{
 		{
 			name: "From fixture",
