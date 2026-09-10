@@ -24,6 +24,7 @@ func TestRunMigrations(t *testing.T) {
 	mock.ExpectExec(regexp.QuoteMeta(`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS improvements`)).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(regexp.QuoteMeta(`ALTER TABLE interviews ADD COLUMN IF NOT EXISTS score`)).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS agent_memories`)).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta(`ALTER TABLE applications ADD CONSTRAINT applications_job_id_key UNIQUE (job_id);`)).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	err = runMigrations(db)
 	assert.NoError(t, err)
@@ -180,6 +181,20 @@ func TestGetAgentMemories(t *testing.T) {
 	assert.Len(t, mems, 1)
 	assert.Equal(t, "Use contexts", mems[0].Insight)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestMigrateFilesToDB(t *testing.T) {
+	db, _, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	// 1. Nil DB test
+	err = MigrateFilesToDB(nil, "/nonexistent")
+	assert.NoError(t, err)
+
+	// 2. Nonexistent path test
+	err = MigrateFilesToDB(db, "/nonexistent")
+	assert.NoError(t, err)
 }
 
 func TestInitDB(t *testing.T) {

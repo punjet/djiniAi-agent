@@ -1,9 +1,15 @@
 package db
 
 import (
+	"bufio"
 	"database/sql"
 	"fmt"
 	"log"
+	"net/url"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
 
 	_ "github.com/lib/pq"
 	"djinni-bot-go/internal/config"
@@ -34,7 +40,7 @@ func runMigrations(db *sql.DB) error {
 	queries := []string{
 		`CREATE TABLE IF NOT EXISTS applications (
 			id SERIAL PRIMARY KEY,
-			job_id VARCHAR(255) NOT NULL,
+			job_id VARCHAR(255) UNIQUE NOT NULL,
 			company_name VARCHAR(255) NOT NULL,
 			status VARCHAR(50) NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -72,10 +78,14 @@ func runMigrations(db *sql.DB) error {
 			score INT DEFAULT 0,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);`,
+		`ALTER TABLE applications ADD CONSTRAINT applications_job_id_key UNIQUE (job_id);`,
 	}
 	
 	for _, q := range queries {
 		if _, err := db.Exec(q); err != nil {
+			if strings.Contains(q, "ADD CONSTRAINT") && strings.Contains(err.Error(), "already exists") {
+				continue
+			}
 			log.Printf("Failed to run migration: %s\nError: %v", q, err)
 			return err
 		}
@@ -185,4 +195,89 @@ func GetAgentMemories(db *sql.DB, category, contextKey string) ([]AgentMemory, e
 		memories = append(memories, mem)
 	}
 	return memories, rows.Err()
+}
+
+func cleanURLPath(u string) string {
+	parsed, err := url.Parse(u)
+	if err != nil || parsed.Host == "" {
+		if i := strings.Index(u, "?"); i != -1 {
+			return u[:i]
+		}
+		return u
+	}
+	parsed.RawQuery = ""
+	parsed.Fragment = ""
+	return parsed.String()
+}
+
+func normalizeDBString(s string) string {
+	s = strings.ToLower(s)
+	reg := regexp.MustCompile(`[^\p{L}\p{N}\s]`)
+	s = reg.ReplaceAllString(s, "")
+	return strings.Join(strings.Fields(s), " ")
+}
+
+func MigrateFilesToDB(db *sql.DB, contextDir string) error {
+	if db == nil {
+		return nil
+	}
+
+	historyPath := filepath.Join(contextDir, "data", "scan-history.tsv")
+	appsPath := filepath.Join(contextDir, "data", "applications.md")
+
+	query := `INSERT INTO applications (job_id, company_name, status) VALUES ($1, $2, $3) ON CONFLICT (job_id) DO NOTHING`
+
+	if file, err := os.Open(historyPath); err == nil {
+		defer file.Close()
+		scanner := bufio.NewScanner(file)
+		if scanner.Scan() {
+			for scanner.Scan() {
+				line := scanner.Text()
+				parts := strings.Split(line, "\t")
+				if len(parts) > 0 && parts[0] != "" {
+					jobURL := cleanURLPath(parts[0])
+					company := "Unknown"
+					if len(parts) >= 5 && parts[4] != "" {
+						company = parts[4]
+					}
+					status := "scanned"
+					if len(parts) >= 6 && parts[5] != "" {
+						status = parts[5]
+					}
+					if _, err := db.Exec(query, jobURL, company, status); err != nil {
+						log.Printf("Failed to insert scan history job %s into DB: %v", jobURL, err)
+					}
+				}
+			}
+		}
+	}
+
+	if file, err := os.Open(appsPath); err == nil {
+		defer file.Close()
+		scanner := bufio.NewScanner(file)
+		urlRx := regexp.MustCompile(`https?://[^\s|)]+`)
+		rowRx := regexp.MustCompile(`\|[^|]+\|[^|]+\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|`)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+			company := "Unknown"
+			if matches := rowRx.FindStringSubmatch(line); len(matches) > 2 {
+				c := strings.TrimSpace(matches[1])
+				normC := normalizeDBString(c)
+				if normC != "" && normC != "company" && normC != "empresa" {
+					company = c
+				}
+			}
+
+			urls := urlRx.FindAllString(line, -1)
+			for _, u := range urls {
+				jobURL := cleanURLPath(u)
+				if _, err := db.Exec(query, jobURL, company, "applied"); err != nil {
+					log.Printf("Failed to insert markdown application job %s into DB: %v", jobURL, err)
+				}
+			}
+		}
+	}
+
+	return nil
 }
