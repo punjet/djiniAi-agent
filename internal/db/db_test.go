@@ -14,6 +14,8 @@ func TestRunMigrations(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
+	mock.ExpectExec(regexp.QuoteMeta(`CREATE EXTENSION IF NOT EXISTS vector`)).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS wiki_documents`)).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS applications`)).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS interviews`)).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS chat_logs`)).WillReturnResult(sqlmock.NewResult(0, 0))
