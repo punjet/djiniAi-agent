@@ -95,3 +95,29 @@ func (g *GeminiClient) GenerateText(ctx context.Context, system, user string) (s
 	}
 	return result, nil
 }
+
+// GenerateEmbedding implements Provider.
+// It sends the given text to the Gemini embeddings API and returns the vector.
+func (g *GeminiClient) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	client, err := genai.NewClient(ctx, option.WithAPIKey(g.apiKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Gemini client for embeddings: %w", err)
+	}
+	defer client.Close()
+
+	// Use embedding model (not the chat model)
+	m := client.EmbeddingModel("embedding-001")
+
+	resp, err := m.EmbedContent(ctx, genai.Text(text))
+	if err != nil {
+		msg := err.Error()
+		msg = strings.ReplaceAll(msg, g.apiKey, "[REDACTED]")
+		return nil, fmt.Errorf("Gemini embedding API error: %s", msg)
+	}
+
+	if resp.Embedding == nil || len(resp.Embedding.Values) == 0 {
+		return nil, fmt.Errorf("Gemini returned an empty embedding")
+	}
+
+	return resp.Embedding.Values, nil
+}

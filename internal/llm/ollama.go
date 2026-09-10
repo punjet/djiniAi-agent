@@ -20,6 +20,7 @@ type OllamaClient struct {
 	model      string
 	timeoutMS  int
 	apiKey     string // optional bearer token (for remote/tunnelled endpoints)
+	embedModel string // optional embedding model (e.g., "text-embedding-3-small")
 	httpClient *http.Client
 }
 
@@ -30,6 +31,7 @@ type OllamaConfig struct {
 	TimeoutMS   int    // default: 300000 (5 min)
 	APIKey      string // optional
 	AllowRemote bool   // skip the loopback guard (for compatible remote APIs)
+	EmbedModel  string // optional embedding model (e.g., "text-embedding-3-small")
 }
 
 // NewOllamaClient creates a new OllamaClient and runs a loopback guard
@@ -68,10 +70,11 @@ func NewOllamaClient(cfg OllamaConfig) (*OllamaClient, error) {
 	}
 
 	return &OllamaClient{
-		baseURL:   cfg.BaseURL,
-		model:     cfg.Model,
-		timeoutMS: cfg.TimeoutMS,
-		apiKey:    cfg.APIKey,
+		baseURL:    cfg.BaseURL,
+		model:      cfg.Model,
+		embedModel: cfg.EmbedModel,
+		timeoutMS:  cfg.TimeoutMS,
+		apiKey:     cfg.APIKey,
 		httpClient: &http.Client{
 			Timeout: time.Duration(cfg.TimeoutMS) * time.Millisecond,
 		},
@@ -136,6 +139,24 @@ type chatResponse struct {
 	} `json:"choices"`
 }
 
+// embeddingRequest mirrors the OpenAI embeddings API request body.
+type embeddingRequest struct {
+	Model string   `json:"model"`
+	Input []string `json:"input"`
+}
+
+// embeddingResponse mirrors the OpenAI embeddings API response body.
+type embeddingResponse struct {
+	Object string    `json:"object"`
+	Data   []struct {
+		Embedding []float32 `json:"embedding"`
+	} `json:"data"`
+	Usage struct {
+		PromptTokens int `json:"prompt_tokens"`
+		TotalTokens  int `json:"total_tokens"`
+	} `json:"usage"`
+}
+
 // GenerateText implements Provider.
 func (o *OllamaClient) GenerateText(ctx context.Context, system, user string) (string, error) {
 	// Build the endpoint (works for both /v1 and plain base URL)
@@ -192,4 +213,62 @@ func (o *OllamaClient) GenerateText(ctx context.Context, system, user string) (s
 	}
 
 	return strings.TrimSpace(result.Choices[0].Message.Content), nil
+}
+
+// GenerateEmbedding implements Provider.
+// It sends the given text to the embedding endpoint and returns the vector.
+func (o *OllamaClient) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	// Determine embedding model to use
+	embedModel := o.embedModel
+	if embedModel == "" {
+		// Default to OpenAI text-embedding-3-small for 1536-dimension embeddings
+		embedModel = "text-embedding-3-small"
+	}
+
+	// Build the embeddings endpoint (works for both /v1 and plain base URL)
+	endpoint := o.baseURL + "/v1/embeddings"
+	if strings.HasSuffix(o.baseURL, "/v1") {
+		endpoint = o.baseURL + "/embeddings"
+	}
+
+	payload := embeddingRequest{
+		Model: embedModel,
+		Input: []string{text},
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal embedding request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to build embedding request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if o.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+o.apiKey)
+	}
+
+	resp, err := o.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Ollama embedding API call failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 300))
+		return nil, fmt.Errorf("Ollama embedding API error: HTTP %d — %s", resp.StatusCode, strings.TrimSpace(string(snippet)))
+	}
+
+	var result embeddingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode Ollama embedding response: %w", err)
+	}
+
+	if len(result.Data) == 0 {
+		return nil, fmt.Errorf("Ollama returned an empty embedding")
+	}
+
+	return result.Data[0].Embedding, nil
 }
