@@ -41,6 +41,7 @@ COPY --from=builder /app/app-binary .
 # fonts/ — the pipeline reads all of these at runtime for CV/cover-letter
 # generation.
 COPY --from=builder /app/career-ops ./career-ops
+COPY --from=builder /app/templates ./templates
 
 # ---- Runtime directories the pipeline expects ----
 RUN mkdir -p /app/career-ops/output \
@@ -91,5 +92,7 @@ VOLUME ["/app/career-ops"]
 #     -e TG_CHAT_ID="..." \
 #     djinni-bot
 # =============================================================================
+EXPOSE 8080
+
 ENTRYPOINT ["./app-binary"]
 CMD ["pipeline", "run", "--engine", "openai", "--daemon"]
