@@ -3,6 +3,7 @@ module djinni-bot-go
 go 1.26
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/abadojack/whatlanggo v1.0.1
 	github.com/chromedp/cdproto v0.0.0-20260321001828-e3e3800016bc
@@ -10,6 +11,7 @@ require (
 	github.com/google/generative-ai-go v0.20.1
 	github.com/imroc/req/v3 v3.57.0
 	github.com/joho/godotenv v1.5.1
+	github.com/lib/pq v1.12.3
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/api v0.186.0
