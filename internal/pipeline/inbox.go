@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -17,7 +16,9 @@ import (
 	"djinni-bot-go/internal/client"
 	"djinni-bot-go/internal/config"
 	"djinni-bot-go/internal/llm"
+	"djinni-bot-go/internal/logger"
 	"djinni-bot-go/internal/notify"
+	"djinni-bot-go/internal/trace"
 )
 
 type InboxReplyResult struct {
@@ -26,10 +27,9 @@ type InboxReplyResult struct {
 	ConversationState string `json:"conversation_state"`
 }
 
-// ProcessInbox scans unread Djinni messages, calls LLM to classify and write replies,
-// and sends them if should_reply is true.
-// Returns a list of dialogues processed and log lines, or error.
+// ProcessInbox fetches unread messages from Djinni and triggers interactive reviews via Telegram.
 func ProcessInbox(ctx context.Context, bot *notify.TelegramBot, panicStop *atomic.Bool, sigChan <-chan os.Signal, cfg *config.Config, engine llm.Engine, contextDir string, dc *client.DjinniClient, dryRun bool) ([]string, error) {
+	ctx = trace.WithTraceID(ctx, "")
 	dialogues, err := api.GetUnreadMessages(dc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch unread messages: %w", err)
@@ -49,12 +49,12 @@ func ProcessInbox(ctx context.Context, bot *notify.TelegramBot, panicStop *atomi
 
 	seenIDs, err := loadSeenIDs(logFile)
 	if err != nil {
-		logs = append(logs, fmt.Sprintf("⚠️  Failed to load seen IDs: %v", err))
+		logs = append(logs, fmt.Sprintf("  Failed to load seen IDs: %v", err))
 	}
 
 	for _, d := range dialogues {
 		if panicStop != nil && panicStop.Load() {
-			logs = append(logs, "🛑 PanicStop triggered, breaking Inbox loop.")
+			logs = append(logs, " PanicStop triggered, breaking Inbox loop.")
 			break
 		}
 
@@ -78,7 +78,7 @@ func ProcessInbox(ctx context.Context, bot *notify.TelegramBot, panicStop *atomi
 		threadMsgs, err := api.GetThreadMessages(dc, d.ID)
 		if err != nil {
 			// Graceful fallback — proceed with just the last message
-			log.Printf("Warning: could not fetch thread for dialog %s: %v", d.ID, err)
+			logger.Log.Error(fmt.Sprintf("Warningcould not fetch thread for dialog %s", d.ID), "error", err)
 		} else {
 			d.Messages = threadMsgs
 		}
@@ -115,22 +115,22 @@ conversation_state rules:
 		guidance := ""
 		for {
 			var userPrompt string
-		if len(d.Messages) > 0 {
-			var threadBuilder strings.Builder
-			threadBuilder.WriteString("Full conversation thread:\n")
-			for _, msg := range d.Messages {
-				threadBuilder.WriteString(fmt.Sprintf("[%s] %s: %s\n", msg.Timestamp, msg.Role, msg.Text))
-			}
-			threadBuilder.WriteString(fmt.Sprintf("\nRecruiter/sender: %s\nLast message to respond to: %s\n\nJob/Company Evaluation Context:\n%s", d.Sender, d.Message, reportContent))
-			userPrompt = threadBuilder.String()
-		} else {
-			userPrompt = fmt.Sprintf(`Recruiter Info:
+			if len(d.Messages) > 0 {
+				var threadBuilder strings.Builder
+				threadBuilder.WriteString("Full conversation thread:\n")
+				for _, msg := range d.Messages {
+					threadBuilder.WriteString(fmt.Sprintf("[%s] %s: %s\n", msg.Timestamp, msg.Role, msg.Text))
+				}
+				threadBuilder.WriteString(fmt.Sprintf("\nRecruiter/sender: %s\nLast message to respond to: %s\n\nJob/Company Evaluation Context:\n%s", d.Sender, d.Message, reportContent))
+				userPrompt = threadBuilder.String()
+			} else {
+				userPrompt = fmt.Sprintf(`Recruiter Info:
 Sender: %s
 Message: "%s"
 
 Job/Company Evaluation Context:
 %s`, d.Sender, d.Message, reportContent)
-		}
+			}
 
 			if guidance != "" {
 				userPrompt += fmt.Sprintf("\n\nUser Guidance (follow this to adjust the response): %q", guidance)
@@ -138,7 +138,7 @@ Job/Company Evaluation Context:
 
 			response, err := provider.GenerateText(ctx, systemPrompt, userPrompt)
 			if err != nil {
-				logs = append(logs, fmt.Sprintf("⚠️  Failed generating reply for %s (dialogue %s): %v", d.Sender, d.ID, err))
+				logs = append(logs, fmt.Sprintf("  Failed generating reply for %s (dialogue %s): %v", d.Sender, d.ID, err))
 				break
 			}
 
@@ -153,7 +153,7 @@ Job/Company Evaluation Context:
 
 			var res InboxReplyResult
 			if err := json.Unmarshal([]byte(cleanJSON), &res); err != nil {
-				logs = append(logs, fmt.Sprintf("⚠️  Failed parsing reply JSON for %s: %v. Raw: %q", d.Sender, err, response))
+				logs = append(logs, fmt.Sprintf("  Failed parsing reply JSON for %s: %v. Raw: %q", d.Sender, err, response))
 				break
 			}
 
@@ -161,21 +161,21 @@ Job/Company Evaluation Context:
 			res.ReplyText = strings.ReplaceAll(res.ReplyText, "*", "")
 
 			if res.ConversationState == "concluded" {
-				skipMsg := fmt.Sprintf("⏭️ Skipped reply to *%s* (dialog %s) — conversation already concluded.", d.Sender, d.ID)
-				log.Printf("Skipping dialog %s (%s): conversation already concluded", d.ID, d.Sender)
+				skipMsg := fmt.Sprintf(" Skipped reply to *%s* (dialog %s) — conversation already concluded.", d.Sender, d.ID)
+				logger.Log.Info(fmt.Sprintf("Skipping dialog %s (%s): conversation already concluded", d.ID, d.Sender))
 				_ = notify.SendTelegramMessage(skipMsg)
 				break
 			}
 
 			if !res.ShouldReply || res.ReplyText == "" {
-				logs = append(logs, fmt.Sprintf("⏭  Skipped replying to %s (no reply needed)", d.Sender))
+				logs = append(logs, fmt.Sprintf("  Skipped replying to %s (no reply needed)", d.Sender))
 				break
 			}
 
 			// Ask user in Telegram for confirmation, custom edit, or explanation
 			actionText, err := AskUserForInboxReview(ctx, bot, d.Sender, d.Message, res.ReplyText, d.ID, d.Messages)
 			if err != nil {
-				logs = append(logs, fmt.Sprintf("⚠️  Failed Telegram inbox review: %v", err))
+				logs = append(logs, fmt.Sprintf("  Failed Telegram inbox review: %v", err))
 				break
 			}
 

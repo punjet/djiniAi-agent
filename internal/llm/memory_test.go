@@ -1,11 +1,11 @@
 package llm
 
 import (
-	"testing"
 	"djinni-bot-go/internal/config"
 	"djinni-bot-go/internal/db"
-	"strings"
 	"os"
+	"strings"
+	"testing"
 )
 
 func TestGetMemoryContext(t *testing.T) {
@@ -20,13 +20,13 @@ func TestGetMemoryContext(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		// handle CI if needed
 	}
-	
+
 	database, err := db.InitDB(cfg)
 	if err != nil {
 		t.Skip("Skipping db test, no db available")
 	}
 	defer database.Close()
-	
+
 	// Clean table
 	database.Exec("DELETE FROM agent_memories")
 

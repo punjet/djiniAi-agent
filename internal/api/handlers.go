@@ -5,9 +5,43 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 
 	"djinni-bot-go/internal/llm"
+	"djinni-bot-go/internal/trace"
+
+	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
+
+var (
+	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "http_request_duration_seconds",
+		Help: "Duration of HTTP requests.",
+	}, []string{"path"})
+)
+
+func traceMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		traceID := r.Header.Get("X-Trace-Id")
+		if traceID == "" {
+			traceID = uuid.New().String()
+		}
+
+		ctx := trace.WithTraceID(r.Context(), traceID)
+		r = r.WithContext(ctx)
+
+		w.Header().Set("X-Trace-Id", traceID)
+
+		next.ServeHTTP(w, r)
+
+		duration := time.Since(start).Seconds()
+		httpDuration.WithLabelValues(r.URL.Path).Observe(duration)
+	}
+}
 
 type Application struct {
 	ID          int
@@ -32,6 +66,10 @@ func NewHandlers(db *sql.DB, llmProvider llm.Provider, whisperClient *llm.Whispe
 }
 
 func (h *Handlers) DashboardHandler(w http.ResponseWriter, r *http.Request) {
+	if h.DB == nil {
+		http.Error(w, "Database connection not available", http.StatusServiceUnavailable)
+		return
+	}
 	rows, err := h.DB.Query("SELECT id, job_id, company_name, status FROM applications ORDER BY created_at DESC")
 	if err != nil {
 		http.Error(w, "Failed to fetch applications", http.StatusInternalServerError)
@@ -67,6 +105,10 @@ func (h *Handlers) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) ApplicationDetailHandler(w http.ResponseWriter, r *http.Request) {
+	if h.DB == nil {
+		http.Error(w, "Database connection not available", http.StatusServiceUnavailable)
+		return
+	}
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -107,7 +149,7 @@ func (h *Handlers) ApplicationDetailHandler(w http.ResponseWriter, r *http.Reque
 		Improvements: improvements,
 	}
 
-	// We need to render the layout, but pass application_detail content. 
+	// We need to render the layout, but pass application_detail content.
 	// To do this simply, we re-parse or use block template tricks.
 	// Since layout.html defines content via `{{template "content" .}}`
 	// We need to execute layout.html, but how does it know which "content" to use?
@@ -118,13 +160,17 @@ func (h *Handlers) ApplicationDetailHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Template error", http.StatusInternalServerError)
 		return
 	}
-	
+
 	if err := tmpl.ExecuteTemplate(w, "layout.html", data); err != nil {
 		http.Error(w, "Template error", http.StatusInternalServerError)
 	}
 }
 
 func (h *Handlers) UpdateStatusHandler(w http.ResponseWriter, r *http.Request) {
+	if h.DB == nil {
+		http.Error(w, "Database connection not available", http.StatusServiceUnavailable)
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -169,10 +215,11 @@ func (h *Handlers) UpdateStatusHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /dashboard", h.DashboardHandler)
-	mux.HandleFunc("GET /application/{id}", h.ApplicationDetailHandler)
-	mux.HandleFunc("POST /application/{id}/status", h.UpdateStatusHandler)
-	mux.HandleFunc("POST /application/{id}/feedback", h.FeedbackHandler)
-	mux.HandleFunc("POST /application/{id}/interview/upload", h.UploadInterviewHandler)
-	mux.HandleFunc("POST /application/{id}/chat-log", h.UploadChatLogHandler)
+	mux.Handle("GET /metrics", promhttp.Handler())
+	mux.HandleFunc("GET /dashboard", traceMiddleware(h.DashboardHandler))
+	mux.HandleFunc("GET /application/{id}", traceMiddleware(h.ApplicationDetailHandler))
+	mux.HandleFunc("POST /application/{id}/status", traceMiddleware(h.UpdateStatusHandler))
+	mux.HandleFunc("POST /application/{id}/feedback", traceMiddleware(h.FeedbackHandler))
+	mux.HandleFunc("POST /application/{id}/interview/upload", traceMiddleware(h.UploadInterviewHandler))
+	mux.HandleFunc("POST /application/{id}/chat-log", traceMiddleware(h.UploadChatLogHandler))
 }

@@ -4,35 +4,36 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	_ "github.com/lib/pq"
 	"djinni-bot-go/internal/config"
+	"djinni-bot-go/internal/logger"
+
+	_ "github.com/lib/pq"
 )
 
 // InitDB initializes the database connection and runs migrations.
 func InitDB(cfg *config.Config) (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
-	
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
-	
+
 	if err := runMigrations(db); err != nil {
 		return nil, err
 	}
-	
+
 	return db, nil
 }
 
@@ -88,17 +89,17 @@ func runMigrations(db *sql.DB) error {
 		);`,
 		`ALTER TABLE applications ADD CONSTRAINT applications_job_id_key UNIQUE (job_id);`,
 	}
-	
+
 	for _, q := range queries {
 		if _, err := db.Exec(q); err != nil {
 			if strings.Contains(q, "ADD CONSTRAINT") && strings.Contains(err.Error(), "already exists") {
 				continue
 			}
-			log.Printf("Failed to run migration: %s\nError: %v", q, err)
+			logger.Log.Error(fmt.Sprintf("Failed to run migration%sError", q), "error", err)
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -253,7 +254,7 @@ func MigrateFilesToDB(db *sql.DB, contextDir string) error {
 						status = parts[5]
 					}
 					if _, err := db.Exec(query, jobURL, company, status); err != nil {
-						log.Printf("Failed to insert scan history job %s into DB: %v", jobURL, err)
+						logger.Log.Error(fmt.Sprintf("Failed to insert scan history job %s into DB", jobURL), "error", err)
 					}
 				}
 			}
@@ -281,7 +282,7 @@ func MigrateFilesToDB(db *sql.DB, contextDir string) error {
 			for _, u := range urls {
 				jobURL := cleanURLPath(u)
 				if _, err := db.Exec(query, jobURL, company, "applied"); err != nil {
-					log.Printf("Failed to insert markdown application job %s into DB: %v", jobURL, err)
+					logger.Log.Error(fmt.Sprintf("Failed to insert markdown application job %s into DB", jobURL), "error", err)
 				}
 			}
 		}

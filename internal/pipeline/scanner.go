@@ -9,6 +9,7 @@ import (
 	"djinni-bot-go/internal/api"
 	"djinni-bot-go/internal/client"
 	"djinni-bot-go/internal/extractor"
+	"djinni-bot-go/internal/logger"
 
 	"gopkg.in/yaml.v3"
 )
@@ -109,7 +110,7 @@ func ScanDjinni(contextDir string, dc *client.DjinniClient, dedup *Dedup) ([]ext
 	}
 
 	// 1. Fetch dashboard jobs (recommended for candidate)
-	fmt.Println("Scraping Djinni candidate dashboard (up to 5 pages)...")
+	logger.Log.Info("Scraping Djinni candidate dashboard (up to 5 pages)...")
 	for page := 1; page <= 5; page++ {
 		dashJobs, err := api.GetDashboardJobs(dc, page)
 		if err == nil {
@@ -117,9 +118,9 @@ func ScanDjinni(contextDir string, dc *client.DjinniClient, dedup *Dedup) ([]ext
 				break // no more jobs on this page, stop paginating
 			}
 			addJobs(dashJobs)
-			fmt.Printf("Dashboard page %d: found %d relevant new jobs\n", page, len(dashJobs))
+			logger.Log.Info(fmt.Sprintf("Dashboard page %d: found %d relevant new jobs", page, len(dashJobs)))
 		} else {
-			fmt.Printf("Warning: failed to fetch dashboard jobs on page %d: %v\n", page, err)
+			logger.Log.Error(fmt.Sprintf("Warningfailed to fetch dashboard jobs on page %d", page), "error", err)
 			break
 		}
 	}
@@ -154,12 +155,12 @@ func ScanDjinni(contextDir string, dc *client.DjinniClient, dedup *Dedup) ([]ext
 		for k, v := range query {
 			qName = fmt.Sprintf("%s=%s", k, v)
 		}
-		fmt.Printf("Searching Djinni for: %s...\n", qName)
+		logger.Log.Info(fmt.Sprintf("Searching Djinni for: %s...", qName))
 		jobs, err := api.SearchJobs(dc, query)
 		if err == nil {
 			addJobs(jobs)
 		} else {
-			fmt.Printf("Warning: search failed for %s: %v\n", qName, err)
+			logger.Log.Error(fmt.Sprintf("Warningsearch failed for %s", qName), "error", err)
 		}
 	}
 

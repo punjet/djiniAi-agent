@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"djinni-bot-go/internal/config"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 )

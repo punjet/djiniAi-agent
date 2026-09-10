@@ -4,9 +4,9 @@ import "context"
 
 // MockProvider is a mock implementation of Provider for testing purposes.
 type MockProvider struct {
-	GenerateTextFunc   func(ctx context.Context, system, user string) (string, error)
+	GenerateTextFunc      func(ctx context.Context, system, user string) (string, error)
 	GenerateEmbeddingFunc func(ctx context.Context, text string) ([]float32, error)
-	ProviderName       string
+	ProviderName          string
 }
 
 // GenerateText calls GenerateTextFunc if defined, otherwise returns empty string.

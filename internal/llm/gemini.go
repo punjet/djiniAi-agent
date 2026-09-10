@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
@@ -55,6 +56,11 @@ func (g *GeminiClient) Name() string {
 // GenerateText implements Provider.
 // It sends the system prompt + user message and returns the raw text.
 func (g *GeminiClient) GenerateText(ctx context.Context, system, user string) (string, error) {
+	start := time.Now()
+	defer func() {
+		InferenceLatency.WithLabelValues(g.Name(), g.model).Observe(time.Since(start).Seconds())
+	}()
+
 	client, err := genai.NewClient(ctx, option.WithAPIKey(g.apiKey))
 	if err != nil {
 		return "", fmt.Errorf("failed to create Gemini client: %w", err)

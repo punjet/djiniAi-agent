@@ -7,8 +7,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
 	"djinni-bot-go/internal/client"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 // GetUnreadMessages fetches unread messages from /my/inbox/?bucket=unread and parses them.
@@ -182,7 +183,7 @@ func parseThreadMessages(r io.Reader) ([]ThreadMessage, error) {
 			}
 
 			text := strings.TrimSpace(s.Find(".message-text-inner").Text())
-			
+
 			timeNode := s.Find("time.message-date")
 			timestamp, exists := timeNode.Attr("datetime")
 			if !exists {

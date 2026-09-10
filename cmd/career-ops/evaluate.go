@@ -12,6 +12,7 @@ import (
 	"djinni-bot-go/internal/config"
 	"djinni-bot-go/internal/eval"
 	"djinni-bot-go/internal/llm"
+	"djinni-bot-go/internal/logger"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
@@ -107,7 +108,7 @@ func runEvaluate(cmd *cobra.Command, args []string) error {
 				serverURL = cfg.FreeLLMAPIBaseURL
 			}
 			if !flagOutputJSON {
-				fmt.Fprintf(os.Stdout, "🔍  Probing %s at %s...\n", engine, serverURL)
+				logger.Log.Info(fmt.Sprintf("  Probing %s at %s...", engine, serverURL))
 			}
 			if err := oc.Probe(context.Background()); err != nil {
 				if engine == llm.EngineFreeLLMAPI {
@@ -122,7 +123,7 @@ func runEvaluate(cmd *cobra.Command, args []string) error {
 	// 4. Run evaluation
 	// -----------------------------------------------------------------------
 	if !flagOutputJSON {
-		fmt.Fprintf(os.Stdout, "🤖  Calling %s... this may take 30-90 seconds.\n\n", provider.Name())
+		logger.Log.Info(fmt.Sprintf("  Calling %s... this may take 30-90 seconds.", provider.Name()))
 	}
 
 	result, err := eval.Evaluate(context.Background(), provider, flagContextDir, jdText)
@@ -143,7 +144,7 @@ func runEvaluate(cmd *cobra.Command, args []string) error {
 		}
 		fname, err := eval.SaveReport(result, flagContextDir, provider.Name(), out)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "⚠️   Could not save report: %v\n", err)
+			logger.Log.Error("Could not save report", "error", err)
 			os.Exit(1)
 		}
 		reportFilename = fname
@@ -166,21 +167,21 @@ func runEvaluate(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal JSON output: %w", err)
 		}
-		fmt.Println(string(bytes))
+		logger.Log.Info(fmt.Sprint(string(bytes)))
 	} else {
 		sep := strings.Repeat("═", 66)
-		fmt.Println()
-		fmt.Println(sep)
-		fmt.Printf("  CAREER-OPS EVALUATION — powered by %s\n", provider.Name())
-		fmt.Println(sep)
-		fmt.Println()
-		fmt.Println(result.FullText)
-		fmt.Println()
-		fmt.Println(strings.Repeat("─", 66))
-		fmt.Printf("  Score: %.1f/5  |  Archetype: %s  |  Legitimacy: %s\n",
-			result.Score, result.Archetype, result.Legitimacy)
-		fmt.Println(strings.Repeat("─", 66))
-		fmt.Println()
+		logger.Log.Info(fmt.Sprint())
+		logger.Log.Info(fmt.Sprint(sep))
+		logger.Log.Info(fmt.Sprintf("  CAREER-OPS EVALUATION — powered by %s", provider.Name()))
+		logger.Log.Info(fmt.Sprint(sep))
+		logger.Log.Info(fmt.Sprint())
+		logger.Log.Info(fmt.Sprint(result.FullText))
+		logger.Log.Info(fmt.Sprint())
+		logger.Log.Info(fmt.Sprint(strings.Repeat("─", 66)))
+		logger.Log.Info(fmt.Sprintf("  Score: %.1f/5  |  Archetype: %s  |  Legitimacy: %s",
+			result.Score, result.Archetype, result.Legitimacy))
+		logger.Log.Info(fmt.Sprint(strings.Repeat("─", 66)))
+		logger.Log.Info(fmt.Sprint())
 	}
 
 	return nil

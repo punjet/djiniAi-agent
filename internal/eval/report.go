@@ -66,7 +66,7 @@ func SaveReport(result *EvalResult, contextDir, toolLabel string, out io.Writer)
 		return "", fmt.Errorf("could not write report: %w", err)
 	}
 	if out != nil {
-		fmt.Fprintf(out, "\n✅  Report saved: reports/%s\n", filename)
+		fmt.Fprintf(out, "\n  Report saved: reports/%s\n", filename)
 	}
 
 	// Build TSV tracker entry
@@ -88,7 +88,7 @@ func SaveReport(result *EvalResult, contextDir, toolLabel string, out io.Writer)
 		return "", fmt.Errorf("could not write tracker entry: %w", err)
 	}
 	if out != nil {
-		fmt.Fprintf(out, "📊  Tracker addition saved: batch/tracker-additions/%s-%s.tsv\n", num, companySlug)
+		fmt.Fprintf(out, "  Tracker addition saved: batch/tracker-additions/%s-%s.tsv\n", num, companySlug)
 	}
 
 	return filename, nil

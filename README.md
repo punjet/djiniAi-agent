@@ -74,6 +74,44 @@ We use `make` to streamline common tasks.
   make lint
   ```
 
+## Observability (Grafana + Loki & MCP Setup)
+
+The stack includes Grafana and Loki in `docker-compose.yml` for log aggregation and AI agent observability via the Grafana MCP server.
+
+### Running Grafana + Loki
+
+To start the observability services alongside Postgres and App:
+```bash
+docker compose up -d loki grafana
+```
+- **Grafana URL**: `http://localhost:3000` (Default credentials: `admin` / `${GRAFANA_ADMIN_PASSWORD:-admin}`)
+- **Loki URL**: `http://localhost:3100` (Pre-configured as default datasource in Grafana)
+
+### Connecting Grafana MCP Server for AI Agent Access
+
+To enable AI agents (e.g. Claude Desktop, OpenCode, Codex) to inspect logs and query metrics via Grafana MCP server (`@grafana/mcp` or `grafana-mcp`), configure your MCP client settings (e.g., `opencode.json`, `claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "grafana": {
+      "command": "npx",
+      "args": ["-y", "@grafana/mcp-server"],
+      "env": {
+        "GRAFANA_URL": "http://localhost:3000",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "<your-grafana-service-account-token>"
+      }
+    }
+  }
+}
+```
+
+*Steps to generate Service Account Token:*
+1. Open `http://localhost:3000` in browser.
+2. Go to **Administration** -> **Users & access** -> **Service accounts**.
+3. Create a Service Account (e.g., `ai-agent`) with `Viewer` or `Editor` role.
+4. Click **Add service account token**, generate token, and copy it into `GRAFANA_SERVICE_ACCOUNT_TOKEN`.
+
 - **Run Evaluate**: Runs the evaluation command directly. Pass the job description text via the `JD` variable.
   ```bash
   make run-evaluate JD="We are looking for a Senior Go Engineer with 5+ years of experience..."

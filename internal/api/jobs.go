@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"strings"
 	"os"
+	"strings"
 
 	"djinni-bot-go/internal/client"
 	"djinni-bot-go/internal/extractor"
@@ -83,7 +83,7 @@ func GetJobDetails(dc *client.DjinniClient, jobSlug string) (*JobFull, error) {
 
 	htmlStr := resp.String()
 	alreadyApplied := extractor.IsAlreadyApplied(htmlStr)
-	
+
 	// FRAGILE: Relying on the presence of "js-inbox-toggle-reply-form" to determine if a job is applied or blocked.
 	// TODO: Replace with a more robust structured check or API endpoint if available.
 	if !alreadyApplied && !strings.Contains(htmlStr, "js-inbox-toggle-reply-form") && !strings.Contains(htmlStr, `<form action="?ref=for_me"`) {
@@ -159,9 +159,10 @@ func ApplyToJob(dc *client.DjinniClient, jobSlug string, message string, cvFileN
 	}
 	// FRAGILE: Relying on redirect URLs containing "applied=ok" to confirm application success.
 	// TODO: Replace with a more robust response validation or API verification.
-	
+
 	if !strings.Contains(finalURL, "applied=ok") && !strings.Contains(finalURL, "applied=1") && !strings.Contains(resp.String(), "b-application-status--success") {
-		os.WriteFile("logs/failed_apply.html", resp.Bytes(), 0644); return "", fmt.Errorf("application redirection check failed: expected applied=ok in final URL %q", finalURL)
+		os.WriteFile("logs/failed_apply.html", resp.Bytes(), 0644)
+		return "", fmt.Errorf("application redirection check failed: expected applied=ok in final URL %q", finalURL)
 	}
 
 	return "Application Success", nil
