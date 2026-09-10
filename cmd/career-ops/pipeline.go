@@ -354,6 +354,9 @@ func startHTTPServer(cfg *config.Config) {
 		log.Printf("⚠️ Database initialization warning/error: %v", err)
 	} else {
 		globalDB = database
+		if err := db.MigrateFilesToDB(database, flagContextDir); err != nil {
+			log.Printf("⚠️ Data auto-migration warning/error: %v", err)
+		}
 	}
 
 	handlers := api.NewHandlers(database, nil, nil)
