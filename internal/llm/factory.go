@@ -12,7 +12,8 @@ import (
 var GlobalTraceLogger func(string, ...interface{})
 
 type TraceProvider struct {
-	inner Provider
+	inner               Provider
+	generateEmbeddingFunc func(context.Context, string) ([]float32, error)
 }
 
 func (t *TraceProvider) GenerateText(ctx context.Context, system, user string) (string, error) {
@@ -35,6 +36,27 @@ func (t *TraceProvider) GenerateText(ctx context.Context, system, user string) (
 		GlobalTraceLogger("-------------------")
 	}
 	return resp, err
+}
+
+func (t *TraceProvider) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	if GlobalTraceLogger != nil {
+		GlobalTraceLogger("--- Embedding Request ---")
+		GlobalTraceLogger("Provider: %s", t.inner.Name())
+		GlobalTraceLogger("Text (len=%d): %s", len(text), text)
+	}
+	start := time.Now()
+	embedding, err := t.generateEmbeddingFunc(ctx, text)
+	latency := time.Since(start)
+	if GlobalTraceLogger != nil {
+		GlobalTraceLogger("Embedding Latency: %v", latency)
+		if err != nil {
+			GlobalTraceLogger("Embedding Error: %v", err)
+		} else {
+			GlobalTraceLogger("Embedding Vector Length: %d", len(embedding))
+		}
+		GlobalTraceLogger("------------------------")
+	}
+	return embedding, err
 }
 
 func (t *TraceProvider) Name() string {
@@ -115,13 +137,14 @@ func NewProvider(cfg *config.Config, engine Engine, task string) (Provider, erro
 			model = "gpt-4o-mini"
 		}
 
-		p, err = NewOllamaClient(OllamaConfig{
-			BaseURL:     "https://api.openai.com/v1",
-			Model:       model,
-			TimeoutMS:   cfg.OpenAITimeoutMS,
-			APIKey:      apiKey,
-			AllowRemote: true,
-		})
+p, err = NewOllamaClient(OllamaConfig{
+		BaseURL:     "https://api.openai.com/v1",
+		Model:       model,
+		TimeoutMS:   cfg.OpenAITimeoutMS,
+		APIKey:      apiKey,
+		AllowRemote: true,
+		EmbedModel:  "text-embedding-3-small", // Use OpenAI embedding model for 1536-dimension vectors
+	})
 
 	default:
 		return nil, fmt.Errorf("unknown LLM engine %q: choose 'gemini', 'ollama', 'freellmapi', or 'openai'", engine)
@@ -131,9 +154,18 @@ func NewProvider(cfg *config.Config, engine Engine, task string) (Provider, erro
 		return nil, err
 	}
 
+	var wrapped Provider = p
 	if GlobalTraceLogger != nil {
-		return &TraceProvider{inner: p}, nil
+		wrapped = &TraceProvider{
+			inner:               p,
+			generateEmbeddingFunc: func(ctx context.Context, text string) ([]float32, error) {
+				if pb, ok := p.(interface{ GenerateEmbedding(ctx context.Context, text string) ([]float32, error) }); ok {
+					return pb.GenerateEmbedding(ctx, text)
+				}
+				return nil, fmt.Errorf("provider does not support embeddings")
+			},
+		}
 	}
 
-	return p, nil
+	return wrapped, nil
 }

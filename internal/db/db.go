@@ -38,6 +38,14 @@ func InitDB(cfg *config.Config) (*sql.DB, error) {
 
 func runMigrations(db *sql.DB) error {
 	queries := []string{
+		`CREATE EXTENSION IF NOT EXISTS vector;`,
+		`CREATE TABLE IF NOT EXISTS wiki_documents (
+			id SERIAL PRIMARY KEY,
+			url TEXT,
+			title TEXT,
+			file_path TEXT,
+			embedding vector(1536)
+		);`,
 		`CREATE TABLE IF NOT EXISTS applications (
 			id SERIAL PRIMARY KEY,
 			job_id VARCHAR(255) UNIQUE NOT NULL,
