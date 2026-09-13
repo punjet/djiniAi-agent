@@ -1,9 +1,11 @@
 # macOS specific files
 .DS_Store
+*.DS_Store
 
 # Data directory
 data/
 djinni-bot-go/data/
+data/applied_jobs.json
 
 # Logs
 djinni-bot-go/career-ops/logs/
@@ -17,6 +19,8 @@ djinni-bot-go/career-ops/batch/tracker-additions/
 djinni-bot-go/app-binary
 app-binary
 /career-ops
+test-build
+*.zip
 
 # Environment variables and secrets
 .env
@@ -35,3 +39,4 @@ node_modules/
 update_daemon.go
 check_djinni_form.go
 debug_job.html
+
