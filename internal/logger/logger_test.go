@@ -156,3 +156,34 @@ func TestLokiHandler(t *testing.T) {
 		t.Errorf("expected log file to exist at %s", logFile)
 	}
 }
+
+func TestLogDeep(t *testing.T) {
+	tempDir := t.TempDir()
+	InitLogger(tempDir)
+
+	LogDeep("test_stage", "test message", "key1", "val1", "key2", 42)
+
+	deepLogPath := filepath.Join(tempDir, "logs", "deep_trace.log")
+	data, err := os.ReadFile(deepLogPath)
+	if err != nil {
+		t.Fatalf("failed to read deep_trace.log: %v", err)
+	}
+
+	var entry map[string]any
+	if err := json.Unmarshal(data, &entry); err != nil {
+		t.Fatalf("failed to parse deep trace log json: %v", err)
+	}
+
+	if entry["msg"] != "[test_stage] test message" {
+		t.Errorf("expected msg '[test_stage] test message', got '%v'", entry["msg"])
+	}
+	if entry["stage"] != "test_stage" {
+		t.Errorf("expected stage 'test_stage', got '%v'", entry["stage"])
+	}
+	if entry["key1"] != "val1" {
+		t.Errorf("expected key1='val1', got '%v'", entry["key1"])
+	}
+	if floatVal, ok := entry["key2"].(float64); !ok || int(floatVal) != 42 {
+		t.Errorf("expected key2=42, got '%v'", entry["key2"])
+	}
+}

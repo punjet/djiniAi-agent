@@ -68,14 +68,21 @@ func parseLogLevel() slog.Level {
 // It is nil until InitLogger is called.
 var DeepTraceLogger *slog.Logger
 
+var bufferPool = sync.Pool{
+	New: func() any {
+		return new(bytes.Buffer)
+	},
+}
+
 // LogDeep writes a deep trace log entry with timestamp and stage
-func LogDeep(stage, message string, fields ...any) {
+func LogDeep(stage, message string, args ...any) {
 	if DeepTraceLogger != nil {
-		DeepTraceLogger.Debug(message,
+		msg := fmt.Sprintf("[%s] %s", stage, message)
+		logArgs := append([]any{
 			slog.String("stage", stage),
-			slog.Any("fields", fields),
 			slog.String("timestamp", time.Now().Format(time.RFC3339Nano)),
-		)
+		}, args...)
+		DeepTraceLogger.Debug(msg, logArgs...)
 	}
 }
 
@@ -116,8 +123,11 @@ func (lh *lokiHandler) Enabled(ctx context.Context, level slog.Level) bool {
 func (lh *lokiHandler) Handle(ctx context.Context, r slog.Record) error {
 	err := lh.handler.Handle(ctx, r)
 
-	var buf bytes.Buffer
-	subHandler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{
+	buf := bufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufferPool.Put(buf)
+
+	subHandler := slog.NewJSONHandler(buf, &slog.HandlerOptions{
 		Level:       slog.LevelDebug,
 		AddSource:   r.Level == slog.LevelError,
 		ReplaceAttr: nil,
