@@ -53,6 +53,9 @@ func ProcessInbox(ctx context.Context, bot *notify.TelegramBot, panicStop *atomi
 	}
 
 	for _, d := range dialogues {
+		dialogLogger := logger.Log.With("dialog_id", d.ID, "sender", d.Sender)
+		loopCtx := logger.WithContext(ctx, dialogLogger)
+
 		if panicStop != nil && panicStop.Load() {
 			logs = append(logs, " PanicStop triggered, breaking Inbox loop.")
 			break
@@ -78,7 +81,7 @@ func ProcessInbox(ctx context.Context, bot *notify.TelegramBot, panicStop *atomi
 		threadMsgs, err := api.GetThreadMessages(dc, d.ID)
 		if err != nil {
 			// Graceful fallback — proceed with just the last message
-			logger.Log.Error(fmt.Sprintf("Warningcould not fetch thread for dialog %s", d.ID), "error", err)
+			logger.FromContext(loopCtx).Error("Warning: could not fetch thread for dialog", "dialog_id", d.ID, "error", err)
 		} else {
 			d.Messages = threadMsgs
 		}
@@ -136,7 +139,7 @@ Job/Company Evaluation Context:
 				userPrompt += fmt.Sprintf("\n\nUser Guidance (follow this to adjust the response): %q", guidance)
 			}
 
-			response, err := provider.GenerateText(ctx, systemPrompt, userPrompt)
+			response, err := provider.GenerateText(loopCtx, systemPrompt, userPrompt)
 			if err != nil {
 				logs = append(logs, fmt.Sprintf("  Failed generating reply for %s (dialogue %s): %v", d.Sender, d.ID, err))
 				break
@@ -162,7 +165,7 @@ Job/Company Evaluation Context:
 
 			if res.ConversationState == "concluded" {
 				skipMsg := fmt.Sprintf(" Skipped reply to *%s* (dialog %s) — conversation already concluded.", d.Sender, d.ID)
-				logger.Log.Info(fmt.Sprintf("Skipping dialog %s (%s): conversation already concluded", d.ID, d.Sender))
+				logger.FromContext(loopCtx).Info("Skipping dialog: conversation already concluded", "dialog_id", d.ID, "sender", d.Sender)
 				_ = notify.SendTelegramMessage(skipMsg)
 				break
 			}
@@ -173,7 +176,7 @@ Job/Company Evaluation Context:
 			}
 
 			// Ask user in Telegram for confirmation, custom edit, or explanation
-			actionText, err := AskUserForInboxReview(ctx, bot, d.Sender, d.Message, res.ReplyText, d.ID, d.Messages)
+			actionText, err := AskUserForInboxReview(loopCtx, bot, d.Sender, d.Message, res.ReplyText, d.ID, d.Messages)
 			if err != nil {
 				logs = append(logs, fmt.Sprintf("  Failed Telegram inbox review: %v", err))
 				break

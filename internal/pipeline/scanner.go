@@ -118,9 +118,9 @@ func ScanDjinni(contextDir string, dc *client.DjinniClient, dedup *Dedup) ([]ext
 				break // no more jobs on this page, stop paginating
 			}
 			addJobs(dashJobs)
-			logger.Log.Info(fmt.Sprintf("Dashboard page %d: found %d relevant new jobs", page, len(dashJobs)))
+			logger.Log.Info("Dashboard page scanned", "page", page, "relevant_new_jobs", len(dashJobs))
 		} else {
-			logger.Log.Error(fmt.Sprintf("Warningfailed to fetch dashboard jobs on page %d", page), "error", err)
+			logger.Log.Error("Warning: failed to fetch dashboard jobs", "page", page, "error", err)
 			break
 		}
 	}
@@ -155,12 +155,12 @@ func ScanDjinni(contextDir string, dc *client.DjinniClient, dedup *Dedup) ([]ext
 		for k, v := range query {
 			qName = fmt.Sprintf("%s=%s", k, v)
 		}
-		logger.Log.Info(fmt.Sprintf("Searching Djinni for: %s...", qName))
+		logger.Log.Info("Searching Djinni for query", "query", qName)
 		jobs, err := api.SearchJobs(dc, query)
 		if err == nil {
 			addJobs(jobs)
 		} else {
-			logger.Log.Error(fmt.Sprintf("Warningsearch failed for %s", qName), "error", err)
+			logger.Log.Error("Warning: search failed", "query", qName, "error", err)
 		}
 	}
 

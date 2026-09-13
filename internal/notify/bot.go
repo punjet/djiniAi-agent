@@ -178,7 +178,7 @@ func (b *TelegramBot) Start() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				logger.Log.Info(fmt.Sprintf("[TelegramBot poller] recovered from panic: %v", r))
+				logger.Log.Info("[TelegramBot poller] recovered from panic", "panic", r)
 			}
 		}()
 		ticker := time.NewTicker(2 * time.Second)
@@ -275,7 +275,7 @@ func (b *TelegramBot) StartStatusBoard() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				logger.Log.Info(fmt.Sprintf("[TelegramBot status board] recovered from panic: %v", r))
+				logger.Log.Info("[TelegramBot status board] recovered from panic", "panic", r)
 			}
 		}()
 		ticker := time.NewTicker(30 * time.Second)
