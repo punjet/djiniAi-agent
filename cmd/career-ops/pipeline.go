@@ -48,13 +48,13 @@ func retryPendingApplications(ctx context.Context, dc *client.DjinniClient) {
 			cvBytes, _ = os.ReadFile(app.CVPath)
 		}
 
-		logger.Log.Info(fmt.Sprintf(" Retrying application for %s...", app.JobSlug))
+		logger.Log.Info(" Retrying application", "job_slug", app.JobSlug)
 		_, err := api.ApplyToJob(dc, app.JobSlug, app.Message, app.CVFileName, cvBytes, app.ExtraFormData)
 		if err != nil {
-			logger.Log.Error(fmt.Sprintf("Still failing for %s", app.JobSlug), "error", err)
+			logger.Log.Error("Still failing application", "job_slug", app.JobSlug, "error", err)
 			remaining = append(remaining, app)
 		} else {
-			logger.Log.Info(fmt.Sprintf(" Success for %s!", app.JobSlug))
+			logger.Log.Info(" Success for application", "job_slug", app.JobSlug)
 			successCount++
 			// Extract job ID from JobSlug (first part before \-)
 			jobID := ""
@@ -363,7 +363,7 @@ func startHTTPServer(cfg *config.Config) {
 	handlers.RegisterRoutes(mux)
 
 	go func() {
-		logger.Log.Info(fmt.Sprintf(" Web UI server listening on port %s", port))
+		logger.Log.Info(" Web UI server listening", "port", port)
 		if err := http.ListenAndServe(":"+port, mux); err != nil {
 			logger.Log.Error("HTTP server error", "error", err)
 		}
@@ -414,7 +414,7 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// 2. Load Deduplicator
-	logger.Log.Info(fmt.Sprintf("  Loading deduplication history from %s...", flagContextDir))
+	logger.Log.Info("  Loading deduplication history", "dir", flagContextDir)
 	dedup, err := pipeline.LoadDedup(flagContextDir)
 	if err != nil {
 		return fmt.Errorf("failed to load deduplication history: %w", err)
@@ -432,7 +432,7 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	logger.Log.Info(fmt.Sprintf("  Found %d new relevant job(s) to process.", len(jobs)))
+	logger.Log.Info("  Found new relevant job(s) to process", "count", len(jobs))
 	appliedCount := 0
 	skippedThreshold := 0
 	skippedDedupe := 0
@@ -460,13 +460,13 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 		}
 
 		if appliedCount >= flagLimit {
-			logger.Log.Info(fmt.Sprintf("  Daily application limit (%d) reached. Stopping.", flagLimit))
+			logger.Log.Info("  Daily application limit reached. Stopping.", "limit", flagLimit)
 			break
 		}
 
 		applied, err := processJobItem(ctx, panicStop, cfg, bot, dc, engine, dedup, j, &skippedDedupe, &skippedThreshold, &errorCount, &pdfCount, &appliedJobs)
 		if err != nil {
-			logger.Log.Error(fmt.Sprintf("Error processing job %s", j.Title), "error", err)
+			logger.Log.Error("Error processing job", "title", j.Title, "error", err)
 			continue
 		}
 		if applied {
@@ -551,6 +551,8 @@ func logDeep(stage, message string) {
 }
 
 func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Config, bot *notify.TelegramBot, dc *client.DjinniClient, engine llm.Engine, dedup *pipeline.Dedup, j extractor.JobSummary, skippedDedupe, skippedThreshold, errorCount, pdfCount *int, appliedJobs *[]appliedJobInfo) (bool, error) {
+	jobLogger := logger.FromContext(ctx).With("job_slug", j.Slug)
+	ctx = logger.WithContext(ctx, jobLogger)
 	if panicStop != nil && panicStop.Load() {
 		return false, fmt.Errorf("panicStop triggered")
 	}
@@ -563,17 +565,17 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 		if _, ok := appliedMap[j.ID]; ok {
 			msg := fmt.Sprintf("Skipping already applied job ID %s (registry)", j.ID)
 			logDeep("REGISTRY_SKIP", msg)
-			logger.Log.Info(fmt.Sprintf("   %s", msg))
+			logger.FromContext(ctx).Info("Skipping already applied job ID (registry)", "job_id", j.ID)
 			return false, nil
 		}
 		if _, ok := appliedMap[j.Slug]; ok {
 			msg := fmt.Sprintf("Skipping already applied job %s (registry)", j.Slug)
 			logDeep("REGISTRY_SKIP", msg)
-			logger.Log.Info(fmt.Sprintf("   %s", msg))
+			logger.FromContext(ctx).Info("Skipping already applied job (registry)", "job_slug", j.Slug)
 			return false, nil
 		}
 	}
-	logger.Log.Info(fmt.Sprintf("%-66s", " Processing: "+j.Title))
+	logger.FromContext(ctx).Info("Processing job", "title", j.Title)
 	logDeep("PROCESS_JOB_ITEM", fmt.Sprintf("Fetching details for %s", j.Slug))
 
 	// Fetch full job details
@@ -587,7 +589,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 	if details.AlreadyApplied {
 		msg := fmt.Sprintf("Already applied to %s (HTML snippet detected). Skipping.", details.Title)
 		logDeep("HTML_SKIP", msg)
-		logger.Log.Info("Already applied (HTML snippet detected). Skipping.")
+		logger.FromContext(ctx).Info("Already applied (HTML snippet detected). Skipping.")
 		if err := pipeline.SaveAppliedJob(j.ID); err != nil {
 			logDeep("WARNING", fmt.Sprintf("Failed to save applied job ID %s: %v", j.ID, err))
 		}
@@ -598,18 +600,18 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 	if !dedup.IsNew(j.URL, details.Company, details.Title) {
 		msg := fmt.Sprintf("Already applied/scanned a similar role at %s. Skipping.", details.Company)
 		logDeep("DEDUP", msg)
-		logger.Log.Info(fmt.Sprintf("   %s", msg))
+		logger.FromContext(ctx).Info("Already applied/scanned a similar role at company. Skipping.", "company", details.Company)
 		*skippedDedupe++
 		return false, nil
 	}
 
 	// Evaluate the job
 	logDeep("EVALUATE", fmt.Sprintf("Evaluating role at %s...", details.Company))
-	logger.Log.Info(fmt.Sprintf("  Evaluating role at %s...", details.Company))
+	logger.FromContext(ctx).Info("Evaluating role", "company", details.Company)
 
 	// Add delay BEFORE evaluation to respect free LLM rate limits
 	if engine == "freellmapi" {
-		logger.Log.Info(" Waiting 30 seconds to respect free LLM API rate limits...")
+		logger.FromContext(ctx).Info(" Waiting 30 seconds to respect free LLM API rate limits...")
 		time.Sleep(30 * time.Second)
 	}
 
@@ -619,7 +621,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 		logDeep("ERROR", fmt.Sprintf("EvaluateJob failed for %s: %v", details.Company, err))
 
 		if engine == "freellmapi" {
-			logger.Log.Info(" Free API Error encountered. Waiting 60 seconds for quota reset...")
+			logger.FromContext(ctx).Info(" Free API Error encountered. Waiting 60 seconds for quota reset...")
 			time.Sleep(60 * time.Second)
 		}
 		return false, err
@@ -639,7 +641,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 	}
 
 	logDeep("EVAL_RESULT", fmt.Sprintf("Score: %.1f/5 | Archetype: %s | Legitimacy: %s", res.Score, res.Archetype, res.Legitimacy))
-	logger.Log.Info(fmt.Sprintf("  Score: %.1f/5 | Archetype: %s | Legitimacy: %s", res.Score, res.Archetype, res.Legitimacy))
+	logger.FromContext(ctx).Info("Evaluated role", "score", res.Score, "archetype", res.Archetype, "legitimacy", res.Legitimacy)
 
 	// Trigger merge-tracker to merge evaluated status immediately
 	runMergeTracker(flagContextDir)
@@ -647,16 +649,16 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 	// Apply if score meets threshold
 	if res.Score >= flagThreshold {
 		logDeep("APPLY_START", fmt.Sprintf("Score %.1f >= %.1f. Proceeding to auto-apply.", res.Score, flagThreshold))
-		logger.Log.Info(fmt.Sprintf("  High match (%.1f >= %.1f). Auto-applying!", res.Score, flagThreshold))
+		logger.FromContext(ctx).Info("High match. Auto-applying!", "score", res.Score, "threshold", flagThreshold)
 
 		if engine == "freellmapi" {
-			logger.Log.Info(" Waiting 20 seconds before generating CV to respect free LLM API rate limits...")
+			logger.FromContext(ctx).Info(" Waiting 20 seconds before generating CV to respect free LLM API rate limits...")
 			time.Sleep(20 * time.Second)
 		}
 
 		// Generate tailored CV PDF
 		logDeep("CV_GENERATE", fmt.Sprintf("Generating tailored CV PDF for %s", details.Company))
-		logger.Log.Info(fmt.Sprintf(" Generating tailored CV PDF for %s...", details.Company))
+		logger.FromContext(ctx).Info("Generating tailored CV PDF", "company", details.Company)
 		cvBytes, err := covergen.GenerateCustomCV(ctx, cfg, engine, flagContextDir, j.URL, details.Company, details.Title, reportAbsPath, details.Description)
 		if err != nil {
 			*errorCount++
@@ -665,7 +667,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 		}
 
 		if engine == "freellmapi" {
-			logger.Log.Info(" Waiting 20 seconds before generating Cover Letter...")
+			logger.FromContext(ctx).Info(" Waiting 20 seconds before generating Cover Letter...")
 			time.Sleep(20 * time.Second)
 		}
 
@@ -681,16 +683,16 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 		// Handle recruiter quiz (if present)
 		var extraFormData map[string]string
 		if details.QuizID != "" && len(details.QuizQuestions) > 0 {
-			logger.Log.Info(fmt.Sprintf("  Quiz detected: %d question(s) for quiz %s", len(details.QuizQuestions), details.QuizID))
+			logger.FromContext(ctx).Info("Quiz detected", "questions_count", len(details.QuizQuestions), "quiz_id", details.QuizID)
 			logDeep("QUIZ_DETECTED", fmt.Sprintf("%d question(s) for quiz %s", len(details.QuizQuestions), details.QuizID))
 
 			if engine == "freellmapi" {
-				logger.Log.Info(" Waiting 20 seconds before answering quiz to respect free LLM API rate limits...")
+				logger.FromContext(ctx).Info(" Waiting 20 seconds before answering quiz to respect free LLM API rate limits...")
 				time.Sleep(20 * time.Second)
 			}
 
 			logDeep("QUIZ_ANSWERING", "Calling LLM to answer quiz questions")
-			logger.Log.Info(fmt.Sprintf("  Answering %d quiz question(s)...", len(details.QuizQuestions)))
+			logger.FromContext(ctx).Info("Answering quiz questions...", "count", len(details.QuizQuestions))
 			answered, err := covergen.AnswerQuizQuestions(ctx, cfg, engine, flagContextDir, details.QuizQuestions, details.Description, details.Company, details.Title)
 			if err != nil {
 				*errorCount++
@@ -704,19 +706,19 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 				extraFormData[q.Name] = q.Answer
 				logDeep("QUIZ_ANSWER", fmt.Sprintf("[%s] %s", q.Name, q.Answer))
 			}
-			logger.Log.Info(fmt.Sprintf("  Quiz answers ready (%d fields).", len(answered)))
+			logger.FromContext(ctx).Info("Quiz answers ready", "fields_count", len(answered))
 		}
 
 		if flagDryRun {
 			if extraFormData != nil {
-				logger.Log.Info("Quiz answers would be submitted:")
+				logger.FromContext(ctx).Info("Quiz answers would be submitted:")
 				for k, v := range extraFormData {
-					logger.Log.Info(fmt.Sprintf("      %s = %s", k, v))
+					logger.FromContext(ctx).Info("Quiz form field", "key", k, "value", v)
 				}
 			}
 			msg := fmt.Sprintf("[DRY-RUN] Would apply to %s with generated custom CV PDF and message: %q", details.Company, introMsg)
 			logDeep("APPLY_DRYRUN", msg)
-			logger.Log.Info(fmt.Sprintf("%s", msg))
+			logger.FromContext(ctx).Info("[DRY-RUN] Would apply to company with generated custom CV PDF", "company", details.Company, "message", introMsg)
 			*pdfCount++
 			*appliedJobs = append(*appliedJobs, appliedJobInfo{
 				Company: details.Company,
@@ -746,7 +748,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 
 				if strings.HasPrefix(instruction, "edit:") {
 					editMsg := strings.TrimPrefix(instruction, "edit:")
-					logger.Log.Info(fmt.Sprintf("  Regenerating cover letter with instruction: %q", editMsg))
+					logger.FromContext(ctx).Info("Regenerating cover letter with instruction", "instruction", editMsg)
 					newMsg, err := regenerateCoverLetter(ctx, cfg, engine, details, introMsg, editMsg)
 					if err != nil {
 						*errorCount++
@@ -758,14 +760,14 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 				}
 
 				if !accept {
-					logger.Log.Info(fmt.Sprintf("  Application to %s rejected by user.", details.Company))
+					logger.FromContext(ctx).Info("Application rejected by user", "company", details.Company)
 					return false, nil
 				}
 				break
 			}
 
 			logDeep("APPLY_SUBMIT", fmt.Sprintf("Submitting application to %s...", details.Company))
-			logger.Log.Info(fmt.Sprintf("  Submitting application to %s...", details.Company))
+			logger.FromContext(ctx).Info("Submitting application to company...", "company", details.Company)
 
 			// Submit application with the tailored CV PDF (and quiz answers if any)
 			_, err = api.ApplyToJob(dc, j.Slug, introMsg, cvFileName, cvBytes, extraFormData)
@@ -825,7 +827,7 @@ func processJobItem(ctx context.Context, panicStop *atomic.Bool, cfg *config.Con
 	} else {
 		msg := fmt.Sprintf("Score (%.1f) below threshold (%.1f). Skipping apply.", res.Score, flagThreshold)
 		logDeep("SKIP_LOW_SCORE", msg)
-		logger.Log.Info(fmt.Sprintf("   %s", msg))
+		logger.FromContext(ctx).Info("Score below threshold. Skipping apply.", "score", res.Score, "threshold", flagThreshold)
 		*skippedThreshold++
 		return false, nil
 	}
@@ -851,13 +853,13 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 	// We reload it here so the bot remembers the token across container restarts.
 	savedEnvPath := filepath.Join(flagContextDir, ".env")
 	if err := godotenv.Overload(savedEnvPath); err == nil {
-		logger.Log.Info(fmt.Sprintf(" Loaded persisted session from %s", savedEnvPath))
+		logger.Log.Info(" Loaded persisted session", "path", savedEnvPath)
 		// Rebuild config with the restored token
 		if reloaded, err := config.LoadConfig(); err == nil {
 			cfg = reloaded
 		}
 	} else {
-		logger.Log.Info(fmt.Sprintf("  No persisted .env found at %s (will use environment vars)", savedEnvPath))
+		logger.Log.Info("  No persisted .env found (will use environment vars)", "path", savedEnvPath)
 	}
 
 	dc := client.NewDjinniClient(cfg)
@@ -954,18 +956,18 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 			if err != nil {
 				msg := fmt.Sprintf("Failed to load deduplication history: %v", err)
 				logDeep("ERROR", msg)
-				logger.Log.Info(fmt.Sprintf(" %s. Retrying in 1 minute...", msg))
+				logger.Log.Info(" Retrying load deduplication history in 1 minute...", "error", err)
 			} else {
 				logger.Log.Info("  Scanning Djinni for new positions...")
 				jobs, err := pipeline.ScanDjinni(flagContextDir, dc, dedup)
 				if err != nil {
 					msg := fmt.Sprintf("Scan failed: %v", err)
 					logDeep("ERROR", msg)
-					logger.Log.Info(fmt.Sprintf(" %s. Retrying in 1 minute...", msg))
+					logger.Log.Info(" Scan failed. Retrying in 1 minute...", "error", err)
 				} else if len(jobs) > 0 {
 					msg := fmt.Sprintf("Found %d relevant job(s) to process.", len(jobs))
 					logDeep("SCAN_RESULT", msg)
-					logger.Log.Info(fmt.Sprintf(" %s", msg))
+					logger.Log.Info(" Found relevant job(s) to process", "count", len(jobs))
 
 					for _, j := range jobs {
 						if panicStop.Load() {
@@ -994,7 +996,7 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 						if err != nil {
 							errMsg := fmt.Sprintf("Error processing job %s: %v", j.Title, err)
 							logDeep("PROCESS_ERROR", errMsg)
-							logger.Log.Info(fmt.Sprintf(" %s", errMsg))
+							logger.Log.Info(" Error processing job", "title", j.Title, "error", err)
 						}
 
 						stats.SkippedDedupe += skippedDedupe
@@ -1022,7 +1024,7 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 
 		if scanTriggered {
 			logDeep("SLEEP", fmt.Sprintf("Sleeping for %v before next scan.", sleepDur))
-			logger.Log.Info(fmt.Sprintf(" Sleeping for %v...", sleepDur))
+			logger.Log.Info(" Sleeping before next scan...", "duration", sleepDur)
 		}
 
 		select {
@@ -1043,7 +1045,7 @@ func runDaemonMode(ctx context.Context, cfg *config.Config, sigChan chan os.Sign
 					url := match[0]
 
 					notify.SendTelegramMessage(fmt.Sprintf(" Processing manual job URL: %s", url))
-					logger.Log.Info(fmt.Sprintf(" Processing manual job URL: %s", url))
+					logger.Log.Info(" Processing manual job URL", "url", url)
 
 					j := extractor.JobSummary{
 						Slug:  slug,

@@ -102,7 +102,7 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 		case u := <-updateChan:
 			if u.CallbackQuery != nil {
 				data := u.CallbackQuery.Data
-				logger.Log.Info(fmt.Sprintf("[DEBUG] AskUserForApplyReview received callback: %s (expected slug: %s)", data, jobSlug))
+				logger.Log.Debug("AskUserForApplyReview received callback", "data", data, "expected_slug", jobSlug)
 				if strings.HasPrefix(data, "apply_accept:") && strings.HasSuffix(data, jobSlug) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Accepted!")
 					statusBlock := &notify.InputRichBlockParagraph{

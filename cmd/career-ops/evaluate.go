@@ -57,6 +57,10 @@ func init() {
 }
 
 func runEvaluate(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+	evalLogger := logger.FromContext(ctx).With("job_id", "evaluate-cli")
+	ctx = logger.WithContext(ctx, evalLogger)
+
 	// -----------------------------------------------------------------------
 	// 1. Resolve JD text
 	// -----------------------------------------------------------------------
@@ -108,9 +112,9 @@ func runEvaluate(cmd *cobra.Command, args []string) error {
 				serverURL = cfg.FreeLLMAPIBaseURL
 			}
 			if !flagOutputJSON {
-				logger.Log.Info(fmt.Sprintf("  Probing %s at %s...", engine, serverURL))
+				logger.FromContext(ctx).Info("Probing engine", "engine", engine, "url", serverURL)
 			}
-			if err := oc.Probe(context.Background()); err != nil {
+			if err := oc.Probe(ctx); err != nil {
 				if engine == llm.EngineFreeLLMAPI {
 					return fmt.Errorf("%w\n\n  Start freellmapi: cd freellmapi && npm run dev", err)
 				}
@@ -123,10 +127,10 @@ func runEvaluate(cmd *cobra.Command, args []string) error {
 	// 4. Run evaluation
 	// -----------------------------------------------------------------------
 	if !flagOutputJSON {
-		logger.Log.Info(fmt.Sprintf("  Calling %s... this may take 30-90 seconds.", provider.Name()))
+		logger.FromContext(ctx).Info("Calling provider... this may take 30-90 seconds.", "provider", provider.Name())
 	}
 
-	result, err := eval.Evaluate(context.Background(), provider, flagContextDir, jdText)
+	result, err := eval.Evaluate(ctx, provider, flagContextDir, jdText)
 	if err != nil {
 		return err
 	}
@@ -144,7 +148,7 @@ func runEvaluate(cmd *cobra.Command, args []string) error {
 		}
 		fname, err := eval.SaveReport(result, flagContextDir, provider.Name(), out)
 		if err != nil {
-			logger.Log.Error("Could not save report", "error", err)
+			logger.FromContext(ctx).Error("Could not save report", "error", err)
 			os.Exit(1)
 		}
 		reportFilename = fname
@@ -167,21 +171,21 @@ func runEvaluate(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal JSON output: %w", err)
 		}
-		logger.Log.Info(fmt.Sprint(string(bytes)))
+		logger.FromContext(ctx).Info(fmt.Sprint(string(bytes)))
 	} else {
 		sep := strings.Repeat("═", 66)
-		logger.Log.Info(fmt.Sprint())
-		logger.Log.Info(fmt.Sprint(sep))
-		logger.Log.Info(fmt.Sprintf("  CAREER-OPS EVALUATION — powered by %s", provider.Name()))
-		logger.Log.Info(fmt.Sprint(sep))
-		logger.Log.Info(fmt.Sprint())
-		logger.Log.Info(fmt.Sprint(result.FullText))
-		logger.Log.Info(fmt.Sprint())
-		logger.Log.Info(fmt.Sprint(strings.Repeat("─", 66)))
-		logger.Log.Info(fmt.Sprintf("  Score: %.1f/5  |  Archetype: %s  |  Legitimacy: %s",
-			result.Score, result.Archetype, result.Legitimacy))
-		logger.Log.Info(fmt.Sprint(strings.Repeat("─", 66)))
-		logger.Log.Info(fmt.Sprint())
+		logger.FromContext(ctx).Info(fmt.Sprint())
+		logger.FromContext(ctx).Info(fmt.Sprint(sep))
+		logger.FromContext(ctx).Info("CAREER-OPS EVALUATION", "powered_by", provider.Name())
+		logger.FromContext(ctx).Info(fmt.Sprint(sep))
+		logger.FromContext(ctx).Info(fmt.Sprint())
+		logger.FromContext(ctx).Info(fmt.Sprint(result.FullText))
+		logger.FromContext(ctx).Info(fmt.Sprint())
+		logger.FromContext(ctx).Info(fmt.Sprint(strings.Repeat("─", 66)))
+		logger.FromContext(ctx).Info("Job evaluation results",
+			"score", result.Score, "archetype", result.Archetype, "legitimacy", result.Legitimacy)
+		logger.FromContext(ctx).Info(fmt.Sprint(strings.Repeat("─", 66)))
+		logger.FromContext(ctx).Info(fmt.Sprint())
 	}
 
 	return nil

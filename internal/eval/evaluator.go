@@ -80,7 +80,7 @@ func Evaluate(ctx context.Context, provider llm.Provider, contextDir, jdText str
 func readFile(path, label string) string {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		logger.Log.Error(fmt.Sprintf("   %s not found at: %s", label, path))
+		logger.Log.Error("Context file not found", "label", label, "path", path)
 		return fmt.Sprintf("[%s not found — skipping]", label)
 	}
 	return strings.TrimSpace(string(data))

@@ -1,8 +1,10 @@
 package logger
 
 import (
+	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,6 +13,90 @@ import (
 	"testing"
 	"time"
 )
+
+func TestParseLogLevel(t *testing.T) {
+	tests := []struct {
+		name     string
+		envVal   string
+		expected slog.Level
+	}{
+		{name: "Debug", envVal: "DEBUG", expected: slog.LevelDebug},
+		{name: "Info", envVal: "INFO", expected: slog.LevelInfo},
+		{name: "Warn", envVal: "WARN", expected: slog.LevelWarn},
+		{name: "Error", envVal: "ERROR", expected: slog.LevelError},
+		{name: "Unset", envVal: "", expected: slog.LevelInfo},
+		{name: "Invalid", envVal: "UNKNOWN", expected: slog.LevelInfo},
+		{name: "Lowercase", envVal: "debug", expected: slog.LevelDebug},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.envVal != "" {
+				t.Setenv("LOG_LEVEL", tt.envVal)
+			} else {
+				os.Unsetenv("LOG_LEVEL")
+			}
+			level := parseLogLevel()
+			if level != tt.expected {
+				t.Errorf("expected level %v, got %v", tt.expected, level)
+			}
+		})
+	}
+}
+
+func TestWithAndFromContext(t *testing.T) {
+	t.Run("nil context returns default Log", func(t *testing.T) {
+		l := FromContext(nil)
+		if l != Log {
+			t.Errorf("expected default Log, got %v", l)
+		}
+	})
+
+	t.Run("empty context returns default Log", func(t *testing.T) {
+		ctx := context.Background()
+		l := FromContext(ctx)
+		if l != Log {
+			t.Errorf("expected default Log, got %v", l)
+		}
+	})
+
+	t.Run("context with stored logger returns stored logger", func(t *testing.T) {
+		customLogger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		ctx := WithContext(context.Background(), customLogger)
+		l := FromContext(ctx)
+		if l != customLogger {
+			t.Errorf("expected custom logger, got %v", l)
+		}
+	})
+
+	t.Run("WithContext with nil context creates background context", func(t *testing.T) {
+		customLogger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		ctx := WithContext(nil, customLogger)
+		if ctx == nil {
+			t.Fatal("expected non-nil context")
+		}
+		l := FromContext(ctx)
+		if l != customLogger {
+			t.Errorf("expected custom logger, got %v", l)
+		}
+	})
+}
+
+func TestInit(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("LOG_LEVEL", "WARN")
+
+	Init(tmpDir)
+
+	if Log == nil {
+		t.Fatal("expected initialized Log, got nil")
+	}
+
+	logFilePath := filepath.Join(tmpDir, "logs", "djinni-bot.log")
+	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
+		t.Errorf("expected log file at %s, but it was not created", logFilePath)
+	}
+}
 
 func TestLokiHandler(t *testing.T) {
 	var mu sync.Mutex

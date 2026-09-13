@@ -22,6 +22,48 @@ var Log *slog.Logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOpti
 	Level: slog.LevelDebug,
 }))
 
+type contextKey int
+
+const loggerKey contextKey = iota
+
+// WithContext stores *slog.Logger in context using a private key type.
+func WithContext(ctx context.Context, l *slog.Logger) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, loggerKey, l)
+}
+
+// FromContext retrieves *slog.Logger from context.
+// If context is nil or does not contain a logger, return default Log.
+func FromContext(ctx context.Context) *slog.Logger {
+	if ctx == nil {
+		return Log
+	}
+	if l, ok := ctx.Value(loggerKey).(*slog.Logger); ok && l != nil {
+		return l
+	}
+	return Log
+}
+
+// parseLogLevel parses LOG_LEVEL env var ("DEBUG", "INFO", "WARN", "ERROR").
+// Defaults to INFO if unset or invalid.
+func parseLogLevel() slog.Level {
+	envLevel := strings.ToUpper(strings.TrimSpace(os.Getenv("LOG_LEVEL")))
+	switch envLevel {
+	case "DEBUG":
+		return slog.LevelDebug
+	case "INFO":
+		return slog.LevelInfo
+	case "WARN", "WARNING":
+		return slog.LevelWarn
+	case "ERROR":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
+
 // DeepTraceLogger handles deep tracing to a separate file.
 // It is nil until InitLogger is called.
 var DeepTraceLogger *slog.Logger
@@ -143,6 +185,10 @@ func (lh *lokiHandler) worker() {
 	}
 }
 
+func Init(contextDir string) {
+	InitLogger(contextDir)
+}
+
 func InitLogger(contextDir string) {
 	logDir := filepath.Join(contextDir, "logs")
 	if err := os.MkdirAll(logDir, 0o755); err != nil {
@@ -156,9 +202,10 @@ func InitLogger(contextDir string) {
 		os.Exit(1)
 	}
 
+	level := parseLogLevel()
 	mainWriter := io.MultiWriter(os.Stdout, logFile)
 	var handler slog.Handler = slog.NewJSONHandler(mainWriter, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level: level,
 	})
 
 	if lokiURL := os.Getenv("LOKI_URL"); lokiURL != "" {

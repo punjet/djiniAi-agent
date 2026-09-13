@@ -95,7 +95,7 @@ func runMigrations(db *sql.DB) error {
 			if strings.Contains(q, "ADD CONSTRAINT") && strings.Contains(err.Error(), "already exists") {
 				continue
 			}
-			logger.Log.Error(fmt.Sprintf("Failed to run migration%sError", q), "error", err)
+			logger.Log.Error("Failed to run migration", "query", q, "error", err)
 			return err
 		}
 	}
@@ -254,7 +254,7 @@ func MigrateFilesToDB(db *sql.DB, contextDir string) error {
 						status = parts[5]
 					}
 					if _, err := db.Exec(query, jobURL, company, status); err != nil {
-						logger.Log.Error(fmt.Sprintf("Failed to insert scan history job %s into DB", jobURL), "error", err)
+						logger.Log.Error("Failed to insert scan history job into DB", "job_url", jobURL, "error", err)
 					}
 				}
 			}
@@ -282,7 +282,7 @@ func MigrateFilesToDB(db *sql.DB, contextDir string) error {
 			for _, u := range urls {
 				jobURL := cleanURLPath(u)
 				if _, err := db.Exec(query, jobURL, company, "applied"); err != nil {
-					logger.Log.Error(fmt.Sprintf("Failed to insert markdown application job %s into DB", jobURL), "error", err)
+					logger.Log.Error("Failed to insert markdown application job into DB", "job_url", jobURL, "error", err)
 				}
 			}
 		}

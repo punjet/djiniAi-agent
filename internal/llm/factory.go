@@ -169,5 +169,5 @@ func NewProvider(cfg *config.Config, engine Engine, task string) (Provider, erro
 		}
 	}
 
-	return wrapped, nil
+	return NewLoggedProvider(wrapped), nil
 }
