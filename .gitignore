@@ -1,6 +1,10 @@
 # macOS specific files
 .DS_Store
 
+# Data directory
+data/
+djinni-bot-go/data/
+
 # Logs
 djinni-bot-go/career-ops/logs/
 djinni-bot-go/career-ops/reports/
