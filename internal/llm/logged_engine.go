@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"djinni-bot-go/internal/logger"
@@ -25,15 +26,27 @@ func (p *LoggedProvider) GenerateText(ctx context.Context, system, user string) 
 	resp, err := p.inner.GenerateText(ctx, system, user)
 	duration := time.Since(start)
 
+	fields := []any{
+		"provider", p.inner.Name(),
+		"duration_ms", duration.Milliseconds(),
+		"system_len", len(system),
+		"user_len", len(user),
+		"response_len", len(resp),
+		"error", err,
+	}
+
+	if os.Getenv("LOG_DEEP_FULL") == "true" {
+		fields = append(fields,
+			"system", system,
+			"user", user,
+			"response", resp,
+		)
+	}
+
 	logger.LogDeep(
 		"llm_generate_text",
 		"GenerateText call",
-		"provider", p.inner.Name(),
-		"duration_ms", duration.Milliseconds(),
-		"system", system,
-		"user", user,
-		"response", resp,
-		"error", err,
+		fields...,
 	)
 
 	return resp, err

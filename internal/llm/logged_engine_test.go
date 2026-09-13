@@ -18,7 +18,7 @@ func TestLoggedProvider_Name(t *testing.T) {
 }
 
 func TestLoggedProvider_GenerateText(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
+	t.Run("success without LOG_DEEP_FULL", func(t *testing.T) {
 		called := false
 		mock := &MockProvider{
 			ProviderName: "TestMockProvider",
@@ -27,6 +27,30 @@ func TestLoggedProvider_GenerateText(t *testing.T) {
 				if system != "sys_prompt" || user != "user_msg" {
 					t.Errorf("unexpected arguments: system=%s, user=%s", system, user)
 				}
+				return "generated response", nil
+			},
+		}
+
+		logged := NewLoggedProvider(mock)
+		resp, err := logged.GenerateText(context.Background(), "sys_prompt", "user_msg")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !called {
+			t.Errorf("expected GenerateTextFunc to be called")
+		}
+		if resp != "generated response" {
+			t.Errorf("expected response 'generated response', got '%s'", resp)
+		}
+	})
+
+	t.Run("success with LOG_DEEP_FULL", func(t *testing.T) {
+		t.Setenv("LOG_DEEP_FULL", "true")
+		called := false
+		mock := &MockProvider{
+			ProviderName: "TestMockProvider",
+			GenerateTextFunc: func(ctx context.Context, system, user string) (string, error) {
+				called = true
 				return "generated response", nil
 			},
 		}
