@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -72,6 +73,7 @@ func (h *Handlers) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	rows, err := h.DB.Query("SELECT id, job_id, company_name, status FROM applications ORDER BY created_at DESC")
 	if err != nil {
+		slog.ErrorContext(r.Context(), "Failed to fetch applications", slog.Any("error", err))
 		http.Error(w, "Failed to fetch applications", http.StatusInternalServerError)
 		return
 	}
@@ -100,6 +102,7 @@ func (h *Handlers) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Render layout with dashboard content
 	if err := tmpl.ExecuteTemplate(w, "layout.html", data); err != nil {
+		slog.ErrorContext(r.Context(), "Template execution error", slog.Any("error", err))
 		http.Error(w, "Template error", http.StatusInternalServerError)
 	}
 }
@@ -124,6 +127,7 @@ func (h *Handlers) ApplicationDetailHandler(w http.ResponseWriter, r *http.Reque
 			http.Error(w, "Application not found", http.StatusNotFound)
 			return
 		}
+		slog.ErrorContext(r.Context(), "Database error fetching application", slog.Any("error", err))
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
@@ -133,6 +137,7 @@ func (h *Handlers) ApplicationDetailHandler(w http.ResponseWriter, r *http.Reque
 	err = h.DB.QueryRow("SELECT score, mistakes, improvements FROM interviews WHERE application_id = $1 ORDER BY created_at DESC LIMIT 1", id).
 		Scan(&score, &mistakes, &improvements)
 	if err != nil && err != sql.ErrNoRows {
+		slog.ErrorContext(r.Context(), "Database error fetching interview", slog.Any("error", err))
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
@@ -162,6 +167,7 @@ func (h *Handlers) ApplicationDetailHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "layout.html", data); err != nil {
+		slog.ErrorContext(r.Context(), "Template execution error", slog.Any("error", err))
 		http.Error(w, "Template error", http.StatusInternalServerError)
 	}
 }
@@ -197,6 +203,7 @@ func (h *Handlers) UpdateStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.DB.Exec("UPDATE applications SET status = $1 WHERE id = $2", newStatus, id)
 	if err != nil {
+		slog.ErrorContext(r.Context(), "Failed to update status", slog.Any("error", err))
 		http.Error(w, "Failed to update status", http.StatusInternalServerError)
 		return
 	}
@@ -210,16 +217,17 @@ func (h *Handlers) UpdateStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	app := Application{ID: id, Status: newStatus}
 	if err := tmpl.ExecuteTemplate(w, "status_badge", app); err != nil {
+		slog.ErrorContext(r.Context(), "Template execution error", slog.Any("error", err))
 		http.Error(w, "Template error", http.StatusInternalServerError)
 	}
 }
 
 func (h *Handlers) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /metrics", promhttp.Handler())
-	mux.HandleFunc("GET /dashboard", traceMiddleware(h.DashboardHandler))
-	mux.HandleFunc("GET /application/{id}", traceMiddleware(h.ApplicationDetailHandler))
-	mux.HandleFunc("POST /application/{id}/status", traceMiddleware(h.UpdateStatusHandler))
-	mux.HandleFunc("POST /application/{id}/feedback", traceMiddleware(h.FeedbackHandler))
-	mux.HandleFunc("POST /application/{id}/interview/upload", traceMiddleware(h.UploadInterviewHandler))
-	mux.HandleFunc("POST /application/{id}/chat-log", traceMiddleware(h.UploadChatLogHandler))
+	mux.Handle("GET /dashboard", RequestID(Logging(Recovery(traceMiddleware(h.DashboardHandler)))))
+	mux.Handle("GET /application/{id}", RequestID(Logging(Recovery(traceMiddleware(h.ApplicationDetailHandler)))))
+	mux.Handle("POST /application/{id}/status", RequestID(Logging(Recovery(traceMiddleware(h.UpdateStatusHandler)))))
+	mux.Handle("POST /application/{id}/feedback", RequestID(Logging(Recovery(traceMiddleware(h.FeedbackHandler)))))
+	mux.Handle("POST /application/{id}/interview/upload", RequestID(Logging(Recovery(traceMiddleware(h.UploadInterviewHandler)))))
+	mux.Handle("POST /application/{id}/chat-log", RequestID(Logging(Recovery(traceMiddleware(h.UploadChatLogHandler)))))
 }
