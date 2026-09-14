@@ -96,86 +96,50 @@ type lokiPayload struct {
 }
 
 type lokiHandler struct {
-	handler slog.Handler
-	ch      chan []byte
-	url     string
-	client  *http.Client
-	wg      sync.WaitGroup
+	ch     chan []byte
+	url    string
+	client *http.Client
+	wg     sync.WaitGroup
 }
 
-func newLokiHandler(h slog.Handler, lokiURL string) *lokiHandler {
+func newLokiHandler(lokiURL string) *lokiHandler {
 	u := strings.TrimSuffix(lokiURL, "/") + "/loki/api/v1/push"
 	lh := &lokiHandler{
-		handler: h,
-		ch:      make(chan []byte, 1000),
-		url:     u,
-		client:  &http.Client{Timeout: 5 * time.Second},
+		ch:     make(chan []byte, 1000),
+		url:    u,
+		client: &http.Client{Timeout: 5 * time.Second},
 	}
 	lh.wg.Add(1)
 	go lh.worker()
 	return lh
 }
 
-func (lh *lokiHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return lh.handler.Enabled(ctx, level)
-}
+func (lh *lokiHandler) Write(p []byte) (int, error) {
+	tsNs := strconv.FormatInt(time.Now().UnixNano(), 10)
+	line := strings.TrimSpace(string(p))
 
-func (lh *lokiHandler) Handle(ctx context.Context, r slog.Record) error {
-	err := lh.handler.Handle(ctx, r)
-
-	buf := bufferPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	defer bufferPool.Put(buf)
-
-	subHandler := slog.NewJSONHandler(buf, &slog.HandlerOptions{
-		Level:       slog.LevelDebug,
-		AddSource:   r.Level == slog.LevelError,
-		ReplaceAttr: nil,
-	})
-	if subErr := subHandler.Handle(ctx, r); subErr == nil {
-		tsNs := strconv.FormatInt(r.Time.UnixNano(), 10)
-		line := buf.String()
-		payload, jsonErr := json.Marshal(lokiPayload{
-			Streams: []lokiStream{
-				{
-					Stream: map[string]string{
-						"app":         "djini-ai-agent",
-						"job":         "djinni-bot",
-						"environment": "production",
-					},
-					Values: [][]string{
-						{tsNs, line},
-					},
+	payload, jsonErr := json.Marshal(lokiPayload{
+		Streams: []lokiStream{
+			{
+				Stream: map[string]string{
+					"app":         "djini-ai-agent",
+					"job":         "djinni-bot",
+					"environment": "production",
+				},
+				Values: [][]string{
+					{tsNs, line},
 				},
 			},
-		})
-		if jsonErr == nil {
-			select {
-			case lh.ch <- payload:
-			default:
-			}
+		},
+	})
+	if jsonErr == nil {
+		select {
+		case lh.ch <- payload:
+		default:
 		}
 	}
 
-	return err
-}
-
-func (lh *lokiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &lokiHandler{
-		handler: lh.handler.WithAttrs(attrs),
-		ch:      lh.ch,
-		url:     lh.url,
-		client:  lh.client,
-	}
-}
-
-func (lh *lokiHandler) WithGroup(name string) slog.Handler {
-	return &lokiHandler{
-		handler: lh.handler.WithGroup(name),
-		ch:      lh.ch,
-		url:     lh.url,
-		client:  lh.client,
-	}
+	return len(p), nil
 }
 
 func (lh *lokiHandler) worker() {
@@ -212,16 +176,20 @@ func InitLogger(contextDir string) {
 		os.Exit(1)
 	}
 
+	var writers []io.Writer
+	writers = append(writers, os.Stdout, logFile)
+
+	if lokiURL := os.Getenv("LOKI_URL"); lokiURL != "" {
+		lh := newLokiHandler(lokiURL)
+		writers = append(writers, lh)
+		fmt.Printf("Loki log pusher enabled for %s\n", lokiURL)
+	}
+
 	level := parseLogLevel()
-	mainWriter := io.MultiWriter(os.Stdout, logFile)
+	mainWriter := io.MultiWriter(writers...)
 	var handler slog.Handler = slog.NewJSONHandler(mainWriter, &slog.HandlerOptions{
 		Level: level,
 	})
-
-	if lokiURL := os.Getenv("LOKI_URL"); lokiURL != "" {
-		handler = newLokiHandler(handler, lokiURL)
-		fmt.Printf("Loki log pusher enabled for %s\n", lokiURL)
-	}
 
 	Log = slog.New(handler)
 	slog.SetDefault(Log)
