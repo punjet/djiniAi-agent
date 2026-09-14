@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"djinni-bot-go/internal/api"
@@ -28,7 +27,7 @@ type InboxReplyResult struct {
 }
 
 // ProcessInbox fetches unread messages from Djinni and triggers interactive reviews via Telegram.
-func ProcessInbox(ctx context.Context, bot *notify.TelegramBot, panicStop *atomic.Bool, sigChan <-chan os.Signal, cfg *config.Config, engine llm.Engine, contextDir string, dc *client.DjinniClient, dryRun bool) ([]string, error) {
+func ProcessInbox(ctx context.Context, bot *notify.TelegramBot, sigChan <-chan os.Signal, cfg *config.Config, engine llm.Engine, contextDir string, dc *client.DjinniClient, dryRun bool) ([]string, error) {
 	ctx = trace.WithTraceID(ctx, "")
 	dialogues, err := api.GetUnreadMessages(dc)
 	if err != nil {
@@ -56,9 +55,11 @@ func ProcessInbox(ctx context.Context, bot *notify.TelegramBot, panicStop *atomi
 		dialogLogger := logger.Log.With("dialog_id", d.ID, "sender", d.Sender)
 		loopCtx := logger.WithContext(ctx, dialogLogger)
 
-		if panicStop != nil && panicStop.Load() {
-			logs = append(logs, " PanicStop triggered, breaking Inbox loop.")
-			break
+		select {
+		case <-loopCtx.Done():
+			logs = append(logs, " Context cancelled, breaking Inbox loop.")
+			return logs, loopCtx.Err()
+		default:
 		}
 
 		if seenIDs != nil && seenIDs[d.ID] {
