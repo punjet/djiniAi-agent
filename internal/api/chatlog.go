@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -73,6 +74,7 @@ func (h *Handlers) UploadChatLogHandler(w http.ResponseWriter, r *http.Request) 
 		RETURNING id
 	`, appID, chatLog).Scan(&chatLogID)
 	if err != nil {
+		slog.ErrorContext(r.Context(), "Failed to save chat log", slog.Any("error", err))
 		http.Error(w, "Failed to save chat log", http.StatusInternalServerError)
 		return
 	}
@@ -106,7 +108,7 @@ Respond ONLY with the exact status name if it changes, or "NO_CHANGE" if it rema
 				// Update status in db
 				_, err = h.DB.Exec("UPDATE applications SET status = $1 WHERE id = $2", newStatus, appID)
 				if err != nil {
-					// could not update status, just ignore or log
+					slog.ErrorContext(r.Context(), "Failed to update application status after chat log upload", slog.Any("error", err))
 				}
 			}
 		}
