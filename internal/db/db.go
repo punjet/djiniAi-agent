@@ -16,7 +16,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// InitDB initializes the database connection and runs migrations.
 func InitDB(cfg *config.Config) (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
@@ -103,7 +102,6 @@ func runMigrations(db *sql.DB) error {
 	return nil
 }
 
-// Application represents a job application
 type Application struct {
 	ID          int
 	JobID       string
@@ -112,7 +110,6 @@ type Application struct {
 	CreatedAt   string
 }
 
-// Interview represents an interview
 type Interview struct {
 	ID            int
 	ApplicationID int
@@ -126,7 +123,6 @@ type Interview struct {
 	CreatedAt     string
 }
 
-// AgentMemory represents learned insights from the LLM agent
 type AgentMemory struct {
 	ID         int
 	Category   string
@@ -136,7 +132,6 @@ type AgentMemory struct {
 	CreatedAt  string
 }
 
-// ChatLog represents a chat log
 type ChatLog struct {
 	ID            int
 	ApplicationID int
@@ -219,10 +214,15 @@ func cleanURLPath(u string) string {
 	return parsed.String()
 }
 
+var (
+	nonAlphanumericRegex = regexp.MustCompile(`[^\p{L}\p{N}\s]`)
+	urlRx                = regexp.MustCompile(`https?://[^\s|)]+`)
+	rowRx                = regexp.MustCompile(`\|[^|]+\|[^|]+\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|`)
+)
+
 func normalizeDBString(s string) string {
 	s = strings.ToLower(s)
-	reg := regexp.MustCompile(`[^\p{L}\p{N}\s]`)
-	s = reg.ReplaceAllString(s, "")
+	s = nonAlphanumericRegex.ReplaceAllString(s, "")
 	return strings.Join(strings.Fields(s), " ")
 }
 
@@ -264,8 +264,6 @@ func MigrateFilesToDB(db *sql.DB, contextDir string) error {
 	if file, err := os.Open(appsPath); err == nil {
 		defer file.Close()
 		scanner := bufio.NewScanner(file)
-		urlRx := regexp.MustCompile(`https?://[^\s|)]+`)
-		rowRx := regexp.MustCompile(`\|[^|]+\|[^|]+\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|`)
 
 		for scanner.Scan() {
 			line := scanner.Text()

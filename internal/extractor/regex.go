@@ -1,16 +1,14 @@
 package extractor
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
 	"regexp"
 	"strings"
-)
 
-// FRAGILE: The extraction logic heavily relies on regular expressions for HTML parsing, which is notoriously brittle.
-// TODO: Replace regex-based HTML extraction with a proper DOM parser (e.g., golang.org/x/net/html or goquery).
+	"github.com/PuerkitoBio/goquery"
+)
 
 // Job represents a summary of a job posting.
 type Job struct {
@@ -40,18 +38,9 @@ type JobDetails struct {
 }
 
 var (
-	csrfRegex       = regexp.MustCompile(`(?i)<input[^>]+name="csrfmiddlewaretoken"[^>]+value="([^"]+)"`)
-	jobLinkRegex    = regexp.MustCompile(`(?i)<a[^>]+href="/jobs/(\d+)-([^"/?#]+)[^"]*"[^>]*>([\s\S]+?)</a>`)
 	htmlTagRegex    = regexp.MustCompile(`<[^>]+>`)
 	whitespaceRegex = regexp.MustCompile(`\s+`)
 	companyCleanRx  = regexp.MustCompile(`[·\.]`)
-
-	// Job Details Regexes
-	jsonLdRegex   = regexp.MustCompile(`(?i)<script[^>]+type="application/ld\+json"[^>]*>([\s\S]+?)</script>`)
-	titleRegex    = regexp.MustCompile(`(?i)<h1[^>]*>([\s\S]+?)</h1>`)
-	companyDivRx  = regexp.MustCompile(`(?i)<div[^>]+class="[^"]*company_name[^"]*"[^>]*>([\s\S]+?)</div>`)
-	companyLinkRx = regexp.MustCompile(`(?i)<a[^>]+href="[^"]*/jobs/company-[^"]*"[^>]*>([\s\S]+?)</a>`)
-	descriptionRx = regexp.MustCompile(`(?i)<div[^>]+class="[^"]*job-post__description[^"]*"[^>]*>([\s\S]+?)</div>`)
 
 	reqHeaders = []*regexp.Regexp{
 		regexp.MustCompile(`(?i)requirements?:?([\s\S]+)`),
@@ -61,31 +50,60 @@ var (
 	}
 )
 
-// ExtractCSRF extracts the CSRF token from the HTML body.
-func ExtractCSRF(html string) (string, error) {
-	match := csrfRegex.FindStringSubmatch(html)
-	if len(match) > 1 {
-		return match[1], nil
+// ExtractCSRF extracts the CSRF token from the HTML body using goquery DOM parsing.
+func ExtractCSRF(htmlContent string) (string, error) {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
+	if err != nil {
+		return "", err
+	}
+
+	var token string
+	doc.Find("input[name='csrfmiddlewaretoken']").Each(func(i int, s *goquery.Selection) {
+		if val, exists := s.Attr("value"); exists && val != "" {
+			token = val
+		}
+	})
+
+	if token != "" {
+		return token, nil
 	}
 	return "", errors.New("csrf token not found")
 }
 
-// ExtractJobs extracts job postings from a job search/list HTML page.
-func ExtractJobs(html string) ([]Job, error) {
-	matches := jobLinkRegex.FindAllStringSubmatch(html, -1)
+// ExtractJobs extracts job postings from a job search/list HTML page using goquery.
+func ExtractJobs(htmlContent string) ([]Job, error) {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
+	if err != nil {
+		return nil, err
+	}
+
 	var jobs []Job
 	seenSlugs := make(map[string]bool)
 
-	for _, match := range matches {
-		if len(match) < 4 {
-			continue
+	doc.Find("a[href^='/jobs/']").Each(func(i int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if !exists {
+			return
 		}
-		id := match[1]
-		slugSuffix := match[2]
-		slug := fmt.Sprintf("%s-%s", id, slugSuffix)
-		titleRaw := match[3]
 
-		title := cleanTitle(titleRaw)
+		parts := strings.Split(strings.Trim(href, "/"), "/")
+		if len(parts) < 2 || parts[0] != "jobs" {
+			return
+		}
+
+		slugPart := parts[1]
+		dashIndex := strings.Index(slugPart, "-")
+		if dashIndex <= 0 {
+			return
+		}
+
+		id := slugPart[:dashIndex]
+		slugSuffix := slugPart[dashIndex+1:]
+		if slugSuffix == "" {
+			return
+		}
+
+		title := cleanTitle(s.Text())
 
 		// Exclude search links that are short or match login/signup strings
 		if len(title) < 3 ||
@@ -93,58 +111,25 @@ func ExtractJobs(html string) ([]Job, error) {
 			strings.Contains(title, "Зареєструватись") ||
 			strings.Contains(title, "Log in") ||
 			strings.Contains(title, "Sign up") ||
-			seenSlugs[slug] {
-			continue
+			seenSlugs[slugPart] {
+			return
 		}
 
-		seenSlugs[slug] = true
+		seenSlugs[slugPart] = true
 		jobs = append(jobs, Job{
 			ID:    id,
-			Slug:  slug,
+			Slug:  slugPart,
 			Title: title,
-			URL:   fmt.Sprintf("https://djinni.co/jobs/%s/", slug),
+			URL:   fmt.Sprintf("https://djinni.co/jobs/%s/", slugPart),
 		})
-	}
+	})
 
 	return jobs, nil
 }
 
-// ExtractDashboardJobs extracts job postings from the personal dashboard HTML page.
-func ExtractDashboardJobs(html string) ([]Job, error) {
-	matches := jobLinkRegex.FindAllStringSubmatch(html, -1)
-	var jobs []Job
-	seenSlugs := make(map[string]bool)
-
-	for _, match := range matches {
-		if len(match) < 4 {
-			continue
-		}
-		id := match[1]
-		slugSuffix := match[2]
-		slug := fmt.Sprintf("%s-%s", id, slugSuffix)
-		innerHTML := match[3]
-
-		// Extract title from <h2 class="job-item__position...">Title</h2>
-		titleMatch := regexp.MustCompile(`(?i)<h2[^>]*job-item__position[^>]*>([\s\S]+?)</h2>`).FindStringSubmatch(innerHTML)
-		if len(titleMatch) < 2 {
-			continue
-		}
-
-		title := cleanTitle(titleMatch[1])
-		if title == "" || seenSlugs[slug] {
-			continue
-		}
-
-		seenSlugs[slug] = true
-		jobs = append(jobs, Job{
-			ID:    id,
-			Slug:  slug,
-			Title: title,
-			URL:   fmt.Sprintf("https://djinni.co/jobs/%s/", slug),
-		})
-	}
-
-	return jobs, nil
+// ExtractDashboardJobs extracts job postings from the personal dashboard HTML page using goquery.
+func ExtractDashboardJobs(htmlContent string) ([]Job, error) {
+	return ExtractDashboardJobsV2(htmlContent)
 }
 
 // jobPostingLD holds structured application/ld+json data.
@@ -157,71 +142,9 @@ type jobPostingLD struct {
 	Description string `json:"description"`
 }
 
-// ExtractJobDetails extracts detailed information from a job posting HTML page.
-func ExtractJobDetails(html string) (*JobDetails, error) {
-	var title, company, description string
-
-	// 1. Try application/ld+json parsing
-	jsonLdMatch := jsonLdRegex.FindStringSubmatch(html)
-	if len(jsonLdMatch) > 1 {
-		var ld jobPostingLD
-		if err := json.Unmarshal([]byte(strings.TrimSpace(jsonLdMatch[1])), &ld); err == nil {
-			if ld.Type == "JobPosting" {
-				title = ld.Title
-				company = ld.HiringOrganization.Name
-				description = ld.Description
-			}
-		}
-	}
-
-	// 2. Fallbacks
-	if title == "" {
-		titleMatch := titleRegex.FindStringSubmatch(html)
-		if len(titleMatch) > 1 {
-			title = cleanTitle(titleMatch[1])
-		}
-	}
-
-	if company == "" {
-		companyDivMatch := companyDivRx.FindStringSubmatch(html)
-		if len(companyDivMatch) > 1 {
-			company = cleanTitle(companyDivMatch[1])
-		} else {
-			companyLinkMatch := companyLinkRx.FindStringSubmatch(html)
-			if len(companyLinkMatch) > 1 {
-				company = cleanTitle(companyLinkMatch[1])
-			}
-		}
-	}
-
-	if description == "" {
-		descMatch := descriptionRx.FindStringSubmatch(html)
-		if len(descMatch) > 1 {
-			description = descMatch[1]
-		}
-	}
-
-	cleanedDescription := cleanDescription(description)
-
-	// 3. Extract requirements from description
-	var requirements string
-	for _, rx := range reqHeaders {
-		reqMatch := rx.FindStringSubmatch(cleanedDescription)
-		if len(reqMatch) > 1 {
-			requirements = strings.TrimSpace(reqMatch[1])
-			break
-		}
-	}
-	if requirements == "" {
-		requirements = cleanedDescription
-	}
-
-	return &JobDetails{
-		Title:        title,
-		Company:      strings.TrimSpace(companyCleanRx.ReplaceAllString(company, "")),
-		Description:  cleanedDescription,
-		Requirements: requirements,
-	}, nil
+// ExtractJobDetails extracts detailed information from a job posting HTML page using goquery DOM parsing.
+func ExtractJobDetails(htmlContent string) (*JobDetails, error) {
+	return ExtractJobDetailsV2(htmlContent)
 }
 
 func cleanTitle(title string) string {
