@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"djinni-bot-go/internal/client"
+	"djinni-bot-go/internal/logger"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -30,7 +31,16 @@ func GetUnreadMessages(dc *client.DjinniClient) ([]Dialogue, error) {
 
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
 	if err != nil {
+		logger.Log.Error("failed to parse HTML from Djinni", "error", err)
 		return nil, err
+	}
+
+	title := strings.TrimSpace(doc.Find("title").Text())
+	logger.Log.Info("Fetched Djinni inbox", "status_code", resp.StatusCode, "title", title, "content_length", len(htmlContent))
+
+	if strings.Contains(title, "Увійти на Джин") || strings.Contains(title, "Увійти") || strings.Contains(title, "Login") {
+		logger.Log.Error("Session expired: Login page detected", "title", title)
+		return nil, errors.New("session expired: please update DJINNI_SESSIONID in Coolify")
 	}
 
 	var dialogues []Dialogue
@@ -78,6 +88,16 @@ func GetUnreadMessages(dc *client.DjinniClient) ([]Dialogue, error) {
 			Message: message,
 		})
 	})
+
+	if len(dialogues) == 0 {
+		snippet := htmlContent
+		if len(snippet) > 500 {
+			snippet = snippet[:500]
+		}
+		logger.Log.Warn("No dialogues parsed from inbox HTML", "title", title, "html_snippet", snippet)
+	} else {
+		logger.Log.Info("Parsed dialogues", "count", len(dialogues))
+	}
 
 	return dialogues, nil
 }
@@ -146,6 +166,11 @@ func parseThreadMessages(r io.Reader) ([]ThreadMessage, error) {
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
 		return nil, err
+	}
+
+	title := strings.TrimSpace(doc.Find("title").Text())
+	if strings.Contains(title, "Увійти на Джин") || strings.Contains(title, "Увійти") || strings.Contains(title, "Login") {
+		return nil, errors.New("session expired: please update DJINNI_SESSIONID in Coolify")
 	}
 
 	var messages []ThreadMessage
