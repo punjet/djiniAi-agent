@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	myagent "djinni-bot-go/internal/agent"
 	"djinni-bot-go/internal/api"
 	"djinni-bot-go/internal/client"
 	"djinni-bot-go/internal/config"
@@ -18,10 +19,19 @@ import (
 	"djinni-bot-go/internal/logger"
 	"djinni-bot-go/internal/notify"
 	"djinni-bot-go/internal/pipeline"
+	"djinni-bot-go/internal/telemetry"
 	"djinni-bot-go/internal/trace"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
+
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+
+	adk_agent "google.golang.org/adk/v2/agent"
+	"google.golang.org/adk/v2/cmd/launcher"
+	"google.golang.org/adk/v2/cmd/launcher/full"
+	"google.golang.org/adk/v2/model/openaimodel"
 )
 
 type appliedJobInfo struct {
@@ -62,106 +72,47 @@ func runPipelineRun(cmd *cobra.Command, args []string) error {
 		return runDaemonMode(ctx, cfg, sigChan)
 	}
 
-	dc := client.NewDjinniClient(cfg)
-	engine := llm.Engine(flagEngine)
+	// ADK Telemetry setup
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSpanProcessor(telemetry.NewADKSpanProcessor()),
+	)
+	otel.SetTracerProvider(tp)
+	defer tp.Shutdown(ctx)
 
-	bot := notify.NewTelegramBot()
-	bot.Start()
-	defer bot.Stop()
-	setupBotCommands(bot, dc, ctx)
-
-	if !api.CheckToken(dc) {
-		notify.SendTelegramMessage(" Djinni sessionid cookie expired or invalid! Send `/set_session <your_sessionid>` to update it.")
-	}
-
-	// 2. Load Deduplicator
-	logger.Log.Info("  Loading deduplication history", "dir", flagContextDir)
-	dedup, err := pipeline.LoadDedup(flagContextDir)
-	if err != nil {
-		return fmt.Errorf("failed to load deduplication history: %w", err)
-	}
-
-	// 3. Scan Djinni for relevant jobs
-	logger.Log.Info("  Scanning Djinni for new positions...")
-	jobs, err := pipeline.ScanDjinni(flagContextDir, dc, dedup)
-	if err != nil {
-		return fmt.Errorf("scan failed: %w", err)
-	}
-
-	if len(jobs) == 0 {
-		logger.Log.Info("  No new relevant jobs found.")
-		return nil
-	}
-
-	logger.Log.Info("  Found new relevant job(s) to process", "count", len(jobs))
-	appliedCount := 0
-	skippedThreshold := 0
-	skippedDedupe := 0
-	pdfCount := 0
-	errorCount := 0
-
-	var appliedJobs []appliedJobInfo
-
-	for _, j := range jobs {
-		select {
-		case <-ctx.Done():
-			logger.Log.Info(" Context cancelled. Halting runPipelineRun loop.")
-			return ctx.Err()
-		default:
-		}
-
-		interrupted := false
-		select {
-		case s := <-sigChan:
-			sigChan <- s
-			interrupted = true
-		default:
-		}
-		if interrupted {
-			break
-		}
-
-		if appliedCount >= flagLimit {
-			logger.Log.Info("  Daily application limit reached. Stopping.", "limit", flagLimit)
-			break
-		}
-
-		applied, err := processJobItem(ctx, cfg, bot, dc, engine, dedup, j, &skippedDedupe, &skippedThreshold, &errorCount, &pdfCount, &appliedJobs)
+		// Load MCP Tools (In-Process)
+		mcpToolset, err := myagent.LoadMCPTools(ctx, myagent.ModeInProcess, cfg, "")
 		if err != nil {
-			logger.Log.Error("Error processing job", "title", j.Title, "error", err)
-			continue
+			return fmt.Errorf("failed to load MCP tools: %w", err)
 		}
-		if applied {
-			appliedCount++
-		}
+
+		// Initialize LLM for ADK
+	llmModel, err := openaimodel.NewModel(ctx, "gpt-4o", nil)
+	if err != nil {
+		return fmt.Errorf("failed to initialize ADK LLM model: %w", err)
 	}
 
-	// Send an aggregated summary report to Telegram to reduce spam
-	var summary strings.Builder
-	summary.WriteString(" *Career-Ops Run Summary*\n")
-	summary.WriteString(fmt.Sprintf(" Date: %s\n", time.Now().Format("2006-01-02 15:04")))
-	summary.WriteString(fmt.Sprintf(" Relevant scanned: %d\n", len(jobs)))
-	summary.WriteString(fmt.Sprintf(" Applied: %d\n", appliedCount))
-	summary.WriteString(fmt.Sprintf(" Skipped (low score): %d\n", skippedThreshold))
-	summary.WriteString(fmt.Sprintf(" Skipped (already applied): %d\n", skippedDedupe))
-	summary.WriteString(fmt.Sprintf(" PDFs Generated: %d\n", pdfCount))
-	summary.WriteString(fmt.Sprintf("❌ Errors: %d\n\n", errorCount))
+	// Initialize ADK Agents
+	scanner, _ := myagent.NewScannerNode()
+		filter, _ := myagent.NewFilterAgent(llmModel, mcpToolset)
+		evaluator, _ := myagent.NewEvaluatorAgent(llmModel, mcpToolset)
+		coverLetter, _ := myagent.NewCoverLetterAgent(llmModel, mcpToolset)
+	notifier, _ := myagent.NewNotifierNode()
 
-	if len(appliedJobs) > 0 {
-		if flagDryRun {
-			summary.WriteString(" *Potential Applications (Dry-Run):*\n")
-		} else {
-			summary.WriteString(" *Applied Positions:*\n")
-		}
-		for _, app := range appliedJobs {
-			summary.WriteString(fmt.Sprintf("- %s — %s (Score: %.1f)\n", app.Company, app.Title, app.Score))
-		}
+	coordinator, err := myagent.NewCoordinatorAgent(scanner, filter, evaluator, coverLetter, notifier)
+	if err != nil {
+		return fmt.Errorf("failed to create coordinator agent: %w", err)
 	}
 
-	_ = notify.SendTelegramMessage(summary.String())
+	// Prepare launcher config
+	launcherCfg := &launcher.Config{
+		AgentLoader: adk_agent.NewSingleLoader(coordinator),
+	}
 
-	if bot != nil {
-		bot.SetLastSummary(summary.String())
+	l := full.NewLauncher()
+
+	logger.Log.Info("Executing ADK CoordinatorAgent via launcher")
+	if err := l.Execute(ctx, launcherCfg, []string{"console"}); err != nil {
+		return fmt.Errorf("adk launcher error: %w", err)
 	}
 
 	return nil
