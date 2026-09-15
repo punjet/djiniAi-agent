@@ -91,8 +91,8 @@ func GetUnreadMessages(dc *client.DjinniClient) ([]Dialogue, error) {
 
 	if len(dialogues) == 0 {
 		snippet := htmlContent
-		if len(snippet) > 500 {
-			snippet = snippet[:500]
+		if len(snippet) > 5000 {
+			snippet = snippet[:5000]
 		}
 		logger.Log.Warn("No dialogues parsed from inbox HTML", "title", title, "html_snippet", snippet)
 	} else {
