@@ -90,7 +90,11 @@ func GetUnreadMessages(dc *client.DjinniClient) ([]Dialogue, error) {
 	})
 
 	if len(dialogues) == 0 {
+		bodyStart := strings.Index(htmlContent, "<body")
 		snippet := htmlContent
+		if bodyStart != -1 {
+			snippet = htmlContent[bodyStart:]
+		}
 		if len(snippet) > 5000 {
 			snippet = snippet[:5000]
 		}
