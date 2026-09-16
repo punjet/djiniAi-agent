@@ -7,8 +7,8 @@ import (
 
 // ExaClient wraps req.Client for Exa.ai API interactions
 type ExaClient struct {
-	Client  *req.Client
-	Config  *config.Config
+	Client *req.Client
+	Config *config.Config
 }
 
 // NewExaClient initializes the Exa client with API key and base URL
@@ -41,7 +41,6 @@ func (e *ExaClient) Search(query string) (string, error) {
 		return "", err
 	}
 
-
-
 	return resp.Markdown, nil
 }
+

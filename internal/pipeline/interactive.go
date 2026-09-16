@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"djinni-bot-go/internal/api"
+	"djinni-bot-go/internal/logger"
 	"djinni-bot-go/internal/notify"
 )
 
@@ -19,7 +20,7 @@ func BuildApplyReviewRichMessage(company, role, jobURL, summary string, score fl
 		notify.InputRichBlockParagraph{
 			Type: "paragraph",
 			Text: []interface{}{
-				"📋 ",
+				" ",
 				notify.RichTextBold{Type: "bold", Text: "Job Review Required"},
 				"\n\n",
 				notify.RichTextBold{Type: "bold", Text: "Company:"},
@@ -70,8 +71,8 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 
 	keyboard := [][]notify.InlineButton{
 		{
-			{Text: "✅ Submit", CallbackData: "apply_accept:" + jobSlug},
-			{Text: "✍️ Edit", CallbackData: "apply_edit:" + jobSlug},
+			{Text: " Submit", CallbackData: "apply_accept:" + jobSlug},
+			{Text: " Edit", CallbackData: "apply_edit:" + jobSlug},
 			{Text: "❌ Reject", CallbackData: "apply_reject:" + jobSlug},
 		},
 	}
@@ -101,13 +102,13 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 		case u := <-updateChan:
 			if u.CallbackQuery != nil {
 				data := u.CallbackQuery.Data
-				fmt.Printf("[DEBUG] AskUserForApplyReview received callback: %s (expected slug: %s)\n", data, jobSlug)
+				logger.Log.Debug("AskUserForApplyReview received callback", "data", data, "expected_slug", jobSlug)
 				if strings.HasPrefix(data, "apply_accept:") && strings.HasSuffix(data, jobSlug) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Application Accepted!")
 					statusBlock := &notify.InputRichBlockParagraph{
 						Type: "paragraph",
 						Text: []interface{}{
-							"\n\n⏳ ",
+							"\n\n ",
 							notify.RichTextBold{Type: "bold", Text: "Status:"},
 							" Submitting application to Djinni...",
 						},
@@ -122,7 +123,7 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 					statusBlock := &notify.InputRichBlockParagraph{
 						Type: "paragraph",
 						Text: []interface{}{
-							"\n\n🔴 ",
+							"\n\n ",
 							notify.RichTextBold{Type: "bold", Text: "Status:"},
 							" Application rejected (skipped).",
 						},
@@ -137,7 +138,7 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 					statusBlock := &notify.InputRichBlockParagraph{
 						Type: "paragraph",
 						Text: []interface{}{
-							"\n\n🤖 ",
+							"\n\n ",
 							notify.RichTextBold{Type: "bold", Text: "Status:"},
 							" Waiting for you to type what the AI should change in the cover letter...",
 						},
@@ -154,7 +155,7 @@ func AskUserForApplyReview(ctx context.Context, bot *notify.TelegramBot, company
 					statusBlock2 := &notify.InputRichBlockParagraph{
 						Type: "paragraph",
 						Text: []interface{}{
-							"\n\n🔄 ",
+							"\n\n ",
 							notify.RichTextBold{Type: "bold", Text: "Status:"},
 							fmt.Sprintf(" Regenerating cover letter using guidance: %q", instruction),
 						},
@@ -180,11 +181,11 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 			start = 0
 		}
 		var snippetBuilder strings.Builder
-		snippetBuilder.WriteString("\n📜 *Thread (last messages):*\n")
+		snippetBuilder.WriteString("\n *Thread (last messages):*\n")
 		for _, msg := range threadMsgs[start:] {
-			roleIcon := "🏢"
+			roleIcon := ""
 			if msg.Role == "candidate" {
-				roleIcon = "👤"
+				roleIcon = ""
 			}
 			snippetBuilder.WriteString(fmt.Sprintf("%s %s: %s\n", roleIcon, msg.Role, msg.Text))
 		}
@@ -192,17 +193,17 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 	}
 
 	text := fmt.Sprintf(
-		"✉️ *Recruiter Message Review Required*\n\n"+
+		" *Recruiter Message Review Required*\n\n"+
 			"*From:* %s\n"+
 			"*Message:* %q\n"+
 			"%s\n"+
-			"🤖 *Proposed Reply:* %q",
+			" *Proposed Reply:* %q",
 		sender, originalMsg, threadSnippet, proposedReply,
 	)
 
 	keyboard := [][]notify.InlineButton{
 		{
-			{Text: "✅ Confirm", CallbackData: "inbox_confirm:" + dialogueID},
+			{Text: " Confirm", CallbackData: "inbox_confirm:" + dialogueID},
 			{Text: "❌ Reject / Edit", CallbackData: "inbox_reject:" + dialogueID},
 		},
 	}
@@ -221,7 +222,7 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 				data := u.CallbackQuery.Data
 				if strings.HasPrefix(data, "inbox_confirm:") && strings.HasSuffix(data, dialogueID) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Reply Confirmed!")
-					_ = notify.EditMessageText(msgID, text+"\n\n🟢 *Status:* Confirmed and sent.")
+					_ = notify.EditMessageText(msgID, text+"\n\n *Status:* Confirmed and sent.")
 					_ = notify.EditMessageReplyMarkup(msgID, nil)
 					return proposedReply, nil
 				}
@@ -231,15 +232,15 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 					// Show the Edit/Explain choices
 					editKeyboard := [][]notify.InlineButton{
 						{
-							{Text: "✍️ Write Manually", CallbackData: "inbox_manual:" + dialogueID},
-							{Text: "🤖 Explain to AI", CallbackData: "inbox_explain:" + dialogueID},
+							{Text: " Write Manually", CallbackData: "inbox_manual:" + dialogueID},
+							{Text: " Explain to AI", CallbackData: "inbox_explain:" + dialogueID},
 						},
 					}
 					_ = notify.EditMessageReplyMarkup(msgID, editKeyboard)
 				}
 				if strings.HasPrefix(data, "inbox_manual:") && strings.HasSuffix(data, dialogueID) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Waiting for manual input...")
-					_ = notify.EditMessageText(msgID, text+"\n\n✍️ *Status:* Waiting for you to type your manual reply in the chat...")
+					_ = notify.EditMessageText(msgID, text+"\n\n *Status:* Waiting for you to type your manual reply in the chat...")
 					_ = notify.EditMessageReplyMarkup(msgID, nil)
 
 					// Loop waiting for a text message from the user
@@ -248,12 +249,12 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 						return "", err
 					}
 
-					_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n🟢 *Status:* Sent manual reply: %q", manualText))
+					_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n *Status:* Sent manual reply: %q", manualText))
 					return manualText, nil
 				}
 				if strings.HasPrefix(data, "inbox_explain:") && strings.HasSuffix(data, dialogueID) {
 					_ = notify.AnswerCallbackQuery(u.CallbackQuery.ID, "Waiting for explanation...")
-					_ = notify.EditMessageText(msgID, text+"\n\n🤖 *Status:* Waiting for you to type what the AI should change...")
+					_ = notify.EditMessageText(msgID, text+"\n\n *Status:* Waiting for you to type what the AI should change...")
 					_ = notify.EditMessageReplyMarkup(msgID, nil)
 
 					explanation, err := waitForUserMessage(ctx, updateChan)
@@ -261,7 +262,7 @@ func AskUserForInboxReview(ctx context.Context, bot *notify.TelegramBot, sender,
 						return "", err
 					}
 
-					_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n🔄 *Status:* Regenerating reply using guidance: %q", explanation))
+					_ = notify.EditMessageText(msgID, text+fmt.Sprintf("\n\n *Status:* Regenerating reply using guidance: %q", explanation))
 					return "explain:" + explanation, nil
 				}
 			}

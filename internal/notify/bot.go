@@ -1,9 +1,9 @@
 package notify
 
 import (
-	"log"
-	"os"
+	"djinni-bot-go/internal/logger"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -86,25 +86,35 @@ func (b *TelegramBot) buildStatusText() string {
 func (b *TelegramBot) SetupDefaultCommands() {
 	b.Commands(map[string]func(*TGMessage){
 		"/start": func(m *TGMessage) {
-			if !b.verifyChat(m) { return }
+			if !b.verifyChat(m) {
+				return
+			}
 			SendMessageFunc("Hello! I am your Djinni Bot. Commands: /start, /status, /stop, /panic, /report, /stats")
 		},
 		"/status": func(m *TGMessage) {
-			if !b.verifyChat(m) { return }
+			if !b.verifyChat(m) {
+				return
+			}
 			SendMessageFunc(b.buildStatusText())
 		},
 		"/stop": func(m *TGMessage) {
-			if !b.verifyChat(m) { return }
+			if !b.verifyChat(m) {
+				return
+			}
 			SendMessageFunc("Stopping bot...")
 			b.Stop()
 		},
 		"/panic": func(m *TGMessage) {
-			if !b.verifyChat(m) { return }
+			if !b.verifyChat(m) {
+				return
+			}
 			SendMessageFunc("PANIC! Halting pipeline...")
 			b.PanicStop()
 		},
 		"/report": func(m *TGMessage) {
-			if !b.verifyChat(m) { return }
+			if !b.verifyChat(m) {
+				return
+			}
 			summary := b.GetLastSummary()
 			if summary == "" {
 				summary = "No recent run summary available."
@@ -131,7 +141,6 @@ func (b *TelegramBot) AddCallbackHandler(prefix string, handler func(*TGCallback
 	defer b.mu.Unlock()
 	b.callbackHandlers[prefix] = handler
 }
-
 
 func (b *TelegramBot) SetLastSummary(summary string) {
 	b.mu.Lock()
@@ -169,7 +178,7 @@ func (b *TelegramBot) Start() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("[TelegramBot poller] recovered from panic: %v", r)
+				logger.Log.Info("[TelegramBot poller] recovered from panic", "panic", r)
 			}
 		}()
 		ticker := time.NewTicker(2 * time.Second)
@@ -182,12 +191,12 @@ func (b *TelegramBot) Start() {
 			case <-ticker.C:
 				updates, err := b.GetUpdates()
 				if err != nil {
-					log.Printf("Telegram GetUpdates error: %v", err)
+					logger.Log.Error("Telegram GetUpdates error", "error", err)
 					continue
 				}
 				for _, update := range updates {
 					b.offset = update.UpdateID + 1
-					
+
 					if update.CallbackQuery != nil {
 						b.mu.RLock()
 						var handler func(*TGCallback)
@@ -253,7 +262,7 @@ func (b *TelegramBot) StartStatusBoard() {
 
 	msgID, err := SendTelegramMessageID(b.buildStatusText())
 	if err != nil {
-		log.Printf("Failed to send status board message: %v", err)
+		logger.Log.Error("Failed to send status board message", "error", err)
 		return
 	}
 
@@ -266,7 +275,7 @@ func (b *TelegramBot) StartStatusBoard() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("[TelegramBot status board] recovered from panic: %v", r)
+				logger.Log.Info("[TelegramBot status board] recovered from panic", "panic", r)
 			}
 		}()
 		ticker := time.NewTicker(30 * time.Second)

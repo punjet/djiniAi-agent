@@ -121,7 +121,7 @@ func TestMustLoadPartial(t *testing.T) {
 	// Ensure we test the default fallback behavior
 	os.Clearenv()
 	t.Setenv("GEMINI_API_KEY", "test-gemini-key")
-	t.Setenv("OLLAMA_TIMEOUT_MS", "invalid-number") // Should fallback to default
+	t.Setenv("OLLAMA_TIMEOUT_MS", "invalid-number")           // Should fallback to default
 	t.Setenv("FREELLMAPI_BASE_URL", "http://custom:3001/v1/") // Should strip suffix
 
 	cfg := MustLoadPartial()

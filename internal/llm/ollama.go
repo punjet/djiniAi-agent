@@ -147,7 +147,7 @@ type embeddingRequest struct {
 
 // embeddingResponse mirrors the OpenAI embeddings API response body.
 type embeddingResponse struct {
-	Object string    `json:"object"`
+	Object string `json:"object"`
 	Data   []struct {
 		Embedding []float32 `json:"embedding"`
 	} `json:"data"`
@@ -159,6 +159,11 @@ type embeddingResponse struct {
 
 // GenerateText implements Provider.
 func (o *OllamaClient) GenerateText(ctx context.Context, system, user string) (string, error) {
+	start := time.Now()
+	defer func() {
+		InferenceLatency.WithLabelValues(o.Name(), o.model).Observe(time.Since(start).Seconds())
+	}()
+
 	// Build the endpoint (works for both /v1 and plain base URL)
 	endpoint := o.baseURL + "/v1/chat/completions"
 	if strings.HasSuffix(o.baseURL, "/v1") {

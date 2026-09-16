@@ -28,15 +28,15 @@ func ExtractDashboardJobsV2(htmlContent string) ([]Job, error) {
 		if len(parts) < 2 || parts[0] != "jobs" {
 			return
 		}
-		
+
 		slugPart := parts[1]
-		
+
 		// Find ID from slug Part
 		dashIndex := strings.Index(slugPart, "-")
 		if dashIndex <= 0 {
 			return
 		}
-		
+
 		id := slugPart[:dashIndex]
 
 		// The title might be inside a h2 or just the link text
@@ -49,7 +49,7 @@ func ExtractDashboardJobsV2(htmlContent string) ([]Job, error) {
 			// Find nearest h2 or use text
 			title = cleanTitle(s.Text())
 		}
-		
+
 		if title == "" || len(title) < 3 || strings.Contains(title, "Увійти") || strings.Contains(title, "Зареєструватись") {
 			return
 		}

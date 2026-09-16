@@ -18,6 +18,7 @@ import (
 	"djinni-bot-go/internal/covergen"
 	"djinni-bot-go/internal/extractor"
 	"djinni-bot-go/internal/llm"
+	"djinni-bot-go/internal/logger"
 	"djinni-bot-go/internal/pipeline"
 )
 
@@ -43,7 +44,7 @@ func logTestApply(format string, args ...interface{}) {
 	timestamp := time.Now().Format(time.RFC3339)
 	line := fmt.Sprintf("[%s] %s\n", timestamp, msg)
 
-	fmt.Print(line)
+	logger.Log.Info(fmt.Sprint(line))
 
 	f, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err == nil {
@@ -97,7 +98,7 @@ func runPipelineTestApply(cmd *cobra.Command, args []string) error {
 			logTestApply("HTTP Response <- %s %s", r.Request.Method, urlStr)
 		}
 		logTestApply("Status -> %d", r.StatusCode)
-		
+
 		body := r.Bytes()
 		logTestApply("Payload Size -> %d bytes", len(body))
 
@@ -134,9 +135,9 @@ func runPipelineTestApply(cmd *cobra.Command, args []string) error {
 	if details == nil {
 		logTestApply("No jobs found or scan error. Using dummy job.")
 		testJob = extractor.JobSummary{
-			Slug:    "test-slug-1234",
-			URL:     "https://djinni.co/jobs/test-slug-1234",
-			Title:   "Test AI Developer",
+			Slug:  "test-slug-1234",
+			URL:   "https://djinni.co/jobs/test-slug-1234",
+			Title: "Test AI Developer",
 		}
 		details = &api.JobFull{
 			ID:           "1234",
@@ -193,7 +194,7 @@ func runPipelineTestApply(cmd *cobra.Command, args []string) error {
 		}
 
 		if engine == "freellmapi" {
-			logTestApply("⏳ Waiting 20 seconds before answering quiz to respect free LLM API rate limits...")
+			logTestApply(" Waiting 20 seconds before answering quiz to respect free LLM API rate limits...")
 			time.Sleep(20 * time.Second)
 		}
 

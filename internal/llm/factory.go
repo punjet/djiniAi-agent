@@ -12,7 +12,7 @@ import (
 var GlobalTraceLogger func(string, ...interface{})
 
 type TraceProvider struct {
-	inner               Provider
+	inner Provider
 	generateEmbeddingFunc func(context.Context, string) ([]float32, error)
 }
 
@@ -125,26 +125,26 @@ func NewProvider(cfg *config.Config, engine Engine, task string) (Provider, erro
 		}
 
 		var model string
-	switch task {
-	case "resume":
-		model = cfg.ResumeModel
-	case "evaluation":
-		model = cfg.EvalModel
-	default:
-		model = cfg.OpenAIModel
-	}
+		switch task {
+		case "resume":
+			model = cfg.ResumeModel
+		case "evaluation":
+			model = cfg.EvalModel
+		default:
+			model = cfg.OpenAIModel
+		}
 		if model == "" || model == "auto" {
 			model = "gpt-4o-mini"
 		}
 
-p, err = NewOllamaClient(OllamaConfig{
-		BaseURL:     "https://api.openai.com/v1",
-		Model:       model,
-		TimeoutMS:   cfg.OpenAITimeoutMS,
-		APIKey:      apiKey,
-		AllowRemote: true,
-		EmbedModel:  "text-embedding-3-small", // Use OpenAI embedding model for 1536-dimension vectors
-	})
+		p, err = NewOllamaClient(OllamaConfig{
+			BaseURL:     "https://api.openai.com/v1",
+			Model:       model,
+			TimeoutMS:   cfg.OpenAITimeoutMS,
+			APIKey:      apiKey,
+			AllowRemote: true,
+			EmbedModel:  "text-embedding-3-small", // Use OpenAI embedding model for 1536-dimension vectors
+		})
 
 	default:
 		return nil, fmt.Errorf("unknown LLM engine %q: choose 'gemini', 'ollama', 'freellmapi', or 'openai'", engine)
@@ -157,9 +157,11 @@ p, err = NewOllamaClient(OllamaConfig{
 	var wrapped Provider = p
 	if GlobalTraceLogger != nil {
 		wrapped = &TraceProvider{
-			inner:               p,
+			inner: p,
 			generateEmbeddingFunc: func(ctx context.Context, text string) ([]float32, error) {
-				if pb, ok := p.(interface{ GenerateEmbedding(ctx context.Context, text string) ([]float32, error) }); ok {
+				if pb, ok := p.(interface {
+					GenerateEmbedding(ctx context.Context, text string) ([]float32, error)
+				}); ok {
 					return pb.GenerateEmbedding(ctx, text)
 				}
 				return nil, fmt.Errorf("provider does not support embeddings")
@@ -167,5 +169,5 @@ p, err = NewOllamaClient(OllamaConfig{
 		}
 	}
 
-	return wrapped, nil
+	return NewLoggedProvider(wrapped), nil
 }
