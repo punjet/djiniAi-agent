@@ -1,13 +1,14 @@
 package covergen
 
 import (
+	"bytes"
 	"context"
 	"net/url"
 	
-
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 	"github.com/carlos7ags/folio/document"
+	"djinni-bot-go/internal/logger"
 )
 
 func renderHTMLToPDFChromedp(ctx context.Context, htmlContent string) ([]byte, error) {
@@ -56,5 +57,11 @@ func renderHTMLToPDFFolio(ctx context.Context, htmlContent string) ([]byte, erro
 }
 
 func renderHTMLToPDF(ctx context.Context, htmlContent string) ([]byte, error) {
-	return renderHTMLToPDFFolio(ctx, htmlContent)
+	pdfBytes, err := renderHTMLToPDFFolio(ctx, htmlContent)
+	if err == nil && len(pdfBytes) > 0 {
+		return pdfBytes, nil
+	}
+	
+	logger.Log.Warn("Folio PDF generation failed or empty, falling back to chromedp", "error", err)
+	return renderHTMLToPDFChromedp(ctx, htmlContent)
 }
