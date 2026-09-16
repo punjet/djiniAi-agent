@@ -8,6 +8,7 @@ import (
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 	"github.com/carlos7ags/folio/document"
+	"github.com/carlos7ags/folio/layout"
 	"djinni-bot-go/internal/logger"
 )
 
@@ -47,6 +48,7 @@ func renderHTMLToPDFChromedp(ctx context.Context, htmlContent string) ([]byte, e
 
 func renderHTMLToPDFFolio(ctx context.Context, htmlContent string) ([]byte, error) {
 	doc := document.NewDocument(document.PageSizeA4)
+	doc.SetMargins(layout.Margins{Top: 28.8, Right: 28.8, Bottom: 28.8, Left: 28.8})
 	doc.AddHTML(htmlContent, nil)
 	buf := new(bytes.Buffer)
 	_, err := doc.WriteTo(buf)
