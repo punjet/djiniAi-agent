@@ -44,7 +44,7 @@ func GetUnreadMessages(dc *client.DjinniClient) ([]Dialogue, error) {
 	}
 
 	var dialogues []Dialogue
-	doc.Find("div.proposal, div.inbox-row, .b-list-jobs__item").Each(func(i int, s *goquery.Selection) {
+	doc.Find("div.proposal, div.thread-item-wrapper, div.inbox-row, .b-list-jobs__item").Each(func(i int, s *goquery.Selection) {
 		dialogID, exists := s.Attr("data-id")
 		if !exists {
 			// Try finding a link to /my/inbox/ID/
