@@ -14,7 +14,7 @@ func TestTelegramBot(t *testing.T) {
 	os.Setenv("TG_BOT_TOKEN", "mock-token")
 
 	bot := NewTelegramBot()
-	
+
 	cmds := map[string]func(*TGMessage){
 		"/test": func(msg *TGMessage) {},
 	}
@@ -28,10 +28,10 @@ func TestTelegramBot(t *testing.T) {
 	bot.Start()
 	time.Sleep(100 * time.Millisecond) // let goroutine run a bit
 	bot.Stop()
-	
+
 	// Double stop should be safe
 	bot.Stop()
-	
+
 	// PanicStop should be safe
 	bot.PanicStop()
 
@@ -74,7 +74,7 @@ func TestTelegramBotCommands(t *testing.T) {
 	simulateCmd("/start", 12345)
 	simulateCmd("/status", 12345)
 	simulateCmd("/report", 12345)
-	simulateCmd("/stop", 12345) // will stop the bot
+	simulateCmd("/stop", 12345)  // will stop the bot
 	simulateCmd("/panic", 12345) // will panic stop
 
 	if len(sentMessages) != 5 {

@@ -4,35 +4,35 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	_ "github.com/lib/pq"
 	"djinni-bot-go/internal/config"
+	"djinni-bot-go/internal/logger"
+
+	_ "github.com/lib/pq"
 )
 
-// InitDB initializes the database connection and runs migrations.
 func InitDB(cfg *config.Config) (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
-	
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
-	
+
 	if err := runMigrations(db); err != nil {
 		return nil, err
 	}
-	
+
 	return db, nil
 }
 
@@ -88,21 +88,20 @@ func runMigrations(db *sql.DB) error {
 		);`,
 		`ALTER TABLE applications ADD CONSTRAINT applications_job_id_key UNIQUE (job_id);`,
 	}
-	
+
 	for _, q := range queries {
 		if _, err := db.Exec(q); err != nil {
 			if strings.Contains(q, "ADD CONSTRAINT") && strings.Contains(err.Error(), "already exists") {
 				continue
 			}
-			log.Printf("Failed to run migration: %s\nError: %v", q, err)
+			logger.Log.Error("Failed to run migration", "query", q, "error", err)
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
-// Application represents a job application
 type Application struct {
 	ID          int
 	JobID       string
@@ -111,7 +110,6 @@ type Application struct {
 	CreatedAt   string
 }
 
-// Interview represents an interview
 type Interview struct {
 	ID            int
 	ApplicationID int
@@ -125,7 +123,6 @@ type Interview struct {
 	CreatedAt     string
 }
 
-// AgentMemory represents learned insights from the LLM agent
 type AgentMemory struct {
 	ID         int
 	Category   string
@@ -135,7 +132,6 @@ type AgentMemory struct {
 	CreatedAt  string
 }
 
-// ChatLog represents a chat log
 type ChatLog struct {
 	ID            int
 	ApplicationID int
@@ -218,10 +214,15 @@ func cleanURLPath(u string) string {
 	return parsed.String()
 }
 
+var (
+	nonAlphanumericRegex = regexp.MustCompile(`[^\p{L}\p{N}\s]`)
+	urlRx                = regexp.MustCompile(`https?://[^\s|)]+`)
+	rowRx                = regexp.MustCompile(`\|[^|]+\|[^|]+\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|`)
+)
+
 func normalizeDBString(s string) string {
 	s = strings.ToLower(s)
-	reg := regexp.MustCompile(`[^\p{L}\p{N}\s]`)
-	s = reg.ReplaceAllString(s, "")
+	s = nonAlphanumericRegex.ReplaceAllString(s, "")
 	return strings.Join(strings.Fields(s), " ")
 }
 
@@ -253,7 +254,7 @@ func MigrateFilesToDB(db *sql.DB, contextDir string) error {
 						status = parts[5]
 					}
 					if _, err := db.Exec(query, jobURL, company, status); err != nil {
-						log.Printf("Failed to insert scan history job %s into DB: %v", jobURL, err)
+						logger.Log.Error("Failed to insert scan history job into DB", "job_url", jobURL, "error", err)
 					}
 				}
 			}
@@ -263,8 +264,6 @@ func MigrateFilesToDB(db *sql.DB, contextDir string) error {
 	if file, err := os.Open(appsPath); err == nil {
 		defer file.Close()
 		scanner := bufio.NewScanner(file)
-		urlRx := regexp.MustCompile(`https?://[^\s|)]+`)
-		rowRx := regexp.MustCompile(`\|[^|]+\|[^|]+\|\s*([^|]+)\s*\|\s*([^|]+)\s*\|`)
 
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -281,7 +280,7 @@ func MigrateFilesToDB(db *sql.DB, contextDir string) error {
 			for _, u := range urls {
 				jobURL := cleanURLPath(u)
 				if _, err := db.Exec(query, jobURL, company, "applied"); err != nil {
-					log.Printf("Failed to insert markdown application job %s into DB: %v", jobURL, err)
+					logger.Log.Error("Failed to insert markdown application job into DB", "job_url", jobURL, "error", err)
 				}
 			}
 		}

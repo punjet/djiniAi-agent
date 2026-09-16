@@ -3,8 +3,8 @@ package pipeline
 import (
 	"os"
 	"path/filepath"
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestCleanURL(t *testing.T) {

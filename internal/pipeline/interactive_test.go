@@ -263,12 +263,12 @@ func TestAskUserForApplyReview_RichText(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected second block to be InputRichBlockParagraph, got %T", capturedRichMsg.Blocks[1])
 	}
-	
+
 	evalQuote, ok := capturedRichMsg.Blocks[2].(notify.InputRichBlockBlockQuotation)
 	if !ok {
 		t.Fatalf("expected third block to be InputRichBlockBlockQuotation, got %T", capturedRichMsg.Blocks[2])
 	}
-	
+
 	_ = evalTitle
 	_ = evalQuote
 

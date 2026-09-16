@@ -93,4 +93,4 @@ func TestGenerateEmbedding_EmptyText(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, embedding, 1536)
 	assert.Equal(t, float32(0)/1536.0, embedding[0])
-}
+/main

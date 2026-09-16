@@ -316,7 +316,7 @@ func TestSimilarJobsHTMX(t *testing.T) {
 	// Skip if no credentials (e.g. CSRFToken or SessionID)
 	// For testing, we just check if it's set in environment or we skip.
 	// Actually we just make a dummy server like others.
-	
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/jobs/123/similar-jobs/" {
 			w.WriteHeader(http.StatusOK)

@@ -1,9 +1,10 @@
 package llm
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"djinni-bot-go/internal/config"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewProvider_ModelSelection(t *testing.T) {

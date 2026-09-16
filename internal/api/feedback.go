@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -9,6 +10,10 @@ import (
 )
 
 func (h *Handlers) FeedbackHandler(w http.ResponseWriter, r *http.Request) {
+	if h.DB == nil {
+		http.Error(w, "Database connection not available", http.StatusServiceUnavailable)
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -43,6 +48,7 @@ func (h *Handlers) FeedbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = db.SaveAgentMemory(h.DB, mem)
 	if err != nil {
+		slog.ErrorContext(r.Context(), "Failed to save feedback", slog.Any("error", err))
 		http.Error(w, "Failed to save feedback", http.StatusInternalServerError)
 		return
 	}
