@@ -3,12 +3,14 @@ package covergen
 import (
 	"context"
 	"net/url"
+	
 
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
+	"github.com/carlos7ags/folio/document"
 )
 
-func renderHTMLToPDF(ctx context.Context, htmlContent string) ([]byte, error) {
+func renderHTMLToPDFChromedp(ctx context.Context, htmlContent string) ([]byte, error) {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("no-sandbox", true),
 		chromedp.Flag("disable-dev-shm-usage", true),
@@ -40,4 +42,19 @@ func renderHTMLToPDF(ctx context.Context, htmlContent string) ([]byte, error) {
 	)
 
 	return buf, err
+}
+
+func renderHTMLToPDFFolio(ctx context.Context, htmlContent string) ([]byte, error) {
+	doc := document.NewDocument(document.PageSizeA4)
+	doc.AddHTML(htmlContent, nil)
+	buf := new(bytes.Buffer)
+	_, err := doc.WriteTo(buf)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func renderHTMLToPDF(ctx context.Context, htmlContent string) ([]byte, error) {
+	return renderHTMLToPDFFolio(ctx, htmlContent)
 }
