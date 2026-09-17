@@ -59,11 +59,15 @@ func renderHTMLToPDFFolio(ctx context.Context, htmlContent string) ([]byte, erro
 }
 
 func renderHTMLToPDF(ctx context.Context, htmlContent string) ([]byte, error) {
-	pdfBytes, err := renderHTMLToPDFFolio(ctx, htmlContent)
+	// Normalize ATS-hostile Unicode before Folio renders the text layer.
+	// The chromedp fallback path receives the original content because the
+	// browser handles Unicode natively.
+	normalized := NormalizeForATS(htmlContent)
+	pdfBytes, err := renderHTMLToPDFFolio(ctx, normalized)
 	if err == nil && len(pdfBytes) > 0 {
 		return pdfBytes, nil
 	}
-	
+
 	logger.Log.Warn("Folio PDF generation failed or empty, falling back to chromedp", "error", err)
 	return renderHTMLToPDFChromedp(ctx, htmlContent)
 }
