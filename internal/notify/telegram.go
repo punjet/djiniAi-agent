@@ -14,7 +14,7 @@ func SendTelegramMessage(text string) error {
 	chatID := os.Getenv("TG_CHAT_ID")
 
 	if token == "" || chatID == "" {
-		return nil
+		return fmt.Errorf("telegram TG_BOT_TOKEN or TG_CHAT_ID missing")
 	}
 
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
@@ -106,7 +106,7 @@ func SendTelegramMessageID(text string) (int64, error) {
 	chatID := os.Getenv("TG_CHAT_ID")
 
 	if token == "" || chatID == "" {
-		return 0, nil
+		return 0, fmt.Errorf("telegram TG_BOT_TOKEN or TG_CHAT_ID missing")
 	}
 
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
