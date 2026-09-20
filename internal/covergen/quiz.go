@@ -94,14 +94,7 @@ Please answer the above questions and return them as JSON.`, prof.Candidate.Full
 		return nil, fmt.Errorf("LLM quiz answering failed: %w", err)
 	}
 
-	// 5. Parse JSON response — strip markdown wrappers if present
-	cleanJSON := response
-	if idx := strings.Index(cleanJSON, "{"); idx != -1 {
-		cleanJSON = cleanJSON[idx:]
-	}
-	if idx := strings.LastIndex(cleanJSON, "}"); idx != -1 {
-		cleanJSON = cleanJSON[:idx+1]
-	}
+	cleanJSON := llm.CleanJSON(response)
 
 	var result struct {
 		Answers []struct {

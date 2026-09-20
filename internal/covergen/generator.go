@@ -183,14 +183,7 @@ Github: %s
 		return nil, "", fmt.Errorf("LLM cover letter generation failed: %w", err)
 	}
 
-	// Clean markdown wrappers if any
-	cleanJSON := response
-	if idx := strings.Index(cleanJSON, "{"); idx != -1 {
-		cleanJSON = cleanJSON[idx:]
-	}
-	if idx := strings.LastIndex(cleanJSON, "}"); idx != -1 {
-		cleanJSON = cleanJSON[:idx+1]
-	}
+	cleanJSON := llm.CleanJSON(response)
 
 	var genLetter GeneratedLetter
 	if err := json.Unmarshal([]byte(cleanJSON), &genLetter); err != nil {

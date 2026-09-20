@@ -161,13 +161,7 @@ Job Report:
 		return nil, fmt.Errorf("LLM CV generation failed: %w", err)
 	}
 
-	cleanJSON := response
-	if idx := strings.Index(cleanJSON, "{"); idx != -1 {
-		cleanJSON = cleanJSON[idx:]
-	}
-	if idx := strings.LastIndex(cleanJSON, "}"); idx != -1 {
-		cleanJSON = cleanJSON[:idx+1]
-	}
+	cleanJSON := llm.CleanJSON(response)
 
 	var content CVContent
 	if err := json.Unmarshal([]byte(cleanJSON), &content); err != nil {

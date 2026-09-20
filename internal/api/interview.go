@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"djinni-bot-go/internal/db"
 	"djinni-bot-go/internal/llm"
@@ -113,16 +112,7 @@ Extract the following information and output strictly as a JSON object:
 		if llmErr != nil {
 			summary = "Failed to generate summary: " + llmErr.Error()
 		} else {
-			jsonStr := strings.TrimSpace(respText)
-			if strings.HasPrefix(jsonStr, "```json") {
-				jsonStr = strings.TrimPrefix(jsonStr, "```json")
-				jsonStr = strings.TrimSuffix(jsonStr, "```")
-				jsonStr = strings.TrimSpace(jsonStr)
-			} else if strings.HasPrefix(jsonStr, "```") {
-				jsonStr = strings.TrimPrefix(jsonStr, "```")
-				jsonStr = strings.TrimSuffix(jsonStr, "```")
-				jsonStr = strings.TrimSpace(jsonStr)
-			}
+			jsonStr := llm.CleanJSON(respText)
 
 			var parsed LLMResponse
 			if err := json.Unmarshal([]byte(jsonStr), &parsed); err == nil {
