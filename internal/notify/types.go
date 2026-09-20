@@ -133,7 +133,7 @@ var SendRichInlineKeyboardFunc = func(richMsg InputRichMessage, keyboard [][]Inl
 	}
 	if len(keyboard) > 0 {
 		payload.ReplyMarkup = InlineKeyboardMarkup{
-			InlineKeyboard: keyboard,
+			InlineKeyboard: SanitizeKeyboard(keyboard),
 		}
 	}
 

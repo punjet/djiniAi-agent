@@ -62,7 +62,7 @@ var SendInlineKeyboardFunc = func(text string, keyboard [][]InlineButton) (int64
 		Text:      text,
 		ParseMode: "Markdown",
 		ReplyMarkup: InlineKeyboardMarkup{
-			InlineKeyboard: keyboard,
+			InlineKeyboard: SanitizeKeyboard(keyboard),
 		},
 	}
 

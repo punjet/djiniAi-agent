@@ -61,7 +61,7 @@ var EditMessageReplyMarkupFunc = func(messageID int64, keyboard [][]InlineButton
 	}
 	if keyboard != nil {
 		payload.ReplyMarkup = InlineKeyboardMarkup{
-			InlineKeyboard: keyboard,
+			InlineKeyboard: SanitizeKeyboard(keyboard),
 		}
 	} else {
 		// Nil/Empty keyboard removes the markup completely
