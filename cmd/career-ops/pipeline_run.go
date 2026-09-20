@@ -305,6 +305,10 @@ func processJobItem(ctx context.Context, cfg *config.Config, bot *notify.Telegra
 				logDeep("WARNING", fmt.Sprintf("Failed to send CV document to Telegram: %v", errDoc))
 			}
 
+			if errMsg := notify.SendMessageFunc(fmt.Sprintf("Cover Letter / Intro Message for %s:\n\n%s", details.Company, introMsg)); errMsg != nil {
+				logDeep("WARNING", fmt.Sprintf("Failed to send cover letter message to Telegram: %v", errMsg))
+			}
+
 			var msgID int64
 
 			for {

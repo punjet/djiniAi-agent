@@ -198,3 +198,30 @@ func TestSetupBotCommands(t *testing.T) {
 		}
 	}
 }
+
+func TestProcessJobItem_SendsCoverLetterToTelegram(t *testing.T) {
+	var sentMessages []string
+	oldSendMessage := notify.SendMessageFunc
+	notify.SendMessageFunc = func(text string) error {
+		sentMessages = append(sentMessages, text)
+		return nil
+	}
+	defer func() { notify.SendMessageFunc = oldSendMessage }()
+
+	company := "TestCorp"
+	introMsg := "Hello, I am interested in this position!"
+
+	err := notify.SendMessageFunc("Cover Letter / Intro Message for " + company + ":\n\n" + introMsg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(sentMessages) != 1 {
+		t.Fatalf("expected 1 sent message, got %d", len(sentMessages))
+	}
+
+	expectedPrefix := "Cover Letter / Intro Message for TestCorp:\n\n"
+	if sentMessages[0] != expectedPrefix+introMsg {
+		t.Errorf("expected message %q, got %q", expectedPrefix+introMsg, sentMessages[0])
+	}
+}
