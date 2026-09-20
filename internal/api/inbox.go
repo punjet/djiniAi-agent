@@ -39,7 +39,7 @@ func GetUnreadMessages(dc *client.DjinniClient) ([]Dialogue, error) {
 	logger.Log.Info("Fetched Djinni inbox", "status_code", resp.StatusCode, "title", title, "content_length", len(htmlContent))
 
 	if strings.Contains(title, "Увійти на Джин") || strings.Contains(title, "Увійти") || strings.Contains(title, "Login") {
-		logger.Log.Error("Session expired: Login page detected", "title", title)
+		logger.Log.Error("Session expired: please update DJINNI_SESSIONID in Coolify", "title", title)
 		return nil, errors.New("session expired: please update DJINNI_SESSIONID in Coolify")
 	}
 
@@ -174,6 +174,7 @@ func parseThreadMessages(r io.Reader) ([]ThreadMessage, error) {
 
 	title := strings.TrimSpace(doc.Find("title").Text())
 	if strings.Contains(title, "Увійти на Джин") || strings.Contains(title, "Увійти") || strings.Contains(title, "Login") {
+		logger.Log.Error("Session expired: please update DJINNI_SESSIONID in Coolify", "title", title)
 		return nil, errors.New("session expired: please update DJINNI_SESSIONID in Coolify")
 	}
 

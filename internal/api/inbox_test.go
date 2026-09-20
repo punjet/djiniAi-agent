@@ -216,3 +216,45 @@ func TestParseThreadMessagesNewLayout(t *testing.T) {
 		t.Errorf("expected msg 1 timestamp to be '12:05 PM', got %s", msgs[1].Timestamp)
 	}
 }
+
+func TestGetUnreadMessages_SessionExpired(t *testing.T) {
+	mockHtml := `<html><head><title>Увійти на Джинні</title></head><body>Login page</body></html>`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(mockHtml))
+	}))
+	defer server.Close()
+
+	cfg := &config.Config{SessionID: "expired-session"}
+	dc := client.NewDjinniClient(cfg)
+	dc.Client.SetBaseURL(server.URL)
+
+	_, err := GetUnreadMessages(dc)
+	if err == nil {
+		t.Fatalf("expected session expired error, got nil")
+	}
+	if !strings.Contains(err.Error(), "session expired: please update DJINNI_SESSIONID in Coolify") {
+		t.Errorf("unexpected error message: %v", err)
+	}
+}
+
+func TestGetUnreadMessages_ZeroDialogues(t *testing.T) {
+	mockHtml := `<html><head><title>Inbox</title></head><body><div class="empty-inbox">No messages</div></body></html>`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(mockHtml))
+	}))
+	defer server.Close()
+
+	cfg := &config.Config{SessionID: "mock-session"}
+	dc := client.NewDjinniClient(cfg)
+	dc.Client.SetBaseURL(server.URL)
+
+	dialogues, err := GetUnreadMessages(dc)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(dialogues) != 0 {
+		t.Errorf("expected 0 dialogues, got %d", len(dialogues))
+	}
+}
